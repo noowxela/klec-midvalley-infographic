@@ -1,6 +1,6 @@
 # klec-midvalley-infographic
 
-A 3D scrollytelling infographic of the rail-and-mall cluster on both banks of the Klang River in Kuala Lumpur: KL Eco City, The Gardens Mall and Mid Valley Megamall, around Abdullah Hukum station (LRT Kelana Jaya Line and KTM) and Mid Valley KTM. Nine chapters walk through the site with a fixed 1920×1080 stage, a Three.js block model built from OpenStreetMap and short, sourced text in English, 简体中文 and Bahasa Malaysia. The layout and chapter rail are inspired by the Banqiao Station infographic (link: TODO, the URL is not recorded in this repo). The massing is illustrative, not a survey.
+A 3D scrollytelling infographic of the rail-and-mall cluster on both banks of the Klang River in Kuala Lumpur: KL Eco City, The Gardens Mall and Mid Valley Megamall, around Abdullah Hukum station (LRT Kelana Jaya Line and KTM) and Mid Valley KTM. Nine chapters walk through the site with a fixed 1920×1080 stage, a Three.js block model built from OpenStreetMap and short, sourced text in English, 简体中文 and Bahasa Malaysia. The layout and chapter rail are inspired by the [Banqiao Station infographic](https://a767thycode.github.io/banqiao-station-infographic/). The massing is illustrative, not a survey.
 
 ## Chapters
 
