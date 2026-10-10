@@ -68,6 +68,7 @@ export const zh: Dict = {
   monthsLong: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
   compass16: ['北', '北东北', '东北', '东东北', '东', '东东南', '东南', '南东南', '南', '南西南', '西南', '西西南', '西', '西西北', '西北', '北西北'],
   common: {
+    osmSrc: (date: string) => `地图数据 © OpenStreetMap 贡献者（ODbL），Overpass API 下载于 ${date}。`,
     layers: '图层',
     osm: 'OSM',
     focusStep: (i: number) => `聚焦第 ${i} 段`,
@@ -88,7 +89,7 @@ export const zh: Dict = {
     title: ['三个片区，', '一个交通枢纽'],
     lead: '吉隆坡生态城位于巴生河西岸；The Gardens 与 Mid Valley Megamall 同属东岸的谷中城。Abdullah Hukum 站（轻快铁 KJ17、KTM KD01）与谷中城 KTM 站（KB01）把整个聚落串连起来，其间以人行天桥和商场通道相连。',
     dataTitle: '数据',
-    dataNote: (date: string) => `地图数据 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap 贡献者</a>，采用<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">开放数据库许可（ODbL）</a>；于 ${date} 通过 Overpass API 获取。建筑高度：有出处的采用公开资料（见第 04 章及 docs/height-sources.md），否则采用 OSM 高度标签或 building:levels，再否则为标注的估计值。`,
+    dataNote: (): string => `许可：<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">开放数据库许可（ODbL）</a>。建筑高度：有出处的采用公开资料（见第 04 章及 docs/height-sources.md），否则采用 OSM 高度标签或 building:levels，再否则为标注的估计值。`,
     legendTitle: '模型上的片区与地标',
     zones: { eco: '吉隆坡生态城', gardens: 'The Gardens', midvalley: '谷中城（Megamall 一带）' },
     zoneDesc: { eco: 'OSM 土地用途多边形“KL Eco City”', gardens: 'The Gardens Mall 轮廓及其塔楼（OSM 具名建筑）', midvalley: 'OSM“Mid Valley City”多边形的其余部分：Megamall 及周边' },
@@ -104,7 +105,7 @@ export const zh: Dict = {
     podiumNote: (name: string, levels: number, storey: number, roof: number) => `Masjid Jamek Abdullah Hukum 建于“${name}”停车楼的屋顶上（项目负责人提供的本地信息）。该停车楼即 OSM 中轮廓包住清真寺的无名建筑，标注 building:levels = ${levels}；按全项目统一层高建模为 ${levels} × ${storey} 米 = ${roof} 米，清真寺体块从该屋顶起算。2016 年新闻报道（FMT、Bernama）称其为“建于七层停车场裙楼之上的两层清真寺”；模型沿用 OSM 层数。`,
     mosqueAnNur: 'Masjid An Nur（TNB 孟沙）',
     mosqueAnNurSub: '清真寺 · TNB 孟沙',
-    source: (podium = '') => `片区：吉隆坡生态城与谷中城 = 中心点位于 OSM 土地用途多边形“KL Eco City”与“Mid Valley City”内的体块；The Gardens 按名称从谷中城中分出（The Gardens Mall 轮廓及其部件：北塔、南塔、St. Giles The Gardens Residences）。占地面积 = 各片区 OSM 建筑轮廓与部件以 1 米网格计算的联集。清真寺：OSM 建筑“Masjid Jamek Abdullah Hukum”（位于 KL Eco City 土地用途多边形之外，紧邻其边界）与“Masjid An Nur”（别名“Balai Islam An-Nur TNB Bangsar”）；An Nur 的轮廓跨越研究范围西界，完整绘出但不计入体块数。${podium}清真寺自身高度（基座以上）为占位值。示意性体块模型。`,
+    source: (osm: string, podium = '') => `${osm} 片区：吉隆坡生态城与谷中城 = 中心点位于 OSM 土地用途多边形“KL Eco City”与“Mid Valley City”内的体块；The Gardens 按名称从谷中城中分出（The Gardens Mall 轮廓及其部件：北塔、南塔、St. Giles The Gardens Residences）。占地面积 = 各片区 OSM 建筑轮廓与部件以 1 米网格计算的联集。清真寺：OSM 建筑“Masjid Jamek Abdullah Hukum”（位于 KL Eco City 土地用途多边形之外，紧邻其边界）与“Masjid An Nur”（别名“Balai Islam An-Nur TNB Bangsar”）；An Nur 的轮廓跨越研究范围西界，完整绘出但不计入体块数。${podium}清真寺自身高度（基座以上）为占位值。示意性体块模型。`,
   },
   ch1: {
     label: '交通枢纽 · 吉隆坡',

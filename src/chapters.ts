@@ -130,7 +130,7 @@ export function buildChapters(): Chapter[] {
     {
       id: 0, label: Z.label, tab: Z.tab, title: Z.title, lead: Z.lead,
       stats: ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ fig: fmt(zs[z].footprintM2 / 10000, 1), unit: U.ha, cap: Z.statZone(Z.zones[z], zs[z].blocks), swatch: `var(--z-${z})` })),
-      source: Z.source(jamekPodium ? Z.podiumNote(jamekPodium.name, jamekPodium.levels ?? 0, jamekPodium.storeyM ?? 0, jamekPodium.roof) : ''),
+      source: Z.source(T.common.osmSrc(stats.fetchedDate), jamekPodium ? Z.podiumNote(jamekPodium.name, jamekPodium.levels ?? 0, jamekPodium.storeyM ?? 0, jamekPodium.roof) : ''),
       view: { target: [-10, 0, -30], azimuth: 0.2, polar: 0.7, distance: 2350 }, // turned so Masjid Jamek is not hidden behind the KL Eco City towers
       mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'zone', precincts: false, landmarks: true },
       pins: nn([
@@ -145,7 +145,7 @@ export function buildChapters(): Chapter[] {
         const s = h('section', { class: 'ov-legend' }); s.append(h('h3', {}, Z.legendTitle));
         const rows = [...ZONES.map((z) => ({ swatch: `var(--z-${z})`, label: Z.zones[z], desc: Z.zoneDesc[z] })), ...(landmarks.length ? [{ swatch: 'var(--landmark)', label: Z.mosques, desc: Z.mosquesDesc }] : []), ...(jamekPodium ? [{ swatch: 'var(--podium)', label: Z.podiumLabel, desc: Z.podiumDesc(jamekPodium.name, jamekPodium.levels ?? 0, jamekPodium.storeyM ?? 0, jamekPodium.roof) }] : [])];
         for (const r of rows) s.append(h('div', { class: 'ov-legend-row' }, `<span class="swatch box" style="background:${r.swatch}"></span><div><div class="lg-label">${r.label}</div><div class="lg-desc">${r.desc}</div></div>`));
-        const ds = h('section', { class: 'ov-data' }); ds.append(h('h3', {}, Z.dataTitle), h('div', { class: 'small' }, Z.dataNote(stats.fetchedDate)));
+        const ds = h('section', { class: 'ov-data' }); ds.append(h('h3', {}, Z.dataTitle), h('div', { class: 'small' }, Z.dataNote()));
         el.append(s, ds);
       },
     },

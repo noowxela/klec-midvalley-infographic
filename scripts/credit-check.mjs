@@ -9,6 +9,8 @@ mkdirSync('shots-credit', { recursive: true });
 const browser = await puppeteer.launch({ executablePath: chrome, headless: true, args: ['--ignore-gpu-blocklist', '--enable-webgl', '--use-angle=metal', '--hide-scrollbars'] });
 const errors = []; const bad = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const OSM_LINE = { en: 'Map data © OpenStreetMap contributors (ODbL), Overpass API pull 2026-10-10.', zh: '地图数据 © OpenStreetMap 贡献者（ODbL），Overpass API 下载于 2026-10-10。', ms: 'Data peta © penyumbang OpenStreetMap (ODbL), dimuat turun melalui Overpass API pada 2026-10-10.' };
+const osmOk = (r, chapter, lang) => (chapter === 0 ? r.sourceText.startsWith(OSM_LINE[lang]) && r.sourceText.split('OpenStreetMap').length === 2 : !r.sourceHasOsm);
 async function open(name, q, { w = 1920, h = 1080, panels = null, dpr = 1 } = {}) {
   const page = await browser.newPage();
   await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }]);
@@ -34,6 +36,8 @@ const probe = () => {
   }
   return { text: c.textContent, href: c.href, target: c.target, rel: c.rel, aria: c.getAttribute('aria-label'), rect: [r.x, r.y, r.width, r.height].map(Math.round),
     inView: r.x >= 0 && r.y >= 0 && r.right <= innerWidth && r.bottom <= innerHeight, visible: cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity > 0, onTop: hit === c, font: cs.fontSize, color: cs.color, overlaps,
+    // the original OSM source line is kept in 00 Overview only (Alex); every other chapter must not repeat it
+    sourceText: document.querySelector('#text-panel .source')?.textContent || '',
     sourceHasOsm: [...document.querySelectorAll('#text-panel .source')].some((s) => /OpenStreetMap|Overpass|开放街图/.test(s.textContent)) };
 };
 // 1. every chapter × language: credit OK and no repeated OSM line in the text panel
@@ -43,13 +47,13 @@ for (const lang of ['en', 'zh', 'ms']) {
   for (const id of await p.evaluate(() => window.__mv.chapters)) {
     await p.evaluate((i) => window.__mv.goTo(i), id); await sleep(900);
     const r = await p.evaluate(probe);
-    const ok = r.visible && r.inView && r.onTop && !r.overlaps.length && !r.sourceHasOsm && r.text === '© OpenStreetMap contributors';
+    const ok = r.visible && r.inView && r.onTop && !r.overlaps.length && osmOk(r, id, lang) && r.text === '© OpenStreetMap contributors';
     if (!ok) bad.push(`${lang} #${id} ${JSON.stringify(r)}`);
     if (id === 0) console.log(lang, 'overview data note', JSON.stringify(await p.evaluate(() => ({ data: document.querySelector('.ov-data')?.textContent, links: [...document.querySelectorAll('.ov-data a')].map((a) => `${a.href} ${a.target} ${a.rel}`), sideScroll: (() => { const s = document.getElementById('side-panel'); return s.scrollHeight > s.clientHeight + 1; })(), sideBottom: Math.round(document.getElementById('side-panel').getBoundingClientRect().bottom) }))));
   }
 }
 await p.close();
-console.log(bad.length ? 'BAD\n' + bad.join('\n') : 'credit OK on every chapter x language (visible, in view, on top, no overlaps); no OSM line in any chapter source');
+console.log(bad.length ? 'BAD\n' + bad.join('\n') : 'credit OK on every chapter x language (visible, in view, on top, no overlaps); OSM source line only in 00 (exact, once), absent elsewhere');
 
 // 2. screenshots + layout probes
 const collapsed = JSON.stringify({ tp: true, sp: true });
@@ -64,8 +68,9 @@ const shots = [
 for (const [name, q, o = {}] of shots) {
   const pg = await open(name, q, o); await sleep(2200);
   const r = await pg.evaluate(probe);
-  console.log(name, JSON.stringify({ rect: r.rect, font: r.font, inView: r.inView, onTop: r.onTop, overlaps: r.overlaps, sourceHasOsm: r.sourceHasOsm }));
-  if (!(r.inView && r.onTop && !r.overlaps.length && !r.sourceHasOsm)) bad.push(name);
+  const ch = +new URLSearchParams(q).get('chapter'), lg = new URLSearchParams(q).get('lang');
+  console.log(name, JSON.stringify({ rect: r.rect, font: r.font, inView: r.inView, onTop: r.onTop, overlaps: r.overlaps, osmLineOk: osmOk(r, ch, lg) }));
+  if (!(r.inView && r.onTop && !r.overlaps.length && osmOk(r, ch, lg))) bad.push(name);
   await pg.screenshot({ path: `shots-credit/${name}.png` });
   // close-up crop of the corner credit (2x) for the open EN overview
   if (name === '00-overview-en-panels-open') await pg.screenshot({ path: `shots-credit/${name}-corner-crop.png`, clip: { x: r.rect[0] - 300, y: r.rect[1] - 120, width: r.rect[2] + 340, height: r.rect[3] + 150 } });

@@ -67,6 +67,7 @@ export const ms: Dict = {
   monthsLong: ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'],
   compass16: ['U', 'U–TL', 'TL', 'T–TL', 'T', 'T–TG', 'TG', 'S–TG', 'S', 'S–BD', 'BD', 'B–BD', 'B', 'B–BL', 'BL', 'U–BL'],
   common: {
+    osmSrc: (date: string) => `Data peta © penyumbang OpenStreetMap (ODbL), dimuat turun melalui Overpass API pada ${date}.`,
     layers: 'Lapisan',
     osm: 'OSM',
     focusStep: (i: number) => `Fokus langkah ${i}`,
@@ -87,7 +88,7 @@ export const ms: Dict = {
     title: ['Tiga presint,', 'satu hab transit'],
     lead: 'KL Eco City terletak di tebing barat Sungai Klang; The Gardens dan Mid Valley Megamall berkongsi Mid Valley City di tebing timur. Stesen Abdullah Hukum (LRT KJ17, KTM KD01) dan Stesen KTM Mid Valley (KB01) menyatukan gugusan ini, dihubungkan oleh jejantas dan koridor pusat beli-belah.',
     dataTitle: 'Data',
-    dataNote: (date: string) => `Data peta © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">penyumbang OpenStreetMap</a>, dilesenkan di bawah <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL)</a>; diambil melalui Overpass API pada ${date}. Ketinggian bangunan: sumber terbitan jika dipetik (bab 04, docs/height-sources.md), jika tidak tag ketinggian OSM atau building:levels, selain itu anggaran bertanda.`,
+    dataNote: (): string => `Lesen: <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL)</a>. Ketinggian bangunan: sumber terbitan jika dipetik (bab 04, docs/height-sources.md), jika tidak tag ketinggian OSM atau building:levels, selain itu anggaran bertanda.`,
     legendTitle: 'Presint & mercu tanda pada model',
     zones: { eco: 'KL Eco City', gardens: 'The Gardens', midvalley: 'Mid Valley' },
     zoneDesc: { eco: 'poligon guna tanah OSM “KL Eco City”', gardens: 'garis luar The Gardens Mall dan menaranya (bangunan OSM bernama)', midvalley: 'baki poligon OSM “Mid Valley City”: Megamall dan sekitarnya' },
@@ -103,7 +104,7 @@ export const ms: Dict = {
     podiumNote: (name: string, levels: number, storey: number, roof: number) => `Masjid Jamek Abdullah Hukum terletak di atas bumbung bangunan letak kereta “${name}” (maklumat tempatan daripada pemilik projek). Dalam OSM ini ialah bangunan tanpa nama yang garis luarnya melingkungi masjid, ditanda building:levels = ${levels}; ia dimodelkan sebagai ${levels} × ${storey} m = ${roof} m (ketinggian tingkat seragam projek) dan blok masjid bermula di bumbung itu. Laporan akhbar 2016 (FMT, Bernama) menyebut “masjid dua tingkat di atas podium letak kereta tujuh tingkat”; model mengekalkan bilangan tingkat OSM. `,
     mosqueAnNur: 'Masjid An Nur (TNB Bangsar)',
     mosqueAnNurSub: 'Masjid · TNB Bangsar',
-    source: (podium = '') => `Presint: KL Eco City dan Mid Valley = blok yang titik tengahnya terletak dalam poligon guna tanah OSM “KL Eco City” dan “Mid Valley City”; The Gardens diasingkan daripada Mid Valley City mengikut nama (garis luar The Gardens Mall dan bahagiannya: Menara Utara dan Selatan, St. Giles The Gardens Residences). Keluasan tapak = gabungan garis luar dan bahagian bangunan OSM bagi setiap presint pada grid 1 m. Masjid: bangunan OSM “Masjid Jamek Abdullah Hukum” (di luar sedikit poligon guna tanah KL Eco City) dan “Masjid An Nur” (nama lain “Balai Islam An-Nur TNB Bangsar”); garis luar An Nur merentasi sempadan barat kawasan kajian, jadi dilukis penuh tetapi tidak dikira dalam bilangan blok. ${podium}Ketinggian masjid (di atas tapaknya) ialah nilai sementara. Jisim blok ilustratif.`,
+    source: (osm: string, podium = '') => `${osm} Presint: KL Eco City dan Mid Valley = blok yang titik tengahnya terletak dalam poligon guna tanah OSM “KL Eco City” dan “Mid Valley City”; The Gardens diasingkan daripada Mid Valley City mengikut nama (garis luar The Gardens Mall dan bahagiannya: Menara Utara dan Selatan, St. Giles The Gardens Residences). Keluasan tapak = gabungan garis luar dan bahagian bangunan OSM bagi setiap presint pada grid 1 m. Masjid: bangunan OSM “Masjid Jamek Abdullah Hukum” (di luar sedikit poligon guna tanah KL Eco City) dan “Masjid An Nur” (nama lain “Balai Islam An-Nur TNB Bangsar”); garis luar An Nur merentasi sempadan barat kawasan kajian, jadi dilukis penuh tetapi tidak dikira dalam bilangan blok. ${podium}Ketinggian masjid (di atas tapaknya) ialah nilai sementara. Jisim blok ilustratif.`,
   },
   ch1: {
     label: 'Hab transit · Kuala Lumpur',

@@ -68,6 +68,7 @@ export const en = {
   monthsLong: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   compass16: ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'],
   common: {
+    osmSrc: (date: string) => `Map data © OpenStreetMap contributors (ODbL), Overpass API pull ${date}.`,
     layers: 'Layers',
     osm: 'OSM',
     focusStep: (i: number) => `Focus step ${i}`,
@@ -89,7 +90,7 @@ export const en = {
     title: ['Three precincts,', 'one transit hub'],
     lead: 'KL Eco City sits on the west bank of the Klang River; The Gardens and Mid Valley Megamall share Mid Valley City on the east bank. Abdullah Hukum station (LRT KJ17, KTM KD01) and Mid Valley KTM (KB01) tie the cluster together, linked by footbridges and mall corridors.',
     dataTitle: 'Data',
-    dataNote: (date: string) => `Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, licensed under the <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL)</a>; fetched via the Overpass API on ${date}. Building heights: published sources where cited (chapter 04, docs/height-sources.md), otherwise OSM height tags or building:levels, else a flagged estimate.`,
+    dataNote: (): string => `Licence: <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL)</a>. Building heights: published sources where cited (chapter 04, docs/height-sources.md), otherwise OSM height tags or building:levels, else a flagged estimate.`,
     legendTitle: 'Precincts & landmarks on the model',
     zones: { eco: 'KL Eco City', gardens: 'The Gardens', midvalley: 'Mid Valley' },
     zoneDesc: { eco: 'OSM landuse polygon “KL Eco City”', gardens: 'The Gardens Mall outline and its towers (named OSM buildings)', midvalley: 'rest of the OSM “Mid Valley City” polygon: Megamall and surroundings' },
@@ -105,7 +106,7 @@ export const en = {
     podiumNote: (name: string, levels: number, storey: number, roof: number) => `Masjid Jamek Abdullah Hukum stands on the roof of the “${name}” car park (local knowledge from the project owner). In OSM this is the unnamed building whose outline encloses the mosque, tagged building:levels = ${levels}; it is modelled at ${levels} × ${storey} m = ${roof} m (the project-wide storey height) and the mosque block starts at that roof. 2016 press reports (FMT, Bernama) describe “a two-storey mosque on top of a seven level car park podium”; the model keeps the OSM level count. `,
     mosqueAnNur: 'Masjid An Nur (TNB Bangsar)',
     mosqueAnNurSub: 'Mosque · TNB Bangsar',
-    source: (podium = '') => `Precincts: KL Eco City and Mid Valley = blocks whose centroid lies in the OSM landuse polygons “KL Eco City” and “Mid Valley City”; The Gardens is split out of Mid Valley City by name (The Gardens Mall outline and its parts: North and South Towers, St. Giles The Gardens Residences). Footprint = union of OSM building outlines and parts per precinct on a 1 m grid. Mosques: OSM buildings “Masjid Jamek Abdullah Hukum” (just outside the KL Eco City landuse polygon) and “Masjid An Nur” (alt_name “Balai Islam An-Nur TNB Bangsar”); An Nur’s outline straddles the west edge of the study square, so it is drawn in full but not counted in the blocks. ${podium}Mosque heights above their base are placeholders. Illustrative block massing.`,
+    source: (osm: string, podium = '') => `${osm} Precincts: KL Eco City and Mid Valley = blocks whose centroid lies in the OSM landuse polygons “KL Eco City” and “Mid Valley City”; The Gardens is split out of Mid Valley City by name (The Gardens Mall outline and its parts: North and South Towers, St. Giles The Gardens Residences). Footprint = union of OSM building outlines and parts per precinct on a 1 m grid. Mosques: OSM buildings “Masjid Jamek Abdullah Hukum” (just outside the KL Eco City landuse polygon) and “Masjid An Nur” (alt_name “Balai Islam An-Nur TNB Bangsar”); An Nur’s outline straddles the west edge of the study square, so it is drawn in full but not counted in the blocks. ${podium}Mosque heights above their base are placeholders. Illustrative block massing.`,
   },
   ch1: {
     label: 'Transit hub · Kuala Lumpur',
