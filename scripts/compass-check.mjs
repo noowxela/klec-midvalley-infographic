@@ -33,14 +33,33 @@ const state = () => {
     if (sel !== '#side-panel' || !document.getElementById('stage').classList.contains('sp-collapsed')) if (hit(br, r)) overlaps.push(`reset x ${sel}`);
     if (!['#compass'].includes(sel) && hit(comp, r)) overlaps.push(`compass x ${sel}`);
   }
-  return { visible: !b.classList.contains('is-hidden') && cs.visibility === 'visible', opacity: cs.opacity, tab: b.tabIndex, ariaHidden: b.getAttribute('aria-hidden'), text: b.textContent, trans: cs.transitionDuration,
+  // reset button = half the compass height; text not clipped
+  // measure the label's glyph box against the button's padding box (scrollWidth would count the ::after touch target)
+  function textClipped(el) {
+    const rg = document.createRange(); rg.selectNodeContents(el); const t = rg.getBoundingClientRect(); const o = el.getBoundingClientRect();
+    const bw = parseFloat(cs.borderLeftWidth) || 0;
+    return t.width > 0 && (t.left < o.left + bw - 0.5 || t.right > o.right - bw + 0.5 || t.top < o.top - 0.5 || t.bottom > o.bottom + 0.5 || el.scrollWidth > el.clientWidth + 8.5);
+  }
+  const sizes = { compassH: Math.round((comp[3] - comp[1]) * 10) / 10, resetH: Math.round((br[3] - br[1]) * 10) / 10, clipped: textClipped(b) };
+  // bottom-right strip: scale bar immediately right of the credit, same centre line; clear of rail, furniture, side panel
+  const cred = R(document.getElementById('osm-credit')), sb = R(document.getElementById('scalebar')), strip = R(document.getElementById('map-strip'));
+  const stripInfo = { rightOf: sb[0] >= cred[2] - 0.5 && sb[0] - cred[2] < 40, dyCentre: Math.round(((sb[1] + sb[3]) / 2 - (cred[1] + cred[3]) / 2) * 10) / 10, label: document.getElementById('scale-label').textContent, barW: Math.round(document.getElementById('scale-bar').getBoundingClientRect().width), inView: strip[0] >= 0 && strip[2] <= innerWidth && strip[3] <= innerHeight, hits: [] };
+  for (const sel of ['#chapter-tabs', '#btn-prev', '#btn-next', '.map-furniture', '#compass', '#side-panel', '#sp-toggle', '#credit-prefix']) {
+    const e = document.querySelector(sel); if (!e) continue; const r = R(e); if (r[2] - r[0] < 1) continue;
+    if (sel === '#side-panel' && document.getElementById('stage').classList.contains('sp-collapsed')) continue;
+    if (hit(strip, r)) stripInfo.hits.push(sel);
+  }
+  return { ...sizes, strip: stripInfo, visible: !b.classList.contains('is-hidden') && cs.visibility === 'visible', opacity: cs.opacity, tab: b.tabIndex, ariaHidden: b.getAttribute('aria-hidden'), text: b.textContent, trans: cs.transitionDuration,
     centreDy: Math.round(((br[1] + br[3]) / 2 - (comp[1] + comp[3]) / 2) * 10) / 10, gap: Math.round(comp[0] - br[2]), overlaps };
 };
 async function drag(p, dx = 220, dy = 30) {
   const v = p.viewport(); const x = v.width * 0.55, y = v.height * 0.5;
   await p.mouse.move(x, y); await p.mouse.down(); for (let i = 1; i <= 12; i++) await p.mouse.move(x + (dx * i) / 12, y + (dy * i) / 12); await p.mouse.up(); await sleep(900);
 }
-const expect = (name, s, vis) => { if (s.visible !== vis) bad.push(`${name}: expected ${vis ? 'visible' : 'hidden'}`); if (!vis && s.tab !== -1) bad.push(`${name}: hidden but focusable`); if (vis && s.tab !== 0) bad.push(`${name}: visible but not focusable`); if (s.overlaps.length) bad.push(`${name}: ${s.overlaps.join(', ')}`); console.log(name, JSON.stringify(s)); };
+const expect = (name, s, vis) => {
+  if (Math.abs(s.resetH - s.compassH / 2) > 1) bad.push(`${name}: reset height ${s.resetH} vs compass ${s.compassH}/2`);
+  if (s.clipped) bad.push(`${name}: reset text clipped`);
+  if (!s.strip.rightOf || Math.abs(s.strip.dyCentre) > 1.5 || !s.strip.inView || s.strip.hits.length) bad.push(`${name}: strip ${JSON.stringify(s.strip)}`); if (s.visible !== vis) bad.push(`${name}: expected ${vis ? 'visible' : 'hidden'}`); if (!vis && s.tab !== -1) bad.push(`${name}: hidden but focusable`); if (vis && s.tab !== 0) bad.push(`${name}: visible but not focusable`); if (s.overlaps.length) bad.push(`${name}: ${s.overlaps.join(', ')}`); console.log(name, JSON.stringify(s)); };
 const clipFurn = async (p, path, dpr = 1) => { const r = await p.evaluate(() => { const a = document.querySelector('.map-furniture').getBoundingClientRect(); return { x: a.left - 24, y: a.top - 24, width: a.width + 48, height: a.height + 48 }; }); await p.screenshot({ path, clip: r }); };
 
 // 1. main flow, EN 1920x1080
@@ -61,7 +80,9 @@ const clipFurn = async (p, path, dpr = 1) => { const r = await p.evaluate(() => 
   await drag(p); expect('drag-2', await p.evaluate(state), true);
   await p.evaluate(() => window.__mv.goTo(2)); await sleep(300); expect('chapter-change (flying)', await p.evaluate(state), false);
   await sleep(2600); expect('chapter-change (settled)', await p.evaluate(state), false);
-  await p.mouse.move(1100, 560); await p.mouse.wheel({ deltaY: -400 }); await sleep(900); expect('after-zoom', await p.evaluate(state), true);
+  const z0 = (await p.evaluate(state)).strip;
+  await p.mouse.move(1100, 560); await p.mouse.wheel({ deltaY: -400 }); await sleep(900); const zs = await p.evaluate(state); expect('after-zoom', zs, true);
+  if (zs.strip.label === z0.label && Math.abs(zs.strip.barW - z0.barW) < 2) bad.push(`scale bar did not update on zoom (${JSON.stringify(z0)} -> ${JSON.stringify(zs.strip)})`); else console.log('scale bar on zoom', z0.label, z0.barW, '->', zs.strip.label, zs.strip.barW);
   // back near the preset by hand: undo the zoom
   await p.mouse.wheel({ deltaY: 400 }); await sleep(1200); const back = await p.evaluate(state); console.log('zoom-undone', JSON.stringify(back));
   await p.close();
@@ -82,6 +103,19 @@ for (const [name, q, opt, setup] of [
   if (name === 'reduced-motion' && s.trans.split(',').some((t) => parseFloat(t) > 0)) bad.push('reduced motion: transition not instant');
   await p.screenshot({ path: `shots-compass/layout-${name}.png` });
   await p.close();
+}
+// 2b. v12 crops: compass + reset (visible), bottom-right strip, light and dark; full EN light; 1440x900; 390x844
+for (const dark of [false, true]) {
+  const p = await open(`v12-${dark ? 'dark' : 'light'}`, 'chapter=1&lang=en', { dpr: 3, dark });
+  await drag(p);
+  const cr = await p.evaluate(() => { const a = document.getElementById('btn-reset').getBoundingClientRect(), c = document.getElementById('compass').getBoundingClientRect(); return { x: a.left - 16, y: c.top - 12, width: c.right - a.left + 32, height: c.height + 24 }; });
+  await p.screenshot({ path: `shots-compass/v12-compass-reset-${dark ? 'dark' : 'light'}.png`, clip: cr });
+  const st = await p.evaluate(() => { const a = document.getElementById('map-strip').getBoundingClientRect(); return { x: a.left - 40, y: a.top - 14, width: a.width + 80, height: a.height + 28 }; });
+  await p.screenshot({ path: `shots-compass/v12-strip-${dark ? 'dark' : 'light'}.png`, clip: st });
+  await p.close();
+}
+for (const [name, q, opt] of [['v12-full-en-light', 'chapter=1&lang=en', {}], ['v12-1440x900-en', 'chapter=0&lang=en', { w: 1440, h: 900 }], ['v12-390x844-en', 'chapter=1&lang=en', { w: 390, h: 844, dpr: 2 }], ['v12-full-zh-light', 'chapter=2&lang=zh', {}]]) {
+  const p = await open(name, q, opt); const s = await p.evaluate(state); expect(`${name} load`, s, false); await p.screenshot({ path: `shots-compass/${name}.png` }); await p.close();
 }
 // 3. compass close-ups (3x), light and dark, two bearings
 for (const dark of [false, true]) {

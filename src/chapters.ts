@@ -22,7 +22,9 @@ const D = (n: XY, y = 0): [number, number, number] => [n[0], y, -n[1]];
 // Public-facing station numbers. Mid Valley (official code KB01) is shown the way riders know it: stop 10 on
 // Line 1 counting from Batu Caves (KC05–KC01, KA04–KA01, then Mid Valley; Wikipedia, Batu Caves–Pulau Sebang Line,
 // "Stations"). KB01 appears only in the 02 source note and the README.
-const PUBLIC_CODE: Record<string, string> = { KB01: '10' };
+// Abdullah Hukum KTM (official KD01) is stop 16 on Line 2 counting from Tanjung Malim (KA15–KA01, then Abdullah Hukum),
+// excluding the 2026 Segambut Utara infill (KA05A); owner's choice. KD01 appears only in the 02 source note and the README.
+const PUBLIC_CODE: Record<string, string> = { KB01: '10', KD01: '16' };
 const showCode = (ref: string | null) => (ref ? PUBLIC_CODE[ref] ?? ref : '—');
 const lineColor = { lrt: 'var(--c-lrt)', ktm1: 'var(--c-ktm1)', ktm2: 'var(--c-ktm2)', erl: 'var(--c-erl)' } as const;
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -115,7 +117,7 @@ export function buildChapters(): Chapter[] {
   const textPin = (id: string, title: string, at: XY | null, y = 2, value?: string): PinDef | null => (at ? { id, title, value, at: D(at, y), kind: 'minor' } : null);
   const corePins = () => nn([
     stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
-    stationPin('KD01', 'ktm2', N.kj17, 'KTM · KD01'),
+    stationPin('KD01', 'ktm2', N.kj17, `KTM · ${showCode('KD01')}`),
     placePin('Strata Office', N.ecoCity, undefined, 'major'),
     placePin('The Gardens Mall', N.gardens),
     placePin('Mid Valley Megamall', N.megamall),
@@ -146,7 +148,7 @@ export function buildChapters(): Chapter[] {
         ...landmarks.map((l) => { const jamek = l.name === 'Masjid Jamek Abdullah Hukum'; return { id: `mosque-${l.id}`, title: jamek ? Z.mosqueJamek : Z.mosqueAnNur, value: jamek ? (l.podium?.levels ? Z.mosqueOnPodium(l.podium.levels) : Z.mosqueJamekSub) : Z.mosqueAnNurSub, at: D(l.c, l.height + 1), kind: 'minor' as const, accent: 'var(--landmark)' }; }),
         ...ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ id: `zone-${z}`, title: Z.zones[z], value: Z.pinBlocks(zs[z].blocks), at: D(zs[z].centroid, zoneTop(z)), kind: 'major' as const, accent: `var(--z-${z})` })),
         stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
-        stationPin('KD01', 'ktm2', N.kj17, 'KTM · KD01'),
+        stationPin('KD01', 'ktm2', N.kj17, `KTM · ${showCode('KD01')}`),
         stationPin('KB01', 'ktm1', N.kb01, `KTM · ${showCode('KB01')}`),
       ]),
       // legend lives in the side panel (precinct colours + landmark mosques)
@@ -187,7 +189,7 @@ export function buildChapters(): Chapter[] {
     {
       id: 2, label: T.ch2.label, tab: T.ch2.tab, title: T.ch2.title, lead: T.ch2.lead,
       stats: [
-        { fig: fmt(stats.stationCount), unit: U.stations, cap: T.ch2.statStations(nn([kj17, kd01, kb01]).map((s) => (s === kb01 ? `KTM · ${showCode(s.ref)}` : s.ref)).join(', ')) },
+        { fig: fmt(stats.stationCount), unit: U.stations, cap: T.ch2.statStations(nn([kj17, kd01, kb01]).map((s) => (s === kb01 || s === kd01 ? `KTM · ${showCode(s.ref)}` : s.ref)).join(', ')) },
         ...(stats.straightKJ17toKB01 ? [{ fig: fmt(stats.straightKJ17toKB01), unit: U.m, cap: T.ch2.statStraight }] : []),
         { fig: fmt(stats.railCorridors), unit: U.lines, cap: T.ch2.statCorridors },
       ],
@@ -196,7 +198,7 @@ export function buildChapters(): Chapter[] {
       mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: true },
       pins: nn([
         stationPin('KJ17', 'lrt', N.kj17, T.ch2.pinLrtLine),
-        stationPin('KD01', 'ktm2', N.kj17, T.ch2.pinKtm('KD01')),
+        stationPin('KD01', 'ktm2', N.kj17, T.ch2.pinKtm(showCode('KD01'))),
         stationPin('KB01', 'ktm1', N.kb01, T.ch2.pinKtm(showCode('KB01'))),
         textPin('lbl-river', N.river, longestNamed(lines.waterLines, 'Klang River'), 1),
         textPin('lbl-fed', N.fedHwy, longestNamed(lines.roads, 'Lebuhraya Persekutuan'), 1, N.fedHwy === N.fedHwyLocal ? undefined : N.fedHwyLocal),

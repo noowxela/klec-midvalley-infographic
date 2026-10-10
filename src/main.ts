@@ -27,6 +27,7 @@ let chapters: Chapter[] = buildChapters();
 
 // ---------- fit the 1920x1080 stage to the window ----------
 const world = new World($('#gl'));
+let stageScale = 1; // current stage scale (the bottom-right strip is unscaled, so the scale bar is sized in screen px)
 function fit() {
   const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
   stage.style.transform = `translate(${(window.innerWidth - 1920 * s) / 2}px, ${(window.innerHeight - 1080 * s) / 2}px) scale(${s})`;
@@ -37,7 +38,7 @@ function fit() {
 // "Illustrative block massing" note, below the reset / scale furniture). When the stage is letterboxed with
 // room to spare (narrow / portrait windows) it sits just below the stage instead, so it never covers the tabs.
 function placeCredit(s: number) {
-  const el = document.getElementById('osm-credit'); if (!el) return;
+  const el = document.getElementById('map-strip'); if (!el) return; stageScale = s;
   const gapX = (window.innerWidth - 1920 * s) / 2, gapY = (window.innerHeight - 1080 * s) / 2;
   const below = gapY >= 24;
   el.style.right = `${Math.round(gapX + Math.max(8, 48 * s))}px`;
@@ -130,8 +131,9 @@ const needle = $('#north-needle'); const scaleBar = $('#scale-bar'); const scale
 function updateFurniture() {
   needle.setAttribute('transform', `rotate(${((world.northAngle() * 180) / Math.PI).toFixed(1)})`);
   const ppm = world.pxPerMetre();
-  const nice = [10, 20, 25, 50, 100, 200, 250, 500, 1000].find((m) => m * ppm >= 90) ?? 1000;
-  scaleBar.style.width = `${(nice * ppm).toFixed(1)}px`; scaleLabel.textContent = `${nice} m`;
+  const px = ppm * stageScale; // screen px per metre (the strip sits outside the scaled stage)
+  const nice = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000].find((m) => m * px >= 48) ?? 1000;
+  const w = `${(nice * px).toFixed(1)}px`; if (scaleBar.style.width !== w) { scaleBar.style.width = w; scaleLabel.textContent = `${nice} m`; }
 }
 // RESET VIEW: only while the user has moved the camera away from this chapter's preset. userMoved is set by
 // OrbitControls 'start' (drag, wheel, touch, keys) and cleared on chapter change and on reset; the button also hides
@@ -269,7 +271,7 @@ function applyStaticText() {
   const T = t(); const U = T.ui;
   document.title = T.doc.title; document.querySelector('meta[name="description"]')?.setAttribute('content', T.doc.description);
   $('#brand-name').textContent = U.brand; $('#brand-sub').textContent = U.brandSub;
-  $('#top-buttons').setAttribute('aria-label', U.toolbar);
+  $('#top-tools').setAttribute('aria-label', U.toolbar);
   for (const [id, txt] of [['#btn-autoplay', U.autoplay], ['#btn-sound', U.sound], ['#btn-theme', U.theme], ['#btn-fullscreen', U.fullscreen], ['#btn-maponly', U.mapOnly], ['#btn-trains', U.trains]] as const) { $(id).title = txt; $(id).setAttribute('aria-label', txt); }
   langSwitch.setAttribute('aria-label', U.language);
   langSwitch.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === getLang())));

@@ -11,9 +11,10 @@ const errors = []; const bad = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // official colours (Wikipedia, Klang Valley Integrated Transit System, "System network" table)
 const OFFICIAL = { '--c-lrt': 'rgb(224, 17, 95)', '--c-ktm1': 'rgb(60, 90, 159)', '--c-ktm2': 'rgb(220, 36, 32)' };
-// Mid Valley (official KB01) is shown publicly as 'KTM · 10' (stop 10 from Batu Caves); KB01 may appear only in a .source note
-const PIN = { KJ17: OFFICIAL['--c-lrt'], KD01: OFFICIAL['--c-ktm2'], 'KTM · 10': OFFICIAL['--c-ktm1'] };
-const BADGE = { KJ17: OFFICIAL['--c-lrt'], KD01: OFFICIAL['--c-ktm2'], 10: OFFICIAL['--c-ktm1'] };
+// Mid Valley (official KB01) is shown publicly as 'KTM · 10' (stop 10 from Batu Caves) and Abdullah Hukum KTM (KD01) as
+// 'KTM · 16' (stop 16 from Tanjung Malim); KB01 / KD01 may appear only in a .source note
+const PIN = { KJ17: OFFICIAL['--c-lrt'], 'KTM · 16': OFFICIAL['--c-ktm2'], 'KTM · 10': OFFICIAL['--c-ktm1'] };
+const BADGE = { KJ17: OFFICIAL['--c-lrt'], 16: OFFICIAL['--c-ktm2'], 10: OFFICIAL['--c-ktm1'] };
 const PILL = { 1: OFFICIAL['--c-ktm1'], 2: OFFICIAL['--c-ktm2'], 5: OFFICIAL['--c-lrt'] };
 async function open(name, q, { w = 1920, h = 1080, dark = false, dpr = 1 } = {}) {
   const page = await browser.newPage();
@@ -46,8 +47,8 @@ const probe = () => {
   // user-facing KB01 outside source notes (aria labels and titles included)
   const kb = [];
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-  for (let n; (n = walker.nextNode());) if (/KB01/.test(n.textContent) && !n.parentElement.closest('.source, script, style')) kb.push(n.parentElement.className || n.parentElement.tagName);
-  for (const e of document.querySelectorAll('[aria-label], [title], [alt]')) for (const a of ['aria-label', 'title', 'alt']) if (/KB01/.test(e.getAttribute(a) || '')) kb.push(`${a}@${e.tagName}`);
+  for (let n; (n = walker.nextNode());) if (/KB01|KD01/.test(n.textContent) && !n.parentElement.closest('.source, script, style')) kb.push(n.parentElement.className || n.parentElement.tagName);
+  for (const e of document.querySelectorAll('[aria-label], [title], [alt]')) for (const a of ['aria-label', 'title', 'alt']) if (/KB01|KD01/.test(e.getAttribute(a) || '')) kb.push(`${a}@${e.tagName}`);
   const hint = document.querySelector('#text-panel .hint')?.textContent ?? null;
   const tp = document.querySelector('#text-panel').getBoundingClientRect(), bar = document.querySelector('.bottom-bar').getBoundingClientRect(), sp = document.querySelector('#side-panel');
   const fit = { textBottom: Math.round(tp.bottom), barTop: Math.round(bar.top), sideScroll: sp.scrollHeight > sp.clientHeight + 1 };
@@ -62,8 +63,8 @@ const check = (name, s) => {
   // keyboard hint lives on 00 Overview (the first page) only
   if (/^00-/.test(name) !== !!s.hint) bad.push(`${name} hint ${s.hint ? 'present' : 'missing'}`);
   if (s.fit.textBottom > s.fit.barTop - 8) bad.push(`${name} text panel overflows (${s.fit.textBottom} vs bar ${s.fit.barTop})`);
-  if (s.kb.length) bad.push(`${name} user-facing KB01: ${s.kb.join(', ')}`);
-  if (/^01-/.test(name)) for (const c of ['KJ17', 'KD01', 'KTM · 10']) if (!s.tags.some((t) => t.includes(c))) bad.push(`${name} no visible ${c} label`);
+  if (s.kb.length) bad.push(`${name} user-facing KB01/KD01: ${s.kb.join(', ')}`);
+  if (/^01-/.test(name)) for (const c of ['KJ17', 'KTM · 16', 'KTM · 10']) if (!s.tags.some((t) => t.includes(c))) bad.push(`${name} no visible ${c} label`);
   for (const b of s.badges) { if (BADGE[b.code] && b.bg !== BADGE[b.code]) bad.push(`${name} badge ${b.code} ${b.bg}`); if (b.code === '—') bad.push(`${name} badge without code`); }
 };
 for (const [name, q, opt] of [

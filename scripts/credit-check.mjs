@@ -25,7 +25,7 @@ async function open(name, q, { w = 1920, h = 1080, panels = null, dpr = 1 } = {}
 const probe = () => {
   const c = document.getElementById('osm-credit'); const r = c.getBoundingClientRect(); const cs = getComputedStyle(c);
   const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-  const others = ['#lang-switch', '#top-buttons', '#tp-toggle', '#sp-toggle', '#side-panel', '#text-panel', '.map-furniture', '#chapter-tabs', '#credit-prefix', '#btn-prev', '#btn-next'];
+  const others = ['#lang-switch', '#top-tools', '.mark', '#scalebar', '#tp-toggle', '#sp-toggle', '#side-panel', '#text-panel', '.map-furniture', '#chapter-tabs', '#credit-prefix', '#btn-prev', '#btn-next'];
   const overlaps = [];
   for (const sel of others) for (const el of document.querySelectorAll(sel)) {
     const o = el.getBoundingClientRect(); const st = getComputedStyle(el);
