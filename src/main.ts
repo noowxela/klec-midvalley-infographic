@@ -44,6 +44,7 @@ function setPins(defs: PinDef[]) {
     (el.querySelector('.t') as HTMLElement).textContent = def.title;
     if (def.value) (el.querySelector('.v') as HTMLElement).textContent = def.value;
     if (def.color) (el.querySelector('.dot') as HTMLElement).style.background = def.color;
+    if (def.accent) { (el.querySelector('.tag') as HTMLElement).style.borderLeft = `7px solid ${def.accent}`; (el.querySelector('.dot') as HTMLElement).style.background = def.accent; }
     pinLayer.append(el);
     const tag = el.querySelector('.tag') as HTMLElement;
     return { def, el, tag, stem: el.querySelector('.stem') as HTMLElement, pos: new THREE.Vector3(...def.at), w: 0, h: 0 };
@@ -53,9 +54,10 @@ function setPins(defs: PinDef[]) {
 const rectOf = (el: HTMLElement) => ({ x0: el.offsetLeft, y0: el.offsetTop, x1: el.offsetLeft + el.offsetWidth, y1: el.offsetTop + el.offsetHeight });
 function updatePins() {
   const placed: { x0: number; x1: number; y0: number; y1: number }[] = [];
-  const panels = [rectOf(textPanel), ...(sidePanel.childElementCount ? [rectOf(sidePanel)] : [])];
+  const tpOpen = !panelState.tp; const spOpen = !panelState.sp && sidePanel.childElementCount > 0;
+  const panels = [...(tpOpen ? [rectOf(textPanel)] : []), ...(spOpen ? [rectOf(sidePanel)] : [])];
   const items = pinEls.map((p) => ({ p, s: world.project(p.pos) })).sort((a, b) => b.s.y - a.s.y);
-  const side = sidePanel.childElementCount ? rectOf(sidePanel) : null;
+  const side = spOpen ? rectOf(sidePanel) : null;
   for (const { p, s } of items) {
     if (!s.visible) { p.el.style.opacity = '0'; continue; }
     p.el.style.opacity = '';
@@ -75,6 +77,31 @@ function updatePins() {
     p.tag.style.left = flip ? `${-p.w + 1}px` : '-1px';
   }
 }
+
+// ---------- collapsible panels ----------
+// state: true = collapsed. Persisted; chapter changes never force panels open.
+const panelState: { tp: boolean; sp: boolean } = (() => { try { return { tp: false, sp: false, ...JSON.parse(localStorage.getItem('mv-panels') || '{}') }; } catch { return { tp: false, sp: false }; } })();
+const tpToggle = $('#tp-toggle'), spToggle = $('#sp-toggle'), btnMap = $('#btn-maponly');
+const TEXT_RIGHT = 96 + 520, SIDE_LEFT = 1920 - 48 - 360;
+function applyPanels(instant = false) {
+  const hasSide = sidePanel.childElementCount > 0;
+  stage.classList.toggle('tp-collapsed', panelState.tp);
+  stage.classList.toggle('sp-collapsed', panelState.sp);
+  stage.classList.toggle('no-side', !hasSide);
+  const T = t().ui;
+  tpToggle.setAttribute('aria-expanded', String(!panelState.tp)); tpToggle.setAttribute('aria-label', panelState.tp ? T.showText : T.hideText); tpToggle.title = panelState.tp ? T.showText : T.hideText;
+  spToggle.setAttribute('aria-expanded', String(!panelState.sp)); spToggle.setAttribute('aria-label', panelState.sp ? T.showSide : T.hideSide); spToggle.title = panelState.sp ? T.showSide : T.hideSide;
+  const mapOnly = panelState.tp && (panelState.sp || !hasSide);
+  btnMap.setAttribute('aria-pressed', String(mapOnly)); btnMap.setAttribute('aria-expanded', String(!mapOnly));
+  // recentre the model in the free area between visible panels
+  const left = panelState.tp ? 0 : TEXT_RIGHT; const right = hasSide && !panelState.sp ? SIDE_LEFT : 1920;
+  world.setViewShift((left + right) / 2 - 960, instant || prefersReducedMotion());
+}
+function setPanels(tp: boolean, sp: boolean) { panelState.tp = tp; panelState.sp = sp; localStorage.setItem('mv-panels', JSON.stringify(panelState)); applyPanels(); }
+function toggleMapOnly() { const hasSide = sidePanel.childElementCount > 0; const all = panelState.tp && (panelState.sp || !hasSide); setPanels(!all, !all); }
+tpToggle.addEventListener('click', () => setPanels(!panelState.tp, panelState.sp));
+spToggle.addEventListener('click', () => setPanels(panelState.tp, !panelState.sp));
+btnMap.addEventListener('click', toggleMapOnly);
 
 // ---------- compass & scale bar ----------
 const needle = $('#north-needle'); const scaleBar = $('#scale-bar'); const scaleLabel = $('#scale-label');
@@ -105,21 +132,24 @@ function mountPanel(c: Chapter) {
   runCleanups(); sidePanel.innerHTML = '';
   world.setMode({ ...structuredClone(DEFAULT_MODE), ...c.mode });
   c.panel?.(sidePanel, world, { flyTo: (v: View) => world.flyTo(v), chapterView: c.view, onCleanup: (f) => cleanups.push(f) });
+  applyPanels(true);
 }
 
 function renderText(c: Chapter) {
-  const stats = c.stats.map((s) => `<div class="stat"><div class="fig">${s.fig}<span class="unit">${s.unit ?? ''}</span></div><div class="cap">${s.cap}</div></div>`).join('');
+  const stats = c.stats.map((s) => `<div class="stat"><div class="fig">${s.fig}<span class="unit">${s.unit ?? ''}</span></div><div class="cap">${s.swatch ? `<span class="swatch box" style="background:${s.swatch}"></span>` : ''}${s.cap}</div></div>`).join('');
+  const legend = c.legend ? `<div class="tp-legend"><div class="tp-legend-title">${c.legend.title}</div>${c.legend.items.map((i) => `<div class="tp-legend-row"><span class="swatch box" style="background:${i.swatch}"></span><span class="lg-label">${i.label}</span><span class="lg-desc">${i.desc}</span></div>`).join('')}</div>` : '';
   textPanel.innerHTML = `
     <div class="chapter-label"><span class="num">${pad(c.id)}</span><span class="rule"></span><span>${c.label}</span></div>
     <h1 class="headline">${c.title.map((x) => `<span>${x}</span>`).join('')}</h1>
     <p class="lead">${c.lead}</p>
+    ${legend}
     <div class="stats">${stats}</div>
     ${c.hint ? `<div class="hint">${c.hint}</div>` : ''}
     <div class="source">${c.source}</div>`;
   // shrink any figure that does not fit its 180 px column (long ranges, long units)
   textPanel.querySelectorAll<HTMLElement>('.stat .fig').forEach((f) => {
-    let size = 52;
-    while (f.scrollWidth > f.parentElement!.clientWidth + 1 && size > 30) { size -= 4; f.style.fontSize = `${size}px`; }
+    let size = parseFloat(getComputedStyle(f).fontSize);
+    while (f.scrollWidth > f.parentElement!.clientWidth + 1 && size > 26) { size -= 3; f.style.fontSize = `${size}px`; }
   });
 }
 function goTo(i: number, instant = false) {
@@ -151,6 +181,7 @@ window.addEventListener('keydown', (e) => {
   else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); stopAutoplay(); goTo(current - 1); }
   else if (e.key === 'Home') { e.preventDefault(); goTo(0); }
   else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  else if (e.key === 'm' || e.key === 'M') toggleMapOnly();
 });
 
 // ---------- top buttons ----------
@@ -197,13 +228,14 @@ function applyStaticText() {
   document.title = T.doc.title; document.querySelector('meta[name="description"]')?.setAttribute('content', T.doc.description);
   $('#brand-name').textContent = U.brand; $('#brand-sub').textContent = U.brandSub;
   $('#top-buttons').setAttribute('aria-label', U.toolbar);
-  for (const [id, txt] of [['#btn-autoplay', U.autoplay], ['#btn-sound', U.sound], ['#btn-theme', U.theme], ['#btn-fullscreen', U.fullscreen]] as const) { $(id).title = txt; $(id).setAttribute('aria-label', txt); }
+  for (const [id, txt] of [['#btn-autoplay', U.autoplay], ['#btn-sound', U.sound], ['#btn-theme', U.theme], ['#btn-fullscreen', U.fullscreen], ['#btn-maponly', U.mapOnly]] as const) { $(id).title = txt; $(id).setAttribute('aria-label', txt); }
   langSwitch.setAttribute('aria-label', U.language);
   langSwitch.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === getLang())));
   $('#compass').title = U.compass; $('#north').setAttribute('aria-label', U.northArrow); $('#north-n').textContent = U.north;
   $('#btn-reset').textContent = U.reset; $('#btn-reset').title = U.resetTitle;
   tabs.setAttribute('aria-label', U.chapters); stage.setAttribute('aria-label', U.stage);
   $('#credit-prefix').textContent = U.creditPrefix; $('#credit-link').textContent = U.creditLink;
+  applyPanels(true);
 }
 applyStaticText();
 onLangChange(() => {

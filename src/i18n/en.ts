@@ -14,7 +14,7 @@ export const en = {
   },
   ui: {
     brand: 'MID VALLEY – ABDULLAH HUKUM',
-    brandSub: 'SITE ANALYSIS · DEMO 0.2',
+    brandSub: 'SITE ANALYSIS · DEMO 0.3',
     toolbar: 'Display controls',
     autoplay: 'Autoplay chapters',
     sound: 'Sound (chapter chime)',
@@ -30,8 +30,13 @@ export const en = {
     creditPrefix: 'Illustrative block massing · Map data ©',
     creditLink: 'OpenStreetMap contributors',
     stage: 'Interactive 3D site analysis',
+    mapOnly: 'Map only (M)',
+    hideText: 'Hide text panel',
+    showText: 'Show text panel',
+    hideSide: 'Hide side panel',
+    showSide: 'Show side panel',
   },
-  units: { m: 'm', min: 'min', blocks: 'blocks', stations: 'stations', lines: 'lines', routes: 'routes', pct: '%', deg: '°', mm: 'mm', days: 'days' },
+  units: { m: 'm', min: 'min', blocks: 'blocks', stations: 'stations', lines: 'lines', routes: 'routes', pct: '%', deg: '°', mm: 'mm', ha: 'ha', days: 'days' },
   // Place names. Official names stay as they are; local forms where they are in common use.
   names: {
     kj17: 'Abdullah Hukum',
@@ -79,6 +84,18 @@ export const en = {
     citedFloors: (h: number, floors: number, storey: number, pub: string) => `≈${n(h)} m · ${floors} fl × ${n(storey, 1)} (${pub})`,
   },
   ch0: {
+    label: 'Overview',
+    tab: 'Overview',
+    title: ['Three precincts,', 'one transit hub'],
+    lead: 'KL Eco City sits on the west bank of the Klang River; The Gardens and Mid Valley Megamall share Mid Valley City on the east bank. Abdullah Hukum station (LRT KJ17, KTM KD01) and Mid Valley KTM (KB01) tie the cluster together, linked by footbridges and mall corridors.',
+    legendTitle: 'Precincts on the model',
+    zones: { eco: 'KL Eco City', gardens: 'The Gardens', midvalley: 'Mid Valley' },
+    zoneDesc: { eco: 'OSM landuse polygon “KL Eco City”', gardens: 'The Gardens Mall outline and its towers (named OSM buildings)', midvalley: 'rest of the OSM “Mid Valley City” polygon: Megamall and surroundings' },
+    statZone: (name: string, blocks: number) => `${name}: built footprint, ${n(blocks)} blocks`,
+    pinBlocks: (blocks: number) => `${n(blocks)} blocks`,
+    source: (osm: string) => `${osm} Precincts: KL Eco City and Mid Valley = blocks whose centroid lies in the OSM landuse polygons “KL Eco City” and “Mid Valley City”; The Gardens is split out of Mid Valley City by name (The Gardens Mall outline and its parts: North and South Towers, St. Giles The Gardens Residences). Footprint = union of OSM building outlines and parts per precinct on a 1 m grid. Illustrative block massing.`,
+  },
+  ch1: {
     label: 'Transit hub · Kuala Lumpur',
     tab: 'Transit hub',
     title: ['Mid Valley –', 'Abdullah Hukum'],
@@ -86,16 +103,16 @@ export const en = {
     statBlocks: 'building footprints & parts mapped in OSM in the study area',
     statTallest: (names: string) => `tallest cited height (${names})`,
     statWalk: (min: string) => `LRT to KTM on foot along OSM ways, ≈${min} min at 80 m/min`,
-    hint: 'Press → or Space to begin · F fullscreen · drag to rotate',
-    source: (osm: string, cited: number) => `${osm} Heights: published sources for ${n(cited)} blocks (see chapter 03 and docs/height-sources.md), otherwise OSM height tags or building:levels × 3.5 m; blocks with none of these use a flagged placeholder. Walking distance measured on OSM pedestrian ways (see chapter 05).`,
+    hint: 'Press → or Space to begin · F fullscreen · M map only · drag to rotate',
+    source: (osm: string, cited: number) => `${osm} Heights: published sources for ${n(cited)} blocks (see chapter 04 and docs/height-sources.md), otherwise OSM height tags or building:levels × 3.5 m; blocks with none of these use a flagged placeholder. Walking distance measured on OSM pedestrian ways (see chapter 06).`,
     studyArea: 'Study area',
     studyText: (lat: string, lon: string, size: string, bbox: string) => `Centre ${lat}° N, ${lon}° E · ${size} m × ${size} m (dashed frame).<br/>BBox ${bbox}`,
     onModel: 'On the model',
     legend: { building: 'Building block (OSM footprint, extruded)', water: 'Klang River & water', green: 'Parks & grass', lrt: 'LRT Kelana Jaya line (OSM)', ktm: 'KTM tracks (OSM)' },
     quality: 'Data quality',
-    qualityText: (cited: number, osm: number, levels: number, est: number) => `${n(cited)} blocks use a cited height, ${n(osm)} an OSM height tag and ${n(levels)} a level count; ${n(est)} have none of these and use a placeholder (5–9 m, or the parent outline’s levels). See chapter 03.`,
+    qualityText: (cited: number, osm: number, levels: number, est: number) => `${n(cited)} blocks use a cited height, ${n(osm)} an OSM height tag and ${n(levels)} a level count; ${n(est)} have none of these and use a placeholder (5–9 m, or the parent outline’s levels). See chapter 04.`,
   },
-  ch1: {
+  ch2: {
     label: 'Location',
     tab: 'Location',
     title: ['Where the LRT', 'meets the KTM'],
@@ -112,7 +129,7 @@ export const en = {
     operatorMissing: 'operator not tagged',
     stationsNote: 'Names and operators exactly as tagged in OSM.',
   },
-  ch3: {
+  ch4: {
     label: 'Massing',
     tab: 'Massing',
     title: ['Mall podiums,', 'office towers'],
@@ -135,7 +152,7 @@ export const en = {
     barsNote: 'Bar colour = height source (as in the legend above).',
     conflict: 'MidValley Tower of Light: the cited CTBUH figure (243 m, 56 floors) conflicts with the OSM level count (31). The cited value is shown; check on site.',
   },
-  ch5: {
+  ch6: {
     label: 'Connections',
     tab: 'Connections',
     title: ['LRT to KTM', 'through the malls'],
@@ -159,7 +176,7 @@ export const en = {
     layersNote: (b: number, c: number) => `${n(b)} footbridge ways and ${n(c)} indoor corridor ways are mapped in the study area; indoor links are only as complete as OSM.`,
   },
   shares: { bridge: 'bridge', indoor: 'indoor', covered: 'covered', open: 'open air (ground)' } as Record<'bridge' | 'indoor' | 'covered' | 'open', string>,
-  ch6: {
+  ch7: {
     label: 'Walking routes',
     tab: 'Walking',
     title: ['Four walks', 'across the hub'],
@@ -179,14 +196,14 @@ export const en = {
     notModelled: 'Escalators, lifts, road crossings and opening hours are not modelled; malls may be closed outside trading hours.',
     pickAria: 'Choose a walking route',
   },
-  ch7: {
+  ch8: {
     label: 'Sun & shade',
     tab: 'Sun & shade',
     title: ['High sun,', 'short shadows'],
     lead: (lat: string, jun: string, dec: string) => `At ${lat}° N the sun passes close to the zenith. At noon it stands ${jun}° high in the north on the June solstice and ${dec}° high in the south on the December solstice, so shadows swing from one side of the towers to the other through the year and stay short around midday. Pick a date and time to cast shadows from the block model.`,
     statNoon: (date: string, dir: string) => `noon altitude, ${date} (sun to the ${dir})`,
     dir: { N: 'north', S: 'south' },
-    source: (lat: string, lon: string, pts: number) => `Sun position: NOAA Solar Calculator equations (after Meeus) for ${lat}° N, ${lon}° E, Malaysia Time (UTC+8); refraction ignored. Shadows: real-time shadow map of the block model (buildings only; trees, canopies, the LRT viaduct and footbridges cast none). Sidewalk shade: ${n(pts)} points every 5 m along ground-level OSM footways that are not bridges, indoor, covered or inside a building, 1.5 m above ground, each raycast towards the sun against the blocks; % = shaded points ÷ all points. Heights are as approximate as in chapter 03.`,
+    source: (lat: string, lon: string, pts: number) => `Sun position: NOAA Solar Calculator equations (after Meeus) for ${lat}° N, ${lon}° E, Malaysia Time (UTC+8); refraction ignored. Shadows: real-time shadow map of the block model (buildings only; trees, canopies, the LRT viaduct and footbridges cast none). Sidewalk shade: ${n(pts)} points every 5 m along ground-level OSM footways that are not bridges, indoor, covered or inside a building, 1.5 m above ground, each raycast towards the sun against the blocks; % = shaded points ÷ all points. Heights are as approximate as in chapter 04.`,
     date: 'Date',
     presets: { mar: 'Mar equinox', jun: 'Jun solstice', dec: 'Dec solstice' },
     presetDates: { mar: '20 Mar', jun: '21 Jun', dec: '21 Dec' },
@@ -207,20 +224,20 @@ export const en = {
     dotsLegend: { lit: 'in sun', shade: 'in building shadow' },
     showDots: 'Show sample points',
   },
-  ch8: {
+  ch9: {
     label: 'Rain & monsoon',
     tab: 'Rain',
     title: ['Under cover', 'or in the rain'],
     lead: (mm: string, days: string, wettest: string) => `Rain falls in every month: the cited 1991–2020 normals give ${mm} mm a year on ${days} rain days, peaking in ${wettest}. Every OSM pedestrian way is split into covered (teal) and open-air (grey) segments, so you can see which walks stay under a roof.`,
     statFoot: (cov: number, all: number) => `of mapped pedestrian ways covered (${n(cov)} of ${n(all)} m)`,
-    statLegs: 'of the LRT → KTM walk covered (chapter 05 route)',
+    statLegs: 'of the LRT → KTM walk covered (chapter 06 route)',
     statRain: (station: string) => `mean annual rainfall, ${station}`,
     source: (osm: string, station: string, period: string, date: string) => `${osm} Covered = OSM indoor=yes, highway=corridor, covered=yes, or segment midpoint inside a mapped building footprint (this may count some open passages as covered); everything else is open-air. Climate: Wikipedia, Template:Kuala Lumpur weatherbox (WMO normals), station ${station}, ${period}, fetched ${date}; this station is not on site. Monsoon season from the Wikipedia article “Kuala Lumpur”.`,
     station: 'Sultan Abdul Aziz Shah Airport (Subang)',
     legendCovered: 'covered',
     legendOpen: 'open-air',
     routes: 'Covered share by route',
-    legsName: 'LRT → KTM (chapter 05)',
+    legsName: 'LRT → KTM (chapter 06)',
     coveredOf: (cov: number, all: number) => `${n(cov)} / ${n(all)} m`,
     climate: 'Monthly rainfall (mm)',
     climateNote: (station: string, period: string, days: string) => `${station}, ${period}. ${days} days a year with ≥ 1 mm. Shaded months: northeast monsoon (Oct–Mar).`,

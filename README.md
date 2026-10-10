@@ -14,8 +14,8 @@ npm run build      # type-check (tsc) + production build into dist/
 npm run preview    # serve dist/ on http://127.0.0.1:4173/
 ```
 
-Deep links: `?chapter=0|1|3|5`, `?theme=dark`.
-Keys: → / ↓ / Space next chapter, ← / ↑ previous, Home cover, F fullscreen
+Deep links: `?chapter=0|1|2|4|6|7|8|9`, `?theme=dark`.
+Keys: → / ↓ / Space next chapter, ← / ↑ previous, Home overview, F fullscreen, M map only (hide both panels)
 (ignored while a slider or input has focus). Drag to rotate, scroll to zoom,
 right-drag to pan, RESET VIEW returns to the chapter camera.
 
@@ -55,7 +55,7 @@ keyboard handling). Output in `shots/` (git-ignored).
 ## v2 (demo 0.2)
 
 - **Cited heights**: `scripts/height-sources.json` → applied in `scripts/process-osm.mjs` as `heightSource: "cited"` with a `heightRef` (value, unit, floors, storey height, publisher, URL, fetch date). Full table and limitations: `docs/height-sources.md`.
-- **New chapters**: 06 Walking routes, 07 Sun & shade (NOAA solar position, real shadow map, raycast sidewalk shade), 08 Rain & monsoon (covered vs open-air pedestrian ways; climate normals from the cited WMO table in `src/data/climate.json`).
+- **New chapters** (numbers as of v3): 07 Walking routes, 08 Sun & shade (NOAA solar position, real shadow map, raycast sidewalk shade), 09 Rain & monsoon (covered vs open-air pedestrian ways; climate normals from the cited WMO table in `src/data/climate.json`).
 - **Languages**: English, 简体中文 (zh-Hans, Malaysia), Bahasa Malaysia. Switch in the top bar, `?lang=en|zh|ms`, remembered in localStorage (`mv-lang`).
 
 ### Adding or changing a UI string
@@ -66,3 +66,28 @@ keyboard handling). Output in `shots/` (git-ignored).
 4. Static page chrome (top bar, credit, reset button) is set in `applyStaticText()` in `src/main.ts`.
 
 Chinese glyphs come from `@fontsource/noto-sans-sc` (Simplified Chinese subset), imported dynamically only when `zh` is active; IBM Plex stays first in the stack so Latin text and digits keep the Plex look.
+
+## v3 (demo 0.3)
+
+Chapter numbering (plan numbers; unbuilt chapters are skipped in the tab bar, `?chapter=` takes these numbers):
+
+| # | Chapter | Status |
+|---|---|---|
+| 00 | Overview: three precincts | built |
+| 01 | Transit hub (cover) | built |
+| 02 | Location | built |
+| 03 | Timeline | planned |
+| 04 | Massing | built |
+| 05 | Uses | planned |
+| 06 | Connections | built |
+| 07 | Walking routes | built |
+| 08 | Sun & shade | built |
+| 09 | Rain & monsoon | built |
+
+**Precinct rule (chapter 00)**, computed in `scripts/process-osm.mjs` (`zone` on each block, stats in `meta.zones`):
+1. *The Gardens*: blocks named The Gardens Mall / North Tower / South Tower / St. Giles The Gardens Residences / The Gardens Hotel, or parts of an outline with one of those names (the towers are mapped as parts of the "The Gardens Mall" outline). The Gardens Hotel has no named OSM footprint.
+2. *KL Eco City*: other blocks whose centroid is inside the OSM landuse polygon "KL Eco City".
+3. *Mid Valley*: other blocks whose centroid is inside the OSM landuse polygon "Mid Valley City" (The Gardens lies inside it and is split out by rule 1).
+Footprint per precinct = union of block footprints on a 1 m grid.
+
+**Panels**: the text panel and side panel collapse with the chevron tabs on their inner edges; the top-bar button or **M** hides both. State is saved in localStorage (`mv-panels`) and kept across chapters; the 3D view recentres on the free space.

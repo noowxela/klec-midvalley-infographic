@@ -16,31 +16,31 @@ async function open(name, q, w = 1920, h = 1080, rm = false) {
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`[${name}] console.${m.type()}: ${m.text()}`); });
   page.on('pageerror', (e) => errors.push(`[${name}] pageerror: ${e.message}`));
   page.on('requestfailed', (r) => errors.push(`[${name}] requestfailed: ${r.url()} ${r.failure()?.errorText}`));
+  await page.evaluateOnNewDocument(() => localStorage.removeItem('mv-panels'));
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
   await page.goto(`${base}?${q}`, { waitUntil: 'networkidle0' });
   await page.waitForFunction(() => window.__mv?.ready === true, { timeout: 20000 });
   return page;
 }
 const shots = [
-  { name: '00-cover', q: 'chapter=0&lang=en' },
-  { name: '03-massing', q: 'chapter=3&lang=en' },
-  { name: '03-massing-cited-colours', q: 'chapter=3&lang=en', act: async (p) => { await p.click('#src-toggle'); } },
-  { name: '05-connections', q: 'chapter=5&lang=en' },
-  { name: '06-walking-kj17-megamall', q: 'chapter=6&lang=en', wait: 5000 },
-  { name: '06-walking-kb01-gardens', q: 'chapter=6&lang=en', act: async (p) => { await sleep(800); await p.click('.route-btn[data-id="w-kb01-gardens"]'); }, wait: 5500 },
-  { name: '07-sun-jun21-0900', q: 'chapter=7&lang=en', act: async (p) => { await p.evaluate(() => window.__sun.set('jun', 540)); } },
-  { name: '07-sun-dec21-1630', q: 'chapter=7&lang=en', act: async (p) => { await p.evaluate(() => window.__sun.set('dec', 990)); } },
-  { name: '07-sun-mar20-1300', q: 'chapter=7&lang=en', act: async (p) => { await p.evaluate(() => window.__sun.set('mar', 780)); } },
-  { name: '08-rain', q: 'chapter=8&lang=en' },
-  { name: '08-rain-dark', q: 'chapter=8&lang=en&theme=dark' },
-  { name: '03-massing-cited-dark', q: 'chapter=3&lang=en&theme=dark', act: async (p) => { await p.click('#src-toggle'); } },
-  { name: '00-cover-zh', q: 'chapter=0&lang=zh' },
-  { name: '07-sun-zh', q: 'chapter=7&lang=zh', act: async (p) => { await p.evaluate(() => window.__sun.set('dec', 990)); } },
-  { name: '06-walking-zh', q: 'chapter=6&lang=zh', wait: 5000 },
-  { name: '00-cover-ms', q: 'chapter=0&lang=ms' },
-  { name: '08-rain-ms', q: 'chapter=8&lang=ms' },
-  { name: '03-massing-ms', q: 'chapter=3&lang=ms' },
-  { name: '07-sun-reduced-motion-play', q: 'chapter=7&lang=en', rm: true, act: async (p) => { await p.click('#side-panel .play-btn'); }, wait: 3000 },
+  // v3: overview + renumbered cover
+  { name: '00-overview', q: 'chapter=0&lang=en' },
+  { name: '00-overview-dark', q: 'chapter=0&lang=en&theme=dark' },
+  { name: '00-overview-zh', q: 'chapter=0&lang=zh' },
+  { name: '00-overview-ms', q: 'chapter=0&lang=ms' },
+  { name: '01-cover', q: 'chapter=1&lang=en' },
+  // smaller left-panel text (compare with before-*.png)
+  { name: 'after-01-cover-en-1440x900', q: 'chapter=1&lang=en', w: 1440, h: 900 },
+  { name: 'after-04-massing-ms', q: 'chapter=4&lang=ms' },
+  { name: 'after-08-sun-zh', q: 'chapter=8&lang=zh' },
+  { name: '09-rain-ms', q: 'chapter=9&lang=ms' },
+  // collapsible panels
+  { name: '04-massing-panels-open', q: 'chapter=4&lang=en' },
+  { name: '04-massing-left-collapsed', q: 'chapter=4&lang=en', act: async (p) => { await p.click('#tp-toggle'); } },
+  { name: '04-massing-map-only', q: 'chapter=4&lang=en', act: async (p) => { await p.click('#btn-maponly'); } },
+  { name: '07-walking-map-only-key-M', q: 'chapter=7&lang=en', act: async (p) => { await p.keyboard.press('m'); }, wait: 4500 },
+  { name: '06-connections-left-collapsed-dark', q: 'chapter=6&lang=en&theme=dark', act: async (p) => { await p.click('#tp-toggle'); } },
+  { name: '08-sun-right-collapsed-zh', q: 'chapter=8&lang=zh', act: async (p) => { await p.click('#sp-toggle'); } },
 ];
 for (const s of shots) {
   if (only && !only.test(s.name)) continue;
@@ -78,14 +78,23 @@ if (!only) {
   const h1 = await page.evaluate(() => location.hash);
   await page.keyboard.press('ArrowRight'); await sleep(900);
   const h2 = await page.evaluate(() => location.hash);
-  await page.evaluate(() => window.__mv.goTo(3)); await sleep(600);
+  await page.evaluate(() => window.__mv.goTo(4)); await sleep(600);
   await page.focus('#thr'); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight'); await sleep(600);
   const h3 = await page.evaluate(() => location.hash); const thr = await page.$eval('#thr', (e) => e.value);
-  await page.evaluate(() => window.__mv.goTo(7)); await sleep(800);
+  await page.evaluate(() => window.__mv.goTo(8)); await sleep(800);
   const before = await page.$eval('#sun-time', (e) => e.value);
   await page.focus('#sun-time'); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowLeft'); await page.keyboard.press('ArrowLeft'); await sleep(600);
   const h4 = await page.evaluate(() => location.hash); const after = await page.$eval('#sun-time', (e) => e.value);
   console.log('keys: Space ->', h1, '| ArrowRight ->', h2, '| arrows in #thr ->', h3, 'value', thr, '| arrows in #sun-time ->', h4, 'value', before, '->', after);
+  // M toggles map-only, but not while the slider has focus; chapter change keeps panels collapsed
+  await page.keyboard.press('m'); await sleep(300);
+  const m1 = await page.evaluate(() => document.querySelector('#stage').className);
+  await page.$eval('#sun-time', (e) => e.blur()); await page.keyboard.press('m'); await sleep(300);
+  const m2 = await page.evaluate(() => document.querySelector('#stage').className);
+  await page.keyboard.press('ArrowRight'); await sleep(900);
+  const m3 = await page.evaluate(() => [location.hash, document.querySelector('#stage').className, document.querySelector('#tp-toggle').getAttribute('aria-expanded'), localStorage.getItem('mv-panels')].join(' | '));
+  await page.keyboard.press('m'); await sleep(300);
+  console.log('M key: in slider ->', JSON.stringify(m1), '| on body ->', JSON.stringify(m2), '| next chapter ->', m3);
   // language switch at runtime
   await page.click('#lang-switch button[data-lang="ms"]'); await sleep(500);
   const ls = await page.evaluate(() => ({ lang: document.documentElement.lang, stored: localStorage.getItem('mv-lang'), tab: document.querySelector('.tab[aria-current]')?.textContent }));
