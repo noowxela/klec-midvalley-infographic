@@ -12,7 +12,8 @@ const errors = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function open(name, q, w = 1920, h = 1080, rm = false) {
   const page = await browser.newPage();
-  if (rm) await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+  // pin the OS colour scheme to light (the page now follows prefers-color-scheme when no theme is saved)
+  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }, ...(rm ? [{ name: 'prefers-reduced-motion', value: 'reduce' }] : [])]);
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`[${name}] console.${m.type()}: ${m.text()}`); });
   page.on('pageerror', (e) => errors.push(`[${name}] pageerror: ${e.message}`));
   page.on('requestfailed', (r) => errors.push(`[${name}] requestfailed: ${r.url()} ${r.failure()?.errorText}`));

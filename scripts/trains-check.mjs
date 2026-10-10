@@ -12,7 +12,7 @@ const errors = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function open(name, q, { rm = false, panels = null, trains = null } = {}) {
   const page = await browser.newPage();
-  if (rm) await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }, ...(rm ? [{ name: 'prefers-reduced-motion', value: 'reduce' }] : [])]);
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`[${name}] console.${m.type()}: ${m.text()}`); });
   page.on('pageerror', (e) => errors.push(`[${name}] pageerror: ${e.message}`));
   await page.evaluateOnNewDocument((panels, trains) => { localStorage.removeItem('mv-panels'); localStorage.removeItem('mv-trains'); if (panels) localStorage.setItem('mv-panels', panels); if (trains) localStorage.setItem('mv-trains', trains); }, panels, trains);

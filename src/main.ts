@@ -7,7 +7,11 @@ import './styles.css';
 import * as THREE from 'three';
 import { World, DEFAULT_MODE, prefersReducedMotion, type View } from './scene';
 import { buildChapters, type Chapter, type PinDef } from './chapters';
-import { t, setLang, initialLang, onLangChange, getLang, LANGS, dictFor, type Lang } from './i18n';
+import { t, setLang, initialLang, onLangChange, getLang, LANGS, dictFor, cjkFontCss, type Lang } from './i18n';
+import { loader } from './loader';
+
+// this module runs once its chunk (code + bundled OSM data) has downloaded and parsed
+loader.step('app', 'done'); loader.step('data', 'done'); loader.step('scene', 'active');
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector(sel) as T;
 const stage = $('#stage');
@@ -36,6 +40,7 @@ const textPanel = $('#text-panel'); const sidePanel = $('#side-panel');
 const pinLayer = $('#pins');
 interface PinEl { def: PinDef; el: HTMLElement; tag: HTMLElement; stem: HTMLElement; pos: THREE.Vector3; w: number; h: number }
 let pinEls: PinEl[] = [];
+function measurePins() { for (const p of pinEls) { p.w = p.tag.offsetWidth; p.h = p.tag.offsetHeight; } }
 function setPins(defs: PinDef[]) {
   for (const p of pinEls) { p.el.classList.add('hidden'); const el = p.el; setTimeout(() => el.remove(), 400); }
   pinEls = defs.map((def) => {
@@ -253,4 +258,24 @@ onLangChange(() => {
 const fromHash = parseInt((params.get('chapter') ?? location.hash.slice(1)) || '0', 10);
 const startIdx = Math.max(0, chapters.findIndex((c) => c.id === fromHash));
 goTo(startIdx, true);
-(window as unknown as { __mv: unknown }).__mv = { ready: true, goTo: (id: number) => goTo(chapters.findIndex((c) => c.id === id), true), chapters: chapters.map((c) => c.id), setLang: (l: Lang) => setLang(l), lang: getLang, world };
+const mv = { ready: false, goTo: (id: number) => goTo(chapters.findIndex((c) => c.id === id), true), chapters: chapters.map((c) => c.id), setLang: (l: Lang) => setLang(l), lang: getLang, world };
+(window as unknown as { __mv: unknown }).__mv = mv;
+
+// ---------- loader hand-off: reveal only when fonts, scene, camera and first frames are ready ----------
+const withTimeout = <T,>(p: Promise<T>, ms: number) => Promise.race([p, new Promise<void>((r) => setTimeout(r, ms))]);
+const framesRendered = (n: number) => new Promise<void>((resolve) => { let k = 0; const f = () => { if (++k >= n) { world.onFrame.splice(world.onFrame.indexOf(f), 1); resolve(); } }; world.onFrame.push(f); });
+async function finishBoot() {
+  loader.step('scene', 'done'); loader.step('fonts', 'active');
+  const faces = ['400 16px "IBM Plex Sans"', '600 16px "IBM Plex Sans"', '400 16px "IBM Plex Mono"', '500 16px "IBM Plex Mono"', '600 16px "IBM Plex Mono"'];
+  const cjk = getLang() === 'zh' ? cjkFontCss().then(() => Promise.all(['400', '600'].map((w) => document.fonts.load(`${w} 16px "Noto Sans SC"`, stage.textContent || '中文')))) : Promise.resolve();
+  // bounded: on a very slow connection the page continues with fallback fonts
+  await withTimeout(Promise.all([...faces.map((f) => document.fonts.load(f)), cjk]).then(() => document.fonts.ready), 8000).catch(() => {});
+  loader.step('fonts', 'done'); loader.step('frame', 'active');
+  // re-lay out with the real fonts (stat figure fitting and pin sizes depend on glyph widths)
+  renderText(chapters[current]); measurePins();
+  await framesRendered(3);
+  loader.step('frame', 'done');
+  mv.ready = true;
+  loader.ready();
+}
+void finishBoot();

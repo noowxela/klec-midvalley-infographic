@@ -116,3 +116,12 @@ Footprint per precinct = union of block footprints on a 1 m grid.
 - Masjid Jamek: OSM maps an unnamed 5-level building (way/594385371) whose outline encloses the mosque outline. On the Overview that building is drawn translucent so the mosque is visible.
 - Colour: `--landmark` (warm charcoal in light theme, ivory in dark).
 - Overview camera: turned (azimuth 0.2) so Masjid Jamek is not hidden behind the KL Eco City towers.
+
+## v6: loading screen
+
+- `index.html` carries an inline loader (critical CSS + markup + a small script) that paints before any bundle loads. Theme (`?theme`, then saved `mv-theme`, then `prefers-color-scheme`) and language (`?lang`, then `mv-lang`) are applied before first paint, so a saved dark theme or zh/ms never flashes light/English.
+- The entry is `src/boot.ts`: it checks WebGL, then dynamically imports `main.ts`. Progress steps are real: application, map data (OSM JSON), 3D scene, fonts (Plex, and Noto Sans SC for zh), first frame.
+- The loader hides only after fonts are ready (8 s cap), text is re-rendered and pins re-measured with the final fonts, stage scaling and the first camera are applied, and three frames have rendered. It then fades out over ~0.5 s (instant under `prefers-reduced-motion`).
+- After 8 s a "taking longer than usual" note with a reload button appears. A missing WebGL or an init error (script load failure, uncaught error or rejection before ready) shows an error state with a reload button. All strings are in EN/zh/ms.
+- Noto Sans SC now loads as unicode-range slices (`@fontsource/noto-sans-sc/400.css`, `600.css`) instead of one ~1.1 MB file.
+- `scripts/firstload.mjs <outDir> [query] [dark|rm|nowebgl]` records a cold, throttled first load as frames (env: `VIEW`, `LAT`, `KBPS`, `CPU`, `STORE`, `BASE`).

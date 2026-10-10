@@ -1,13 +1,139 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 fill=%22%23161616%22/%3E%3Crect x=%224%22 y=%223%22 width=%223%22 height=%2210%22 fill=%22%23f3f3f1%22/%3E%3Crect x=%229%22 y=%226%22 width=%223%22 height=%227%22 fill=%22%23f3f3f1%22/%3E%3C/svg%3E" />
     <title>Mid Valley – Abdullah Hukum Transit Hub · Site Analysis (demo)</title>
     <meta name="description" content="Illustrative 3D site analysis of the Mid Valley – Abdullah Hukum transit hub, Kuala Lumpur, built from OpenStreetMap data." />
+    <!-- Before first paint: theme (saved > ?theme > OS preference), language (?lang > saved > en), loader API. -->
+    <script>
+      (function () {
+        var d = document.documentElement, q = new URLSearchParams(location.search);
+        function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+        var th = q.get('theme') || get('mv-theme');
+        if (th !== 'dark' && th !== 'light') th = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        d.setAttribute('data-theme', th);
+        var lg = q.get('lang') || get('mv-lang'); if (['en', 'zh', 'ms'].indexOf(lg) < 0) lg = 'en';
+        d.setAttribute('data-lang', lg); d.lang = { en: 'en', zh: 'zh-Hans-MY', ms: 'ms-MY' }[lg];
+        d.className += ' mv-loading';
+        var rm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var S = {
+          en: { title: 'MID VALLEY – ABDULLAH HUKUM', sub: 'SITE ANALYSIS · LOADING', subErr: 'SITE ANALYSIS', app: 'Application', data: 'Map data (OpenStreetMap)', scene: '3D scene', fonts: 'Fonts', frame: 'First frame', slow: 'This is taking longer than usual.', reload: 'Reload', webglTitle: 'The 3D view can’t start', webgl: 'This page needs WebGL, which is unavailable or turned off in this browser. Try turning on hardware acceleration, using another browser, or reloading.', initTitle: 'Loading failed', init: 'Something went wrong while starting the page. Please reload.' },
+          zh: { title: '谷中城 – ABDULLAH HUKUM', sub: '场地分析 · 加载中', subErr: '场地分析', app: '应用程序', data: '地图数据（OpenStreetMap）', scene: '三维场景', fonts: '字体', frame: '首帧', slow: '加载时间比平常更长。', reload: '重新加载', webglTitle: '无法启动三维视图', webgl: '本页面需要 WebGL，但此浏览器中 WebGL 不可用或已关闭。请开启硬件加速、换用其他浏览器，或重新加载。', initTitle: '加载失败', init: '页面启动时出错，请重新加载。' },
+          ms: { title: 'MID VALLEY – ABDULLAH HUKUM', sub: 'ANALISIS TAPAK · MEMUATKAN', subErr: 'ANALISIS TAPAK', app: 'Aplikasi', data: 'Data peta (OpenStreetMap)', scene: 'Adegan 3D', fonts: 'Fon', frame: 'Bingkai pertama', slow: 'Ini mengambil masa lebih lama daripada biasa.', reload: 'Muat semula', webglTitle: 'Paparan 3D tidak dapat dimulakan', webgl: 'Halaman ini memerlukan WebGL, yang tidak tersedia atau dimatikan dalam pelayar ini. Cuba hidupkan pecutan perkakasan, gunakan pelayar lain, atau muat semula.', initTitle: 'Gagal dimuatkan', init: 'Berlaku ralat semasa memulakan halaman. Sila muat semula.' }
+        }[lg];
+        var STEPS = ['app', 'data', 'scene', 'fonts', 'frame'];
+        var L = window.__loader = { strings: S, isReady: false, failed: false, t0: Date.now(),
+          el: function () { return document.getElementById('loader'); },
+          step: function (id, state) {
+            var el = L.el(); if (!el || L.isReady) return;
+            var li = el.querySelector('[data-step="' + id + '"]'); if (!li) return;
+            li.className = state;
+            var done = el.querySelectorAll('.ld-steps .done').length;
+            el.querySelector('.ld-fill').style.width = Math.round((done / STEPS.length) * 100) + '%';
+          },
+          ready: function () {
+            var el = L.el(); if (L.isReady || L.failed) return; L.isReady = true;
+            d.classList.remove('mv-loading');
+            if (!el) return;
+            el.querySelector('.ld-fill').style.width = '100%';
+            el.classList.add('is-done');
+            setTimeout(function () { el.hidden = true; el.remove(); }, rm ? 0 : 520);
+          },
+          error: function (kind, detail) {
+            var el = L.el(); if (L.isReady || !el) return; L.failed = true;
+            el.classList.add('is-error');
+            el.querySelector('#ld-sub').textContent = S.subErr;
+            el.querySelector('#ld-err-title').textContent = kind === 'webgl' ? S.webglTitle : S.initTitle;
+            el.querySelector('#ld-err-text').textContent = kind === 'webgl' ? S.webgl : S.init;
+            if (detail) el.querySelector('#ld-err-detail').textContent = String(detail).slice(0, 240);
+            el.querySelector('#ld-err-reload').focus();
+          }
+        };
+        // never trap the user: note after 8 s; JS errors before ready show the error state
+        setTimeout(function () { var el = L.el(); if (el && !L.isReady && !L.failed) el.classList.add('is-slow'); }, 8000);
+        window.addEventListener('error', function (e) {
+          if (L.isReady) return;
+          var t = e.target;
+          if (e instanceof ErrorEvent) L.error('init', e.message);
+          else if (t && t.tagName === 'SCRIPT') L.error('init', 'Could not load ' + (t.src || 'script'));
+        }, true);
+        window.addEventListener('unhandledrejection', function (e) { if (!L.isReady) L.error('init', e.reason && e.reason.message ? e.reason.message : e.reason); });
+      })();
+    </script>
+    <style>
+      /* critical loader CSS (inline so it paints before the bundles load) */
+      html { background: #f3f3f1; color: #161616; }
+      html[data-theme='dark'] { background: #121212; color: #ededea; }
+      html.mv-loading #viewport { visibility: hidden; }
+      #loader { --ld-bg: #f3f3f1; --ld-ink: #161616; --ld-grey: #6b6b68; --ld-line: rgba(22, 22, 22, 0.14); --ld-err: #9b2c2c;
+        position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; background: var(--ld-bg); color: var(--ld-ink);
+        font: 13px/1.5 ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; letter-spacing: 0.04em; transition: opacity 0.5s ease; }
+      html[data-theme='dark'] #loader { --ld-bg: #121212; --ld-ink: #ededea; --ld-grey: #9a9a95; --ld-line: rgba(237, 237, 234, 0.16); --ld-err: #e08a8a; }
+      html[data-lang='zh'] #loader { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', monospace; }
+      #loader.is-done { opacity: 0; pointer-events: none; }
+      #loader .ld-box { width: 360px; max-width: calc(100vw - 48px); }
+      #loader .ld-title { font-size: 14px; letter-spacing: 0.14em; }
+      #loader .ld-sub { color: var(--ld-grey); font-size: 12px; letter-spacing: 0.14em; margin-top: 4px; }
+      #loader .ld-bar { position: relative; height: 2px; background: var(--ld-line); margin: 28px 0 18px; overflow: hidden; }
+      #loader .ld-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--ld-ink); transition: width 0.35s ease; }
+      #loader .ld-bar::after { content: ''; position: absolute; top: 0; bottom: 0; width: 22%; left: -22%; background: linear-gradient(90deg, transparent, var(--ld-grey), transparent); opacity: 0.55; animation: ld-sweep 1.6s ease-in-out infinite; }
+      @keyframes ld-sweep { to { left: 100%; } }
+      #loader .ld-steps { list-style: none; margin: 0; padding: 0; color: var(--ld-grey); font-size: 12px; }
+      #loader .ld-steps li { display: flex; align-items: center; gap: 10px; height: 22px; }
+      #loader .ld-steps li::before { content: ''; width: 7px; height: 7px; border: 1px solid currentColor; border-radius: 50%; box-sizing: border-box; flex: none; }
+      #loader .ld-steps li.active { color: var(--ld-ink); }
+      #loader .ld-steps li.active::before { border-color: var(--ld-ink); animation: ld-pulse 1s ease-in-out infinite alternate; }
+      #loader .ld-steps li.done { color: var(--ld-ink); }
+      #loader .ld-steps li.done::before { background: var(--ld-ink); border-color: var(--ld-ink); }
+      @keyframes ld-pulse { from { opacity: 0.25; } to { opacity: 1; } }
+      #loader button { font: inherit; letter-spacing: 0.08em; color: var(--ld-ink); background: none; border: 1px solid var(--ld-ink); padding: 7px 14px; cursor: pointer; }
+      #loader .ld-slow { display: none; margin: 18px 0 0; color: var(--ld-grey); }
+      #loader .ld-slow button { margin-left: 10px; padding: 3px 10px; }
+      #loader.is-slow .ld-slow { display: block; }
+      #loader .ld-error { display: none; }
+      #loader.is-error .ld-progress { display: none; }
+      #loader.is-error .ld-error { display: block; }
+      #loader .ld-error h2 { font-size: 15px; font-weight: 600; letter-spacing: 0.06em; margin: 26px 0 10px; color: var(--ld-err); }
+      #loader .ld-error p { margin: 0 0 12px; line-height: 1.6; letter-spacing: 0.02em; }
+      #loader .ld-error code { display: block; color: var(--ld-grey); font-size: 11px; margin: 0 0 18px; word-break: break-word; }
+      @media (prefers-reduced-motion: reduce) { #loader, #loader .ld-fill { transition: none; } #loader .ld-bar::after, #loader .ld-steps li.active::before { animation: none; } #loader .ld-bar::after { display: none; } }
+    </style>
   </head>
   <body>
+    <div id="loader" role="status" aria-live="polite">
+      <div class="ld-box">
+        <div class="ld-title" id="ld-title">MID VALLEY – ABDULLAH HUKUM</div>
+        <div class="ld-sub" id="ld-sub">SITE ANALYSIS · LOADING</div>
+        <div class="ld-progress">
+          <div class="ld-bar" aria-hidden="true"><div class="ld-fill"></div></div>
+          <ol class="ld-steps">
+            <li data-step="app" class="active"><span>Application</span></li>
+            <li data-step="data"><span>Map data (OpenStreetMap)</span></li>
+            <li data-step="scene"><span>3D scene</span></li>
+            <li data-step="fonts"><span>Fonts</span></li>
+            <li data-step="frame"><span>First frame</span></li>
+          </ol>
+          <p class="ld-slow"><span id="ld-slow-text">This is taking longer than usual.</span><button type="button" id="ld-slow-reload">Reload</button></p>
+        </div>
+        <div class="ld-error" role="alert">
+          <h2 id="ld-err-title"></h2>
+          <p id="ld-err-text"></p>
+          <code id="ld-err-detail"></code>
+          <button type="button" id="ld-err-reload">Reload</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var S = window.__loader.strings, el = document.getElementById('loader');
+        document.getElementById('ld-title').textContent = S.title; document.getElementById('ld-sub').textContent = S.sub;
+        ['app', 'data', 'scene', 'fonts', 'frame'].forEach(function (k) { el.querySelector('[data-step="' + k + '"] span').textContent = S[k]; });
+        document.getElementById('ld-slow-text').textContent = S.slow;
+        ['ld-slow-reload', 'ld-err-reload'].forEach(function (id) { var b = document.getElementById(id); b.textContent = S.reload; b.onclick = function () { location.reload(); }; });
+      })();
+    </script>
     <div id="viewport">
       <div id="stage" aria-live="polite">
         <div id="gl"></div>
@@ -58,6 +184,6 @@
         </footer>
       </div>
     </div>
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/boot.ts"></script>
   </body>
 </html>
