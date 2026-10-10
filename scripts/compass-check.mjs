@@ -70,7 +70,7 @@ const clipFurn = async (p, path, dpr = 1) => { const r = await p.evaluate(() => 
 
 // 1. main flow, EN 1920x1080
 {
-  const p = await open('flow', 'chapter=1&lang=en', { dpr: 2 });
+  const p = await open('flow', 'chapter=2&lang=en', { dpr: 2 });
   expect('load', await p.evaluate(state), false);
   await clipFurn(p, 'shots-compass/reset-before-drag-en.png');
   await p.screenshot({ path: 'shots-compass/full-before-drag-en.png' });
@@ -84,7 +84,7 @@ const clipFurn = async (p, path, dpr = 1) => { const r = await p.evaluate(() => 
   expect('after-click (immediate)', await p.evaluate(state), false);
   await sleep(2400); expect('after-click (settled)', await p.evaluate(state), false);
   await drag(p); expect('drag-2', await p.evaluate(state), true);
-  await p.evaluate(() => window.__mv.goTo(2)); await sleep(300); expect('chapter-change (flying)', await p.evaluate(state), false);
+  await p.evaluate(() => window.__mv.goTo(3)); await sleep(300); expect('chapter-change (flying)', await p.evaluate(state), false);
   await sleep(2600); expect('chapter-change (settled)', await p.evaluate(state), false);
   const z0 = (await p.evaluate(state)).strip;
   await p.mouse.move(1100, 560); await p.mouse.wheel({ deltaY: -400 }); await sleep(900); const zs = await p.evaluate(state); expect('after-zoom', zs, true);
@@ -95,15 +95,15 @@ const clipFurn = async (p, path, dpr = 1) => { const r = await p.evaluate(() => 
 }
 // 2. layouts: side panel collapsed, 1440x900, zh, mobile, dark, reduced motion
 for (const [name, q, opt, setup] of [
-  ['sp-collapsed-en', 'chapter=1&lang=en', {}, async (p) => { await p.click('#sp-toggle'); await sleep(600); }],
-  ['zh-1440x900', 'chapter=2&lang=zh', { w: 1440, h: 900 }],
+  ['sp-collapsed-en', 'chapter=2&lang=en', {}, async (p) => { await p.click('#sp-toggle'); await sleep(600); }],
+  ['zh-1440x900', 'chapter=3&lang=zh', { w: 1440, h: 900 }],
   ['ms-1920-dark', 'chapter=0&lang=ms', { dark: true }],
-  ['mobile-390x844', 'chapter=1&lang=en', { w: 390, h: 844, dpr: 2, mobile: true }],
-  ['mobile-landscape-844x390', 'chapter=1&lang=en', { w: 844, h: 390, dpr: 2, mobile: true }],
-  ['mobile-360x640-zh', 'chapter=2&lang=zh', { w: 360, h: 640, dpr: 2, mobile: true }],
-  ['mobile-667x375-ms', 'chapter=4&lang=ms', { w: 667, h: 375, dpr: 2, mobile: true }],
-  ['small-window-1100x700', 'chapter=1&lang=en', { w: 1100, h: 700 }],
-  ['reduced-motion', 'chapter=1&lang=en', { rm: true }],
+  ['mobile-390x844', 'chapter=2&lang=en', { w: 390, h: 844, dpr: 2, mobile: true }],
+  ['mobile-landscape-844x390', 'chapter=2&lang=en', { w: 844, h: 390, dpr: 2, mobile: true }],
+  ['mobile-360x640-zh', 'chapter=3&lang=zh', { w: 360, h: 640, dpr: 2, mobile: true }],
+  ['mobile-667x375-ms', 'chapter=5&lang=ms', { w: 667, h: 375, dpr: 2, mobile: true }],
+  ['small-window-1100x700', 'chapter=2&lang=en', { w: 1100, h: 700 }],
+  ['reduced-motion', 'chapter=2&lang=en', { rm: true }],
 ]) {
   const p = await open(name, q, opt); if (setup) await setup(p);
   expect(`${name} load`, await p.evaluate(state), false);
@@ -115,7 +115,7 @@ for (const [name, q, opt, setup] of [
 }
 // 2b. v12 crops: compass + reset (visible), bottom-right strip, light and dark; full EN light; 1440x900; 390x844
 for (const dark of [false, true]) {
-  const p = await open(`v12-${dark ? 'dark' : 'light'}`, 'chapter=1&lang=en', { dpr: 3, dark });
+  const p = await open(`v12-${dark ? 'dark' : 'light'}`, 'chapter=2&lang=en', { dpr: 3, dark });
   await drag(p);
   const cr = await p.evaluate(() => { const a = document.getElementById('btn-reset').getBoundingClientRect(), c = document.getElementById('compass').getBoundingClientRect(); return { x: a.left - 16, y: c.top - 12, width: c.right - a.left + 32, height: c.height + 24 }; });
   await p.screenshot({ path: `shots-compass/v12-compass-reset-${dark ? 'dark' : 'light'}.png`, clip: cr });
@@ -123,24 +123,24 @@ for (const dark of [false, true]) {
   await p.screenshot({ path: `shots-compass/v12-strip-${dark ? 'dark' : 'light'}.png`, clip: st });
   await p.close();
 }
-for (const [name, q, opt] of [['v12-full-en-light', 'chapter=1&lang=en', {}], ['v12-1440x900-en', 'chapter=0&lang=en', { w: 1440, h: 900 }], ['v12-390x844-en', 'chapter=1&lang=en', { w: 390, h: 844, dpr: 2 }], ['v12-full-zh-light', 'chapter=2&lang=zh', {}]]) {
+for (const [name, q, opt] of [['v12-full-en-light', 'chapter=2&lang=en', {}], ['v12-1440x900-en', 'chapter=0&lang=en', { w: 1440, h: 900 }], ['v12-390x844-en', 'chapter=2&lang=en', { w: 390, h: 844, dpr: 2 }], ['v12-full-zh-light', 'chapter=3&lang=zh', {}]]) {
   const p = await open(name, q, opt); const s = await p.evaluate(state); expect(`${name} load`, s, false); await p.screenshot({ path: `shots-compass/${name}.png` }); await p.close();
 }
 // 2c. mobile: every chapter, portrait + landscape: compass 40-44 px, reset half that, >= 44 px touch target, no overlaps
 // with the chapter bar / strip / panels (reset visible after a drag); v13 full shots + compass crops
 {
-  const probe = await open('count', 'chapter=0&lang=en'); const nCh = await probe.evaluate(() => document.querySelectorAll('#chapter-tabs .tab').length); await probe.close();
+  const probe = await open('count', 'chapter=0&lang=en'); const ids = await probe.evaluate(() => window.__mv.chapters); await probe.close();
   for (const [tag, w, h] of [['portrait-390x844', 390, 844], ['landscape-844x390', 844, 390]]) {
-    for (let c = 0; c < nCh; c++) {
+    for (const c of ids) {
       const p = await open(`m-${tag}-${c}`, `chapter=${c}&lang=en`, { w, h, dpr: 1, mobile: true });
       await drag(p, w < 600 ? 80 : 160, 10);
       const s = await p.evaluate(state); expect(`mobile ${tag} ch${c}`, s, true);
       if (Math.abs(s.centreDy) > 1.5) bad.push(`mobile ${tag} ch${c}: reset not centred (dy ${s.centreDy})`);
-      if (c === 1) console.log(`mobile ${tag}`, JSON.stringify({ compassH: s.compassH, resetH: s.resetH, hit: `${s.hitW}x${s.hitH}`, gap: s.gap, centreDy: s.centreDy }));
+      if (c === 2) console.log(`mobile ${tag}`, JSON.stringify({ compassH: s.compassH, resetH: s.resetH, hit: `${s.hitW}x${s.hitH}`, gap: s.gap, centreDy: s.centreDy }));
       await p.close();
     }
     for (const lang of ['en']) {
-      const p = await open(`v13-${tag}`, `chapter=1&lang=${lang}`, { w, h, dpr: 3, mobile: true });
+      const p = await open(`v13-${tag}`, `chapter=2&lang=${lang}`, { w, h, dpr: 3, mobile: true });
       await drag(p, w < 600 ? 80 : 160, 10); await sleep(400);
       await p.screenshot({ path: `shots-compass/v13-mobile-${tag}.png` });
       const cr = await p.evaluate(() => { const a = document.getElementById('btn-reset').getBoundingClientRect(), c = document.getElementById('compass').getBoundingClientRect(); return { x: a.left - 14, y: c.top - 14, width: c.right - a.left + 28, height: c.height + 28 }; });
@@ -151,7 +151,7 @@ for (const [name, q, opt] of [['v12-full-en-light', 'chapter=1&lang=en', {}], ['
 }
 // 3. compass close-ups (3x), light and dark, two bearings
 for (const dark of [false, true]) {
-  const p = await open(`compass-${dark ? 'dark' : 'light'}`, 'chapter=1&lang=en', { dpr: 3, dark });
+  const p = await open(`compass-${dark ? 'dark' : 'light'}`, 'chapter=2&lang=en', { dpr: 3, dark });
   const clip = await p.evaluate(() => { const r = document.getElementById('compass').getBoundingClientRect(); return { x: r.left - 10, y: r.top - 10, width: r.width + 20, height: r.height + 20 }; });
   await p.screenshot({ path: `shots-compass/compass-${dark ? 'dark' : 'light'}-a.png`, clip });
   await drag(p, 300, 0); await p.screenshot({ path: `shots-compass/compass-${dark ? 'dark' : 'light'}-b.png`, clip });

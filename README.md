@@ -14,7 +14,7 @@ npm run build      # type-check (tsc) + production build into dist/
 npm run preview    # serve dist/ on http://127.0.0.1:4173/
 ```
 
-Deep links: `?chapter=0|1|2|4|6|7|8|9`, `?theme=dark`.
+Deep links: `?chapter=0|1|2|3|5|7|8|9|10` (or `#00` … `#10`), `?theme=dark`. Since v14 the numbers are the v14 chapter numbers below; links made before v14 (e.g. `#01` for Transit hub) now open the chapter with that new number.
 Keys: → / ↓ / Space next chapter, ← / ↑ previous, Home overview, F fullscreen, M map only (hide both panels)
 (ignored while a slider or input has focus). Drag to rotate, scroll to zoom,
 right-drag to pan, RESET VIEW returns to the chapter camera.
@@ -49,8 +49,8 @@ Map data © OpenStreetMap contributors, ODbL.
 Attribution in the app: one persistent credit, `© OpenStreetMap contributors`, sits in the bottom-right corner of
 the map view and links to https://www.openstreetmap.org/copyright. It is the same text in every language, with a translated aria-label. It
 lives outside the scaled 1920×1080 stage so it stays legible at any window size; on narrow or letterboxed windows it moves just
-below the stage. The 00 Overview source line keeps the full credit ("Map data © OpenStreetMap contributors (ODbL), Overpass API pull <date>"), and
-the "Data" note in its side panel adds the ODbL licence link and the order in which heights are sourced. The other chapters' source lines
+below the stage. The 00 Overview source line is just the full credit ("Map data © OpenStreetMap contributors (ODbL), Overpass API pull <date>"), and
+the "Data" note in the 01 Landmarks side panel adds the ODbL licence link and the order in which heights are sourced. The other chapters' source lines
 do not repeat the OSM line; they keep only their own method notes and non-OSM sources.
 
 ## Screenshots
@@ -78,20 +78,23 @@ Chinese glyphs come from `@fontsource/noto-sans-sc` (Simplified Chinese subset),
 
 Chapter numbering (plan numbers; unbuilt chapters are skipped in the tab bar, `?chapter=` takes these numbers):
 
-| # | Chapter | Status |
-|---|---|---|
-| 00 | Overview: three precincts | built |
-| 01 | Transit hub (cover) | built |
-| 02 | Location | built |
-| 03 | Timeline | planned |
-| 04 | Massing | built |
-| 05 | Uses | planned |
-| 06 | Connections | built |
-| 07 | Walking routes | built |
-| 08 | Sun & shade | built |
-| 09 | Rain & monsoon | built |
+Since v14 (a new 01 Landmarks chapter; every later chapter moved up by one). Notes further down that predate v14 use the old numbers (old 01 = new 02, 02 = 03, 04 = 05, 06 = 07, 07 = 08, 08 = 09, 09 = 10).
 
-**Precinct rule (chapter 00)**, computed in `scripts/process-osm.mjs` (`zone` on each block, stats in `meta.zones`):
+| # | Chapter | Status | before v14 |
+|---|---|---|---|
+| 00 | Overview (text panel only, no side panel; the model fills the area right of the text) | built | 00 |
+| 01 | Landmarks: precincts, landmark mosques, car park (the former 00 side panel, map colouring and pins) | built | — |
+| 02 | Transit hub (cover) | built | 01 |
+| 03 | Location | built | 02 |
+| 04 | Timeline | planned | 03 |
+| 05 | Massing | built | 04 |
+| 06 | Uses | planned | 05 |
+| 07 | Connections | built | 06 |
+| 08 | Walking routes | built | 07 |
+| 09 | Sun & shade | built | 08 |
+| 10 | Rain & monsoon | built | 09 |
+
+**Precinct rule (chapter 01 Landmarks; chapter 00 before v14)**, computed in `scripts/process-osm.mjs` (`zone` on each block, stats in `meta.zones`):
 1. *The Gardens*: blocks named The Gardens Mall / North Tower / South Tower / St. Giles The Gardens Residences / The Gardens Hotel, or parts of an outline with one of those names (the towers are mapped as parts of the "The Gardens Mall" outline). The Gardens Hotel has no named OSM footprint.
 2. *KL Eco City*: other blocks whose centroid is inside the OSM landuse polygon "KL Eco City".
 3. *Mid Valley*: other blocks whose centroid is inside the OSM landuse polygon "Mid Valley City" (The Gardens lies inside it and is split out by rule 1).
@@ -163,7 +166,7 @@ Checked against Wikipedia, [Klang Valley Integrated Transit System](https://en.w
   - in the 02 station list next to the code badge.
   The code badges (KJ17, KD01, KB01) are unchanged: the pill identifies the line, the badge the station.
 - **Line 5 pill** (LRT Kelana Jaya): the same pill in `--c-lrt` #E0115F with a bold white "5". Following the Rapid KL reference, it adds two thin lighter rings, one round the number and one round the train, overlapping in the middle. The reference is ruby #C52936. Its aria-label is "LRT Line 5, Kelana Jaya Line" (zh "LRT 5 号线，格拉那再也线"; ms "LRT Laluan 5, Laluan Kelana Jaya"). It is used on the KJ17 pin, in the 01 legend, on the 02 LRT toggle and in the station list.
-- **Mid Valley shown as "KTM · 10".** Riders know Mid Valley as stop 10 on Line 1 counting from Batu Caves: KC05–KC01 and KA04–KA01, then Mid Valley (Wikipedia, "Batu Caves–Pulau Sebang Line", Stations table). The pins, station list, stats caption and chapter text show "KTM · 10" with the Line 1 pill. The official code KB01 appears only in the 02 source note ("Official station code KB01 (Wikipedia); shown as stop 10 from Batu Caves", in EN/zh/ms) and in this README. `PUBLIC_CODE` in `src/chapters.ts` holds the mapping. rail-check fails if KB01 appears in any user-facing text, aria-label or title outside a source note. Abdullah Hukum KTM gets the same treatment and is shown as **"KTM · 16"** with the Line 2 pill. That is stop 16 from Tanjung Malim (KA15–KA01, then Abdullah Hukum), not counting the 2026 Segambut Utara infill (KA05A), as the project owner chose. KD01 appears only in the 02 source note ("Official station code KD01 (Wikipedia); shown as stop 16 from Tanjung Malim", in EN/zh/ms) and in this README. KJ17 is unchanged for now. For reference:
+- **Mid Valley shown as "KTM · 10".** Riders know Mid Valley as stop 10 on Line 1 counting from Batu Caves: KC05–KC01 and KA04–KA01, then Mid Valley (Wikipedia, "Batu Caves–Pulau Sebang Line", Stations table). The pins, station list, stats caption and chapter text show "KTM · 10" with the Line 1 pill. The official code KB01 appears only in the 02 source note ("Official station code KB01 (Wikipedia); shown as stop 10 from Batu Caves", in EN/zh/ms) and in this README. `PUBLIC_CODE` in `src/chapters.ts` holds the mapping. rail-check fails if KB01 appears in any user-facing text, aria-label or title outside a source note. Abdullah Hukum KTM gets the same treatment and is shown as **"KTM · 16"** with the Line 2 pill. That is stop 16 from Tanjung Malim (KA15–KA01, then Abdullah Hukum), not counting the 2026 Segambut Utara infill (KA05A), as the project owner chose. KD01 appears only in the 03 Location source note (02 before v14) ("Official station code KD01 (Wikipedia); shown as stop 16 from Tanjung Malim", in EN/zh/ms) and in this README. KJ17 is unchanged for now. For reference:
   - Abdullah Hukum KTM (KD01) is stop 17 from Tanjung Malim, counting the 2026 infill Segambut Utara (KA05A), or stop 19 from Port Klang.
   - Abdullah Hukum LRT (KJ17) is stop 17 from Gombak (KJ1) or stop 21 from Putra Heights (KJ37).
 - The keyboard hint ("Press → or Space to begin · F fullscreen · M map only · drag to rotate", in EN/zh/ms) moved from 01 (the old cover) to the 00 Overview text panel, since 00 is now the first page. Its style is unchanged. It fits in all three languages; rail-check checks that it appears on 00 only and that the text panel does not overflow.

@@ -22,9 +22,9 @@ const D = (n: XY, y = 0): [number, number, number] => [n[0], y, -n[1]];
 // official KVITS line colours (styles.css): KJ = Kelana Jaya, KB = Batu Caves–Pulau Sebang (KTM 1), KD = Tanjung Malim–Port Klang (KTM 2)
 // Public-facing station numbers. Mid Valley (official code KB01) is shown the way riders know it: stop 10 on
 // Line 1 counting from Batu Caves (KC05–KC01, KA04–KA01, then Mid Valley; Wikipedia, Batu Caves–Pulau Sebang Line,
-// "Stations"). KB01 appears only in the 02 source note and the README.
+// "Stations"). KB01 appears only in the 03 Location source note and the README.
 // Abdullah Hukum KTM (official KD01) is stop 16 on Line 2 counting from Tanjung Malim (KA15–KA01, then Abdullah Hukum),
-// excluding the 2026 Segambut Utara infill (KA05A); owner's choice. KD01 appears only in the 02 source note and the README.
+// excluding the 2026 Segambut Utara infill (KA05A); owner's choice. KD01 appears only in the 03 Location source note and the README.
 const PUBLIC_CODE: Record<string, string> = { KB01: '10', KD01: '16' };
 const showCode = (ref: string | null) => (ref ? PUBLIC_CODE[ref] ?? ref : '—');
 const lineColor = { lrt: 'var(--c-lrt)', ktm1: 'var(--c-ktm1)', ktm2: 'var(--c-ktm2)', erl: 'var(--c-erl)' } as const;
@@ -138,11 +138,24 @@ export function buildChapters(): Chapter[] {
   const Z = T.ch0; const zs = meta.zones as unknown as Record<string, { blocks: number; footprintM2: number; centroid: XY; tallest: { height: number } | null }>;
   const zoneTop = (z: string) => Math.max(40, ...buildings.filter((b) => b.zone === z).map((b) => b.height)) * 0.55;
   return [
-    // ---------------- 00 overview ----------------
+    // ---------------- 00 overview: text panel only (no side panel); the model fills the area right of the text ----------------
     {
       id: 0, label: Z.label, tab: Z.tab, title: Z.title, lead: Z.lead, hint: Z.hint,
+      stats: [],
+      source: T.common.osmSrc(stats.fetchedDate),
+      view: { target: [-10, 0, -30], azimuth: 0.2, polar: 0.7, distance: 2200 },
+      mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: false },
+      pins: nn([
+        stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
+        stationPin('KD01', 'ktm2', N.kj17, `KTM · ${showCode('KD01')}`),
+        stationPin('KB01', 'ktm1', N.kb01, `KTM · ${showCode('KB01')}`),
+      ]),
+    },
+    // ---------------- 01 landmarks: precinct colours, landmark mosques, car park (the former 00 side panel) ----------------
+    {
+      id: 1, label: T.lm.label, tab: T.lm.tab, title: T.lm.title, lead: T.lm.lead,
       stats: ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ fig: fmt(zs[z].footprintM2 / 10000, 1), unit: U.ha, cap: Z.statZone(Z.zones[z], zs[z].blocks), swatch: `var(--z-${z})` })),
-      source: Z.source(T.common.osmSrc(stats.fetchedDate), jamekPodium ? Z.podiumNote(jamekPodium.name, jamekPodium.levels ?? 0, jamekPodium.storeyM ?? 0, jamekPodium.roof) : ''),
+      source: Z.source('', jamekPodium ? Z.podiumNote(jamekPodium.name, jamekPodium.levels ?? 0, jamekPodium.storeyM ?? 0, jamekPodium.roof) : '').trim(),
       view: { target: [-10, 0, -30], azimuth: 0.2, polar: 0.7, distance: 2350 }, // turned so Masjid Jamek is not hidden behind the KL Eco City towers
       mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'zone', precincts: false, landmarks: true },
       pins: nn([
@@ -162,9 +175,9 @@ export function buildChapters(): Chapter[] {
         el.append(s, ds);
       },
     },
-    // ---------------- 01 cover ----------------
+    // ---------------- 02 cover ----------------
     {
-      id: 1, label: T.ch1.label, tab: T.ch1.tab, title: T.ch1.title, lead: T.ch1.lead,
+      id: 2, label: T.ch1.label, tab: T.ch1.tab, title: T.ch1.title, lead: T.ch1.lead,
       stats: [
         { fig: fmt(stats.buildingCount), unit: U.blocks, cap: T.ch1.statBlocks },
         ...(tallestH ? [{ fig: fmt(tallestH), unit: U.m, cap: T.ch1.statTallest(tallestNames) }] : []),
@@ -187,9 +200,9 @@ export function buildChapters(): Chapter[] {
         el.append(s1, s2, s3);
       },
     },
-    // ---------------- 01 location ----------------
+    // ---------------- 03 location ----------------
     {
-      id: 2, label: T.ch2.label, tab: T.ch2.tab, title: T.ch2.title, lead: T.ch2.lead,
+      id: 3, label: T.ch2.label, tab: T.ch2.tab, title: T.ch2.title, lead: T.ch2.lead,
       stats: [
         { fig: fmt(stats.stationCount), unit: U.stations, cap: T.ch2.statStations(nn([kj17, kd01, kb01]).map((s) => (s === kb01 || s === kd01 ? `KTM · ${showCode(s.ref)}` : s.ref)).join(', ')) },
         ...(stats.straightKJ17toKB01 ? [{ fig: fmt(stats.straightKJ17toKB01), unit: U.m, cap: T.ch2.statStraight }] : []),
@@ -222,9 +235,9 @@ export function buildChapters(): Chapter[] {
         el.append(s1, s2);
       },
     },
-    // ---------------- 03 massing ----------------
+    // ---------------- 05 massing ----------------
     {
-      id: 4, label: T.ch4.label, tab: T.ch4.tab, title: T.ch4.title, lead: T.ch4.lead,
+      id: 5, label: T.ch4.label, tab: T.ch4.tab, title: T.ch4.title, lead: T.ch4.lead,
       stats: [
         ...(tallestH ? [{ fig: fmt(tallestH), unit: U.m, cap: T.ch4.statTallest(tallestNames) }] : []),
         { fig: fmt(stats.heightCited), unit: U.blocks, cap: T.ch4.statCited(stats.citedNamed) },
@@ -258,9 +271,9 @@ export function buildChapters(): Chapter[] {
         el.append(s1, s2);
       },
     },
-    // ---------------- 05 connections ----------------
+    // ---------------- 07 connections ----------------
     {
-      id: 6, label: T.ch6.label, tab: T.ch6.tab, title: T.ch6.title, lead: T.ch6.lead(fmt(stats.routeTotalM)),
+      id: 7, label: T.ch6.label, tab: T.ch6.tab, title: T.ch6.title, lead: T.ch6.lead(fmt(stats.routeTotalM)),
       stats: [
         { fig: fmt(stats.routeTotalM), unit: U.m, cap: T.ch6.statLength },
         { fig: `≈${fmt(stats.routeMinutes)}`, unit: U.min, cap: T.ch6.statTime },
@@ -293,9 +306,9 @@ export function buildChapters(): Chapter[] {
         el.append(s1, s2);
       },
     },
-    // ---------------- 06 walking routes ----------------
+    // ---------------- 08 walking routes ----------------
     {
-      id: 7, label: T.ch7.label, tab: T.ch7.tab, title: T.ch7.title, lead: T.ch7.lead,
+      id: 8, label: T.ch7.label, tab: T.ch7.tab, title: T.ch7.title, lead: T.ch7.lead,
       stats: [
         { fig: fmt(walks.length), unit: U.routes, cap: T.ch7.statCount },
         { fig: `${fmt(walkTotals.min)}–${fmt(walkTotals.max)}`, unit: U.m, cap: T.ch7.statRange },
@@ -337,9 +350,9 @@ export function buildChapters(): Chapter[] {
         if (walks[0]) show(walks[0], false);
       },
     },
-    // ---------------- 07 sun & shade ----------------
+    // ---------------- 09 sun & shade ----------------
     {
-      id: 8, label: T.ch8.label, tab: T.ch8.tab, title: T.ch8.title,
+      id: 9, label: T.ch8.label, tab: T.ch8.tab, title: T.ch8.title,
       lead: T.ch8.lead(meta.center.lat.toFixed(1), fmt(noon.jun.pos.altitude, 1), fmt(noon.dec.pos.altitude, 1)),
       stats: (['mar', 'jun', 'dec'] as PresetKey[]).map((k) => ({ fig: fmt(noon[k].pos.altitude, 1), unit: U.deg, cap: T.ch8.statNoon(T.ch8.presetDates[k], T.ch8.dir[noonDir(k)]) })),
       source: T.ch8.source(meta.center.lat.toFixed(4), meta.center.lon.toFixed(4), groundSamples.length),
@@ -430,9 +443,9 @@ export function buildChapters(): Chapter[] {
         update(true);
       },
     },
-    // ---------------- 08 rain & monsoon ----------------
+    // ---------------- 10 rain & monsoon ----------------
     {
-      id: 9, label: T.ch9.label, tab: T.ch9.tab, title: T.ch9.title,
+      id: 10, label: T.ch9.label, tab: T.ch9.tab, title: T.ch9.title,
       lead: T.ch9.lead(fmt(climate.yearPrecipitationMm), fmt(climate.yearPrecipitationDays, 1), T.monthsLong[wettestIdx]),
       stats: [
         { fig: fmt(stats.shelteredFootPct), unit: U.pct, cap: T.ch9.statFoot(stats.shelteredFootM, stats.footwayM) },

@@ -23,7 +23,7 @@ async function open(name, q, { rm = false, panels = null, trains = null } = {}) 
 }
 
 // ---------- analysis ----------
-const page = await open('analysis', 'chapter=2&lang=en');
+const page = await open('analysis', 'chapter=3&lang=en');
 const A = await page.evaluate(() => {
   const w = window.__mv.world; const tr = w.trains; const tracks = w.lrtTracks;
   const res = { tracks: tracks.map((t) => ({ lengthInMap: t.inEnd - t.inStart, stopAt: t.stop - t.inStart, deckAtStop: +t.y[t.stop].toFixed(2), deckMin: +Math.min(...t.y.slice(t.inStart, t.inEnd)).toFixed(2), deckMax: +Math.max(...t.y.slice(t.inStart, t.inEnd)).toFixed(2) })) };
@@ -63,14 +63,14 @@ const run = await page.evaluate(async () => { const tr = window.__mv.world.train
 console.log('clock', JSON.stringify(run));
 await page.click('#btn-trains');
 const tog = await page.evaluate(() => ({ visible: window.__mv.world.trains.group.visible, pressed: document.querySelector('#btn-trains').getAttribute('aria-pressed'), label: document.querySelector('#btn-trains').getAttribute('aria-label'), stored: localStorage.getItem('mv-trains') }));
-await page.evaluate(() => window.__mv.goTo(6)); await sleep(300);
+await page.evaluate(() => window.__mv.goTo(7)); await sleep(300);
 const tog2 = await page.evaluate(() => window.__mv.world.trains.group.visible);
 console.log('toggle', JSON.stringify(tog), 'after chapter change visible:', tog2);
 for (const l of ['zh', 'ms']) { await page.evaluate((l) => window.__mv.setLang(l), l); await sleep(200); console.log('label', l, await page.evaluate(() => document.querySelector('#btn-trains').getAttribute('aria-label'))); }
 await page.close();
 
 // reduced motion: static, one train standing at KJ17
-const rmp = await open('reduced-motion', 'chapter=2&lang=en', { rm: true });
+const rmp = await open('reduced-motion', 'chapter=3&lang=en', { rm: true });
 const rm = await rmp.evaluate(async () => { const tr = window.__mv.world.trains; const a = tr.state(); await new Promise((r) => setTimeout(r, 1200)); const b = tr.state(); return { same: JSON.stringify(a) === JSON.stringify(b), trains: b.map((x) => `${x.track}/${x.cars}car/${x.speedHint}`) }; });
 console.log('reduced motion', JSON.stringify(rm));
 await rmp.close();
@@ -96,24 +96,24 @@ const focusTrain = (sel) => {
   window.__picked = { t, train: x };
 };
 const mapOnly = JSON.stringify({ tp: true, sp: true });
-await shot('trains-4car-viaduct', 'chapter=2&lang=en', `(${focusTrain})({ track: 0, cars: 4, state: 'cruise', near: ${A.curves[0].at}, dist: 170 })`, { panels: mapOnly });
-await shot('trains-2car-viaduct', 'chapter=2&lang=en', `(${focusTrain})({ track: 1, cars: 2, state: 'cruise', near: ${A.curves[1].at}, dist: 120, side: -1 })`, { panels: mapOnly });
-await shot('trains-kj17-station-stop', 'chapter=2&lang=en', `(${focusTrain})({ track: 0, cars: 4, state: 'dwell', dist: 190, polar: 0.95 })`, { panels: mapOnly });
-await shot('trains-kj17-station-stop-dark', 'chapter=2&lang=en&theme=dark', `(${focusTrain})({ track: 0, cars: 4, state: 'dwell', dist: 190, polar: 0.95 })`, { panels: mapOnly });
+await shot('trains-4car-viaduct', 'chapter=3&lang=en', `(${focusTrain})({ track: 0, cars: 4, state: 'cruise', near: ${A.curves[0].at}, dist: 170 })`, { panels: mapOnly });
+await shot('trains-2car-viaduct', 'chapter=3&lang=en', `(${focusTrain})({ track: 1, cars: 2, state: 'cruise', near: ${A.curves[1].at}, dist: 120, side: -1 })`, { panels: mapOnly });
+await shot('trains-kj17-station-stop', 'chapter=3&lang=en', `(${focusTrain})({ track: 0, cars: 4, state: 'dwell', dist: 190, polar: 0.95 })`, { panels: mapOnly });
+await shot('trains-kj17-station-stop-dark', 'chapter=3&lang=en&theme=dark', `(${focusTrain})({ track: 0, cars: 4, state: 'dwell', dist: 190, polar: 0.95 })`, { panels: mapOnly });
 const ctx = `(() => { const w = window.__mv.world; w.trains.debugFreeze(w.trains.dwellTime(0, 0) + 8); })()`;
 const mid = `(() => { const w = window.__mv.world; w.trains.debugFreeze(w.trains.dwellTime(0, 0) + 6); w.flyTo({ target: [-330, 10, -60], azimuth: -1.25, polar: 0.9, distance: 620 }, true); })()`;
-await shot('trains-context', 'chapter=2&lang=en', mid, { panels: mapOnly });
-await shot('trains-context-dark', 'chapter=2&lang=en&theme=dark', mid, { panels: mapOnly });
-await shot('mosque-jamek-close', 'chapter=0&lang=en', `(() => { const w = window.__mv.world; w.controls.minDistance = 40; w.flyTo({ target: [-109, 0, -307], azimuth: 0.2, polar: 0.8, distance: 380 }, true); })()`, { panels: mapOnly });
-await shot('mosque-annur-close', 'chapter=0&lang=en', `(() => { const w = window.__mv.world; w.controls.minDistance = 40; w.flyTo({ target: [-480, 0, -40], azimuth: 0.2, polar: 0.8, distance: 380 }, true); })()`, { panels: mapOnly });
+await shot('trains-context', 'chapter=3&lang=en', mid, { panels: mapOnly });
+await shot('trains-context-dark', 'chapter=3&lang=en&theme=dark', mid, { panels: mapOnly });
+await shot('mosque-jamek-close', 'chapter=1&lang=en', `(() => { const w = window.__mv.world; w.controls.minDistance = 40; w.flyTo({ target: [-109, 0, -307], azimuth: 0.2, polar: 0.8, distance: 380 }, true); })()`, { panels: mapOnly });
+await shot('mosque-annur-close', 'chapter=1&lang=en', `(() => { const w = window.__mv.world; w.controls.minDistance = 40; w.flyTo({ target: [-480, 0, -40], azimuth: 0.2, polar: 0.8, distance: 380 }, true); })()`, { panels: mapOnly });
 await shot('trains-overview-context', 'chapter=0&lang=en', ctx);
 await shot('trains-overview-context-dark', 'chapter=0&lang=en&theme=dark', ctx);
-await shot('trains-location-context-map-only', 'chapter=2&lang=en', ctx, { panels: mapOnly });
-await shot('00-overview-mosques', 'chapter=0&lang=en', ctx);
-await shot('00-overview-mosques-zh', 'chapter=0&lang=zh', ctx);
-await shot('00-overview-mosques-ms-dark', 'chapter=0&lang=ms&theme=dark', ctx);
+await shot('trains-location-context-map-only', 'chapter=3&lang=en', ctx, { panels: mapOnly });
+await shot('01-landmarks-mosques', 'chapter=1&lang=en', ctx);
+await shot('01-landmarks-mosques-zh', 'chapter=1&lang=zh', ctx);
+await shot('01-landmarks-mosques-ms-dark', 'chapter=1&lang=ms&theme=dark', ctx);
 // mosque pins: on screen and not hidden under a panel?
-const mp = await open('mosque-pins', 'chapter=0&lang=en'); await sleep(1500);
+const mp = await open('mosque-pins', 'chapter=1&lang=en'); await sleep(1500);
 console.log('mosque pins', JSON.stringify(await mp.evaluate(() => [...document.querySelectorAll('.pin')].filter((p) => /Masjid/.test(p.textContent)).map((p) => ({ text: p.querySelector('.t').textContent, occluded: p.classList.contains('occluded'), opacity: getComputedStyle(p).opacity, rect: (() => { const r = p.querySelector('.tag').getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width)]; })() })))));
 await mp.close();
 

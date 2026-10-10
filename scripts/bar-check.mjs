@@ -61,9 +61,9 @@ for (const [w, h] of [[1920, 1080], [1440, 900]]) for (const lang of ['en', 'zh'
 }
 // 3. screenshots: full view + bar crop
 const shots = [
-  ['bar-en-light', 'chapter=0&lang=en'], ['bar-zh-light', 'chapter=8&lang=zh'], ['bar-ms-1440x900', 'chapter=6&lang=ms', { w: 1440, h: 900 }],
-  ['bar-en-dark', 'chapter=4&lang=en&theme=dark', { dark: true }], ['bar-zh-dark', 'chapter=0&lang=zh&theme=dark', { dark: true }],
-  ['bar-en-mobile-390x844', 'chapter=2&lang=en', { w: 390, h: 844, dpr: 2 }],
+  ['bar-en-light', 'chapter=0&lang=en'], ['bar-zh-light', 'chapter=9&lang=zh'], ['bar-ms-1440x900', 'chapter=7&lang=ms', { w: 1440, h: 900 }],
+  ['bar-en-dark', 'chapter=5&lang=en&theme=dark', { dark: true }], ['bar-zh-dark', 'chapter=0&lang=zh&theme=dark', { dark: true }],
+  ['bar-en-mobile-390x844', 'chapter=3&lang=en', { w: 390, h: 844, dpr: 2 }],
 ];
 for (const [name, q, o = {}] of shots) {
   const p = await open(name, q, o); await sleep(2000);

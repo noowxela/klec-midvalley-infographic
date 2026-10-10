@@ -49,7 +49,7 @@ for (const lang of ['en', 'zh', 'ms']) {
     const r = await p.evaluate(probe);
     const ok = r.visible && r.inView && r.onTop && !r.overlaps.length && osmOk(r, id, lang) && r.text === '© OpenStreetMap contributors';
     if (!ok) bad.push(`${lang} #${id} ${JSON.stringify(r)}`);
-    if (id === 0) console.log(lang, 'overview data note', JSON.stringify(await p.evaluate(() => ({ data: document.querySelector('.ov-data')?.textContent, links: [...document.querySelectorAll('.ov-data a')].map((a) => `${a.href} ${a.target} ${a.rel}`), sideScroll: (() => { const s = document.getElementById('side-panel'); return s.scrollHeight > s.clientHeight + 1; })(), sideBottom: Math.round(document.getElementById('side-panel').getBoundingClientRect().bottom) }))));
+    if (id === 1) console.log(lang, 'landmarks data note', JSON.stringify(await p.evaluate(() => ({ data: document.querySelector('.ov-data')?.textContent, links: [...document.querySelectorAll('.ov-data a')].map((a) => `${a.href} ${a.target} ${a.rel}`), sideScroll: (() => { const s = document.getElementById('side-panel'); return s.scrollHeight > s.clientHeight + 1; })(), sideBottom: Math.round(document.getElementById('side-panel').getBoundingClientRect().bottom) }))));
   }
 }
 await p.close();
@@ -59,11 +59,11 @@ console.log(bad.length ? 'BAD\n' + bad.join('\n') : 'credit OK on every chapter 
 const collapsed = JSON.stringify({ tp: true, sp: true });
 const shots = [
   ['00-overview-en-panels-open', 'chapter=0&lang=en'], ['00-overview-en-panels-collapsed', 'chapter=0&lang=en', { panels: collapsed }],
-  ['08-sun-en-panels-open', 'chapter=8&lang=en'], ['08-sun-en-panels-collapsed', 'chapter=8&lang=en', { panels: collapsed }],
+  ['09-sun-en-panels-open', 'chapter=9&lang=en'], ['09-sun-en-panels-collapsed', 'chapter=9&lang=en', { panels: collapsed }],
   ['00-overview-zh-panels-open', 'chapter=0&lang=zh'], ['00-overview-zh-panels-collapsed', 'chapter=0&lang=zh', { panels: collapsed }],
-  ['08-sun-zh-panels-open', 'chapter=8&lang=zh'], ['04-massing-ms-dark', 'chapter=4&lang=ms&theme=dark'],
+  ['09-sun-zh-panels-open', 'chapter=9&lang=zh'], ['05-massing-ms-dark', 'chapter=5&lang=ms&theme=dark'],
   ['00-overview-en-1440x900', 'chapter=0&lang=en', { w: 1440, h: 900 }],
-  ['00-overview-en-mobile-390x844', 'chapter=0&lang=en', { w: 390, h: 844, dpr: 2 }], ['08-sun-en-mobile-landscape-844x390-dark', 'chapter=8&lang=en&theme=dark', { w: 844, h: 390, dpr: 2 }],
+  ['00-overview-en-mobile-390x844', 'chapter=0&lang=en', { w: 390, h: 844, dpr: 2 }], ['09-sun-en-mobile-landscape-844x390-dark', 'chapter=9&lang=en&theme=dark', { w: 844, h: 390, dpr: 2 }],
 ];
 for (const [name, q, o = {}] of shots) {
   const pg = await open(name, q, o); await sleep(2200);

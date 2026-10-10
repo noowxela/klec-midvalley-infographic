@@ -52,7 +52,8 @@ const probe = () => {
   const hint = document.querySelector('#text-panel .hint')?.textContent ?? null;
   const tp = document.querySelector('#text-panel').getBoundingClientRect(), bar = document.querySelector('.bottom-bar').getBoundingClientRect(), sp = document.querySelector('#side-panel');
   const fit = { textBottom: Math.round(tp.bottom), barTop: Math.round(bar.top), sideScroll: sp.scrollHeight > sp.clientHeight + 1 };
-  return { vars, pins, badges, legend, tags: tags.map((t) => t.t), overlaps, pills, kb, hint, fit, chapter: window.__mv?.current ?? null };
+  const side = { n: document.getElementById('side-panel').childElementCount, toggle: getComputedStyle(document.getElementById('sp-toggle')).display };
+  return { side, vars, pins, badges, legend, tags: tags.map((t) => t.t), overlaps, pills, kb, hint, fit, chapter: window.__mv?.current ?? null };
 };
 const check = (name, s) => {
   for (const [k, v] of Object.entries(OFFICIAL)) if (s.vars[k] !== v) bad.push(`${name} ${k}=${s.vars[k]}`);
@@ -66,10 +67,11 @@ const check = (name, s) => {
   if (s.kb.length) bad.push(`${name} user-facing KB01/KD01: ${s.kb.join(', ')}`);
   // legends: KD / KB line letters are fine only with our station's stop number (KD · 16, KB · 10)
   for (const [t] of s.legend) if (/\bK[BD]\b(?! · \d)/.test(t)) bad.push(`${name} legend line letters without stop number: ${t}`);
-  if (/^01-/.test(name)) for (const c of ['KD · 16', 'KB · 10']) if (!s.legend.some(([t]) => t.includes(c))) bad.push(`${name} legend missing ${c}`);
-  // 00 landmarks: the Mid Valley Megamall label is shown; no 'Mid Valley City' landmark label
-  if (/^00-/.test(name)) { if (!s.tags.some((t) => t.startsWith('Mid Valley Megamall'))) bad.push(`${name} no visible Mid Valley Megamall label`); if (s.tags.some((t) => /Mid Valley City/.test(t))) bad.push(`${name} Mid Valley City label on 00`); }
-  if (/^01-/.test(name)) for (const c of ['KJ17', 'KTM · 16', 'KTM · 10']) if (!s.tags.some((t) => t.includes(c))) bad.push(`${name} no visible ${c} label`);
+  if (/^02-/.test(name)) for (const c of ['KD · 16', 'KB · 10']) if (!s.legend.some(([t]) => t.includes(c))) bad.push(`${name} legend missing ${c}`);
+  // 01 Landmarks: the Mid Valley Megamall label is shown; no 'Mid Valley City' landmark label
+  if (/^00-/.test(name) && (s.side.n || s.side.toggle !== 'none')) bad.push(`${name} side panel on 00 (${JSON.stringify(s.side)})`);
+  if (/^01-/.test(name)) { if (!s.tags.some((t) => t.startsWith('Mid Valley Megamall'))) bad.push(`${name} no visible Mid Valley Megamall label`); if (s.tags.some((t) => /Mid Valley City/.test(t))) bad.push(`${name} Mid Valley City label on 01`); }
+  if (/^02-/.test(name)) for (const c of ['KJ17', 'KTM · 16', 'KTM · 10']) if (!s.tags.some((t) => t.includes(c))) bad.push(`${name} no visible ${c} label`);
   for (const b of s.badges) { if (BADGE[b.code] && b.bg !== BADGE[b.code]) bad.push(`${name} badge ${b.code} ${b.bg}`); if (b.code === '—') bad.push(`${name} badge without code`); }
 };
 for (const [name, q, opt] of [
@@ -78,13 +80,17 @@ for (const [name, q, opt] of [
   ['00-overview-ms', 'chapter=0&lang=ms', {}],
   ['00-overview-zh-1440x900', 'chapter=0&lang=zh', { w: 1440, h: 900 }],
   ['00-overview-ms-1440x900-dark', 'chapter=0&lang=ms', { w: 1440, h: 900, dark: true }],
-  ['01-transit-hub-en', 'chapter=1&lang=en', {}],
-  ['02-location-en', 'chapter=2&lang=en', {}],
-  ['01-transit-hub-zh', 'chapter=1&lang=zh', {}],
-  ['01-transit-hub-ms', 'chapter=1&lang=ms', {}],
-  ['01-transit-hub-en-1440x900', 'chapter=1&lang=en', { w: 1440, h: 900 }],
-  ['01-transit-hub-en-dark', 'chapter=1&lang=en', { dark: true }],
-  ['02-location-zh-dark', 'chapter=2&lang=zh', { dark: true }],
+  ['01-landmarks-en', 'chapter=1&lang=en', {}],
+  ['01-landmarks-zh', 'chapter=1&lang=zh', {}],
+  ['01-landmarks-ms', 'chapter=1&lang=ms', {}],
+  ['01-landmarks-ms-1440x900', 'chapter=1&lang=ms', { w: 1440, h: 900 }],
+  ['02-transit-hub-en', 'chapter=2&lang=en', {}],
+  ['03-location-en', 'chapter=3&lang=en', {}],
+  ['02-transit-hub-zh', 'chapter=2&lang=zh', {}],
+  ['02-transit-hub-ms', 'chapter=2&lang=ms', {}],
+  ['02-transit-hub-en-1440x900', 'chapter=2&lang=en', { w: 1440, h: 900 }],
+  ['02-transit-hub-en-dark', 'chapter=2&lang=en', { dark: true }],
+  ['03-location-zh-dark', 'chapter=3&lang=zh', { dark: true }],
 ]) {
   const p = await open(name, q, opt);
   const s = await p.evaluate(probe); check(name, s);
@@ -93,7 +99,7 @@ for (const [name, q, opt] of [
   await p.close();
 }
 // pill close-ups: map labels + legend (01, 3x) and the station list (02, 3x), light and dark
-for (const [name, q, dark] of [['01-en', 'chapter=1&lang=en', false], ['01-en-dark', 'chapter=1&lang=en', true], ['02-en', 'chapter=2&lang=en', false]]) {
+for (const [name, q, dark] of [['02-en', 'chapter=2&lang=en', false], ['02-en-dark', 'chapter=2&lang=en', true], ['03-en', 'chapter=3&lang=en', false]]) {
   const p = await open(`crop-${name}`, q, { dpr: 3, dark });
   const boxes = await p.evaluate(() => [...document.querySelectorAll('.pin.station .tag, .side-panel .legend-row, .station-list li, .toggle')].filter((e) => e.querySelector('svg.line-pill')).map((e) => { const r = e.getBoundingClientRect(); return { x: r.left - 6, y: r.top - 6, width: r.width + 12, height: r.height + 12, k: e.closest('.pin') ? 'pin' : e.className }; }));
   let i = 0; for (const b of boxes) await p.screenshot({ path: `shots-rail/pill-${name}-${b.k.replace(/\W+/g, '')}-${i++}.png`, clip: b });
@@ -101,7 +107,7 @@ for (const [name, q, dark] of [['01-en', 'chapter=1&lang=en', false], ['01-en-da
 }
 // standalone pills, large, for the side-by-side with Alex's reference icons
 {
-  const p = await open('pills-large', 'chapter=1&lang=en', { dpr: 2 });
+  const p = await open('pills-large', 'chapter=2&lang=en', { dpr: 2 });
   const html = await p.evaluate(() => [1, 2, 5].map((n) => { const s = [...document.querySelectorAll('.side-panel svg.line-pill')].find((x) => x.querySelector('text').textContent === String(n)).cloneNode(true); const v = n === 5 ? '--c-lrt' : `--c-ktm${n}`; const col = getComputedStyle(document.documentElement).getPropertyValue(v).trim(); s.innerHTML = s.innerHTML.replaceAll(`var(${v})`, col); s.setAttribute('style', 'height:48px;width:92px'); return s.outerHTML; }));
   await p.setContent(`<body style="margin:0;background:#f2f4f6">${html.map((x, i) => `<div id="p${i + 1}" style="display:inline-block;padding:16px 10px">${x}</div>`).join('')}</body>`);
   for (const n of [1, 2, 3]) await (await p.$(`#p${n}`)).screenshot({ path: `shots-rail/pill-large-${[1, 2, 5][n - 1]}.png` });

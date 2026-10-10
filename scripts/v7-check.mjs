@@ -58,15 +58,15 @@ async function shot(name, q, setup, opts = {}) {
 }
 const mapOnly = JSON.stringify({ tp: true, sp: true });
 const close = `(() => { const w = window.__mv.world; w.trains.debugFreeze(w.trains.dwellTime(0, 0) + 8); w.controls.minDistance = 40; w.flyTo({ target: [-100, 14, -305], azimuth: 0.55, polar: 1.02, distance: 230 }, true); })()`;
-for (const [n, q] of [['mosque-on-car-park-close-light', 'chapter=0&lang=en&theme=light'], ['mosque-on-car-park-close-dark', 'chapter=0&lang=en&theme=dark']]) await (await shot(n, q, close, { panels: mapOnly })).close();
+for (const [n, q] of [['mosque-on-car-park-close-light', 'chapter=1&lang=en&theme=light'], ['mosque-on-car-park-close-dark', 'chapter=1&lang=en&theme=dark']]) await (await shot(n, q, close, { panels: mapOnly })).close();
 const ctx = `(() => { const w = window.__mv.world; w.trains.debugFreeze(w.trains.dwellTime(0, 0) + 8); })()`;
-for (const [n, q] of [['00-overview-en', 'chapter=0&lang=en'], ['00-overview-zh', 'chapter=0&lang=zh'], ['00-overview-ms-dark', 'chapter=0&lang=ms&theme=dark']]) {
+for (const [n, q] of [['01-landmarks-en', 'chapter=1&lang=en'], ['01-landmarks-zh', 'chapter=1&lang=zh'], ['01-landmarks-ms-dark', 'chapter=1&lang=ms&theme=dark']]) {
   const p = await shot(n, q, ctx);
-  if (n === '00-overview-en') console.log('pins', JSON.stringify(await p.evaluate(() => [...document.querySelectorAll('.pin')].filter((x) => /Masjid/.test(x.textContent)).map((x) => ({ t: x.textContent.trim(), occluded: x.classList.contains('occluded') })))), '\nlegend', JSON.stringify(await p.evaluate(() => [...document.querySelectorAll('.ov-legend-row')].map((r) => r.textContent))));
+  if (n === '01-landmarks-en') console.log('pins', JSON.stringify(await p.evaluate(() => [...document.querySelectorAll('.pin')].filter((x) => /Masjid/.test(x.textContent)).map((x) => ({ t: x.textContent.trim(), occluded: x.classList.contains('occluded') })))), '\nlegend', JSON.stringify(await p.evaluate(() => [...document.querySelectorAll('.ov-legend-row')].map((r) => r.textContent))));
   await p.close();
 }
-// ch08 shadows around the mosque (late afternoon, June) to show the raised block casting its shadow
-const sh = await shot('08-shadows-mosque-on-car-park', 'chapter=8&lang=en', `(() => { document.querySelector('.seg button[data-k="jun"]').click(); const i = document.getElementById('sun-time'); i.value = '1020'; i.dispatchEvent(new Event('change')); const w = window.__mv.world; w.controls.minDistance = 40; w.flyTo({ target: [-100, 10, -300], azimuth: 0.4, polar: 0.85, distance: 420 }, true); })()`, { panels: mapOnly });
+// ch09 shadows around the mosque (late afternoon, June) to show the raised block casting its shadow
+const sh = await shot('09-shadows-mosque-on-car-park', 'chapter=9&lang=en', `(() => { document.querySelector('.seg button[data-k="jun"]').click(); const i = document.getElementById('sun-time'); i.value = '1020'; i.dispatchEvent(new Event('change')); const w = window.__mv.world; w.controls.minDistance = 40; w.flyTo({ target: [-100, 10, -300], azimuth: 0.4, polar: 0.85, distance: 420 }, true); })()`, { panels: mapOnly });
 await sh.close();
 console.log(errors.length ? errors.join('\n') : 'No console errors or warnings (v7).');
 await browser.close();
