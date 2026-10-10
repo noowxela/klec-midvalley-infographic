@@ -2,11 +2,12 @@ node_modules
 dist
 .tmp
 .DS_Store
+# screenshot / check output
 shots/
-shots-v4/
-shots-v7/
-shots-credit/
-shots-bar/
-shots-rail/
-shots-compass/
-shots-orbit/
+shots-*/
+# logs
+*.log
+npm-debug.log*
+# local env files
+.env
+.env.*
