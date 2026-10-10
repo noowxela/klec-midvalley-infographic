@@ -1,0 +1,172 @@
+import '@fontsource/ibm-plex-sans/400.css';
+import '@fontsource/ibm-plex-sans/600.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '@fontsource/ibm-plex-mono/600.css';
+import './styles.css';
+import * as THREE from 'three';
+import { World, DEFAULT_MODE, prefersReducedMotion, type View } from './scene';
+import { chapters, type Chapter, type PinDef } from './chapters';
+
+const $ = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector(sel) as T;
+const stage = $('#stage');
+const params = new URLSearchParams(location.search);
+
+// ---------- theme (before the scene reads CSS variables) ----------
+const storedTheme = params.get('theme') || localStorage.getItem('mv-theme');
+if (storedTheme === 'dark' || storedTheme === 'light') document.documentElement.dataset.theme = storedTheme;
+
+// ---------- fit the 1920x1080 stage to the window ----------
+const world = new World($('#gl'));
+function fit() {
+  const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  stage.style.transform = `translate(${(window.innerWidth - 1920 * s) / 2}px, ${(window.innerHeight - 1080 * s) / 2}px) scale(${s})`;
+  world.setPixelRatio(s);
+}
+window.addEventListener('resize', fit); fit();
+
+const textPanel = $('#text-panel'); const sidePanel = $('#side-panel');
+
+// ---------- pins ----------
+const pinLayer = $('#pins');
+interface PinEl { def: PinDef; el: HTMLElement; tag: HTMLElement; stem: HTMLElement; pos: THREE.Vector3; w: number; h: number }
+let pinEls: PinEl[] = [];
+function setPins(defs: PinDef[]) {
+  for (const p of pinEls) { p.el.classList.add('hidden'); const el = p.el; setTimeout(() => el.remove(), 400); }
+  pinEls = defs.map((def) => {
+    const el = document.createElement('div'); el.className = `pin ${def.kind} hidden`;
+    el.innerHTML = `<div class="stem"></div><div class="dot"></div><div class="tag"${def.color ? ` style="background:${def.color}"` : ''}><div class="t"></div>${def.value ? '<div class="v"></div>' : ''}</div>`;
+    (el.querySelector('.t') as HTMLElement).textContent = def.title;
+    if (def.value) (el.querySelector('.v') as HTMLElement).textContent = def.value;
+    if (def.color) (el.querySelector('.dot') as HTMLElement).style.background = def.color;
+    pinLayer.append(el);
+    const tag = el.querySelector('.tag') as HTMLElement;
+    return { def, el, tag, stem: el.querySelector('.stem') as HTMLElement, pos: new THREE.Vector3(...def.at), w: 0, h: 0 };
+  });
+  requestAnimationFrame(() => { for (const p of pinEls) { p.w = p.tag.offsetWidth; p.h = p.tag.offsetHeight; p.el.classList.remove('hidden'); } });
+}
+const rectOf = (el: HTMLElement) => ({ x0: el.offsetLeft, y0: el.offsetTop, x1: el.offsetLeft + el.offsetWidth, y1: el.offsetTop + el.offsetHeight });
+function updatePins() {
+  const placed: { x0: number; x1: number; y0: number; y1: number }[] = [];
+  const panels = [rectOf(textPanel), ...(sidePanel.childElementCount ? [rectOf(sidePanel)] : [])];
+  const items = pinEls.map((p) => ({ p, s: world.project(p.pos) })).sort((a, b) => b.s.y - a.s.y);
+  const side = sidePanel.childElementCount ? rectOf(sidePanel) : null;
+  for (const { p, s } of items) {
+    if (!s.visible) { p.el.style.opacity = '0'; continue; }
+    p.el.style.opacity = '';
+    // flip the tag to the left of its stem when it would run under the side panel
+    const flip = !!side && s.x + p.w > side.x0 - 8 && s.x - p.w > 0;
+    const x0 = flip ? s.x - p.w : s.x; const x1 = flip ? s.x : s.x + p.w;
+    let stem = p.def.kind === 'minor' ? 18 : 34;
+    for (let k = 0; k < 8; k++) {
+      const box = { x0: x0 - 2, x1: x1 + 2, y0: s.y - stem - p.h - 2, y1: s.y - stem + 2 };
+      if (!placed.some((b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0)) { placed.push(box); break; }
+      stem += 30;
+    }
+    const top = s.y - stem - p.h;
+    p.el.classList.toggle('occluded', panels.some((r) => x0 < r.x1 && x1 > r.x0 && top < r.y1 && s.y > r.y0));
+    p.el.style.transform = `translate(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px)`;
+    p.stem.style.height = `${stem}px`; p.tag.style.bottom = `${stem}px`;
+    p.tag.style.left = flip ? `${-p.w + 1}px` : '-1px';
+  }
+}
+
+// ---------- compass & scale bar ----------
+const needle = $('#north-needle'); const scaleBar = $('#scale-bar'); const scaleLabel = $('#scale-label');
+function updateFurniture() {
+  needle.setAttribute('transform', `rotate(${((world.northAngle() * 180) / Math.PI).toFixed(1)})`);
+  const ppm = world.pxPerMetre();
+  const nice = [10, 20, 25, 50, 100, 200, 250, 500, 1000].find((m) => m * ppm >= 90) ?? 1000;
+  scaleBar.style.width = `${(nice * ppm).toFixed(1)}px`; scaleLabel.textContent = `${nice} m`;
+}
+world.onFrame.push(updatePins, updateFurniture);
+
+// ---------- chapters ----------
+const tabs = $('#chapter-tabs'); const progressFill = $('#progress-fill');
+let current = -1;
+const pad = (n: number) => String(n).padStart(2, '0');
+chapters.forEach((c, i) => {
+  const b = document.createElement('button'); b.className = 'tab'; b.innerHTML = `<span class="n">${pad(c.id)}</span>${c.label.split(' · ')[0]}`;
+  b.addEventListener('click', () => { stopAutoplay(); goTo(i); }); tabs.append(b);
+});
+
+function renderText(c: Chapter) {
+  const stats = c.stats.map((s) => `<div class="stat"><div class="fig">${s.fig}<span class="unit">${s.unit ?? ''}</span></div><div class="cap">${s.cap}</div></div>`).join('');
+  textPanel.innerHTML = `
+    <div class="chapter-label"><span class="num">${pad(c.id)}</span><span class="rule"></span><span>${c.label}</span></div>
+    <h1 class="headline"><span>${c.title[0]}</span><span>${c.title[1]}</span></h1>
+    <p class="lead">${c.lead}</p>
+    <div class="stats">${stats}</div>
+    ${c.hint ? `<div class="hint">${c.hint}</div>` : ''}
+    <div class="source">${c.source}</div>`;
+}
+function goTo(i: number, instant = false) {
+  i = (i + chapters.length) % chapters.length; if (i === current) return;
+  current = i; const c = chapters[i];
+  [...tabs.children].forEach((t, k) => (k === i ? t.setAttribute('aria-current', 'step') : t.removeAttribute('aria-current')));
+  progressFill.style.width = `${((i + 1) / chapters.length) * 100}%`;
+  const swap = () => {
+    renderText(c); sidePanel.innerHTML = '';
+    world.setMode({ ...structuredClone(DEFAULT_MODE), ...c.mode });
+    c.panel?.(sidePanel, world, { flyTo: (v: View) => world.flyTo(v), chapterView: c.view });
+    textPanel.classList.remove('out'); sidePanel.classList.remove('out');
+  };
+  setPins(c.pins);
+  world.flyTo(c.view, instant || prefersReducedMotion());
+  if (instant || prefersReducedMotion()) swap();
+  else { textPanel.classList.add('out'); sidePanel.classList.add('out'); setTimeout(swap, 380); }
+  history.replaceState(null, '', `#${pad(c.id)}`);
+  chime();
+  if (autoplay) autoStart = performance.now();
+}
+
+// ---------- keyboard ----------
+window.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const t = e.target as HTMLElement | null;
+  const inForm = !!t?.closest('input, select, textarea, [contenteditable="true"]');
+  if (inForm) return; // sliders/inputs keep their own arrow & space behaviour
+  const onButton = !!t?.closest('button, [role="button"]');
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !onButton)) { e.preventDefault(); stopAutoplay(); goTo(current + 1); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); stopAutoplay(); goTo(current - 1); }
+  else if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+  else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+});
+
+// ---------- top buttons ----------
+const btnAuto = $('#btn-autoplay'), btnSound = $('#btn-sound'), btnTheme = $('#btn-theme'), btnFs = $('#btn-fullscreen');
+let autoplay = false; let autoStart = 0; const AUTO_MS = 10000; const autoFill = $('#autoplay-fill');
+function stopAutoplay() { autoplay = false; btnAuto.setAttribute('aria-pressed', 'false'); btnAuto.querySelector('.ico')!.textContent = '▶'; autoFill.style.width = '0'; }
+btnAuto.addEventListener('click', () => { autoplay = !autoplay; btnAuto.setAttribute('aria-pressed', String(autoplay)); btnAuto.querySelector('.ico')!.textContent = autoplay ? '❚❚' : '▶'; autoStart = performance.now(); if (!autoplay) autoFill.style.width = '0'; });
+(function tick() {
+  if (autoplay) { const k = (performance.now() - autoStart) / AUTO_MS; autoFill.style.width = `${Math.min(1, k) * 100}%`; if (k >= 1) goTo(current + 1); }
+  requestAnimationFrame(tick);
+})();
+world.onUserInteract = () => stopAutoplay();
+
+let sound = false; let actx: AudioContext | null = null;
+btnSound.addEventListener('click', () => { sound = !sound; btnSound.setAttribute('aria-pressed', String(sound)); if (sound) { actx ??= new AudioContext(); chime(); } });
+function chime() { // a soft synthesized two-note chime; no audio files
+  if (!sound || !actx) return; const t = actx.currentTime;
+  for (const [f, d] of [[660, 0], [990, 0.09]]) {
+    const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(0.05, t + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.6);
+    o.connect(g).connect(actx.destination); o.start(t + d); o.stop(t + d + 0.65);
+  }
+}
+const syncThemeBtn = () => btnTheme.setAttribute('aria-pressed', String(document.documentElement.dataset.theme === 'dark'));
+btnTheme.addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next; localStorage.setItem('mv-theme', next); syncThemeBtn();
+  world.applyTheme(); world.setMode({}); // keep the current chapter's mode
+});
+syncThemeBtn();
+function toggleFullscreen() { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.().catch(() => {}); }
+btnFs.addEventListener('click', toggleFullscreen);
+$('#btn-reset').addEventListener('click', () => world.flyTo(chapters[current].view));
+
+// ---------- start ----------
+const fromHash = parseInt((params.get('chapter') ?? location.hash.slice(1)) || '0', 10);
+const startIdx = Math.max(0, chapters.findIndex((c) => c.id === fromHash));
+goTo(startIdx, true);
+(window as unknown as { __mv: unknown }).__mv = { ready: true, goTo: (id: number) => goTo(chapters.findIndex((c) => c.id === id), true), chapters: chapters.map((c) => c.id) };
