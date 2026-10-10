@@ -19,8 +19,8 @@ async function open(name, q, w = 1920, h = 1080, rm = false) {
   page.on('requestfailed', (r) => errors.push(`[${name}] requestfailed: ${r.url()} ${r.failure()?.errorText}`));
   await page.evaluateOnNewDocument(() => localStorage.removeItem('mv-panels'));
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
-  await page.goto(`${base}?${q}`, { waitUntil: 'networkidle0' });
-  await page.waitForFunction(() => window.__mv?.ready === true, { timeout: 20000 });
+  await page.goto(`${base}?skipLoader=1&${q}`, { waitUntil: 'networkidle0' });
+  await page.waitForFunction(() => window.__mv?.revealed === true, { timeout: 20000 });
   return page;
 }
 const shots = [

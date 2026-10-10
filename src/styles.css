@@ -36,6 +36,7 @@
   --z-gardens: #d6bf8c;
   --z-midvalley: #9aa6bd;
   --landmark: #4a4743;
+  --podium: #d3cdc0; /* block a landmark stands on (car park under Masjid Jamek) */
   --train-body: #f4f3ef;
   --train-window: #7d8791;
   --train-accent: #c97aa3;
@@ -84,6 +85,7 @@
   --z-gardens: #a08a58;
   --z-midvalley: #6b7891;
   --landmark: #e6e0cf;
+  --podium: #57534b;
   --train-body: #a9a8a2;
   --train-window: #3b4048;
   --train-accent: #a2557e;

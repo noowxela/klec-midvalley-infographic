@@ -258,7 +258,7 @@ onLangChange(() => {
 const fromHash = parseInt((params.get('chapter') ?? location.hash.slice(1)) || '0', 10);
 const startIdx = Math.max(0, chapters.findIndex((c) => c.id === fromHash));
 goTo(startIdx, true);
-const mv = { ready: false, goTo: (id: number) => goTo(chapters.findIndex((c) => c.id === id), true), chapters: chapters.map((c) => c.id), setLang: (l: Lang) => setLang(l), lang: getLang, world };
+const mv = { ready: false, revealed: false, goTo: (id: number) => goTo(chapters.findIndex((c) => c.id === id), true), chapters: chapters.map((c) => c.id), setLang: (l: Lang) => setLang(l), lang: getLang, world };
 (window as unknown as { __mv: unknown }).__mv = mv;
 
 // ---------- loader hand-off: reveal only when fonts, scene, camera and first frames are ready ----------
@@ -276,6 +276,7 @@ async function finishBoot() {
   await framesRendered(3);
   loader.step('frame', 'done');
   mv.ready = true;
+  loader.onReveal(() => { mv.revealed = true; });
   loader.ready();
 }
 void finishBoot();

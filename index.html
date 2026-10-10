@@ -23,26 +23,24 @@
           zh: { title: '谷中城 – ABDULLAH HUKUM', sub: '场地分析 · 加载中', subErr: '场地分析', app: '应用程序', data: '地图数据（OpenStreetMap）', scene: '三维场景', fonts: '字体', frame: '首帧', slow: '加载时间比平常更长。', reload: '重新加载', webglTitle: '无法启动三维视图', webgl: '本页面需要 WebGL，但此浏览器中 WebGL 不可用或已关闭。请开启硬件加速、换用其他浏览器，或重新加载。', initTitle: '加载失败', init: '页面启动时出错，请重新加载。' },
           ms: { title: 'MID VALLEY – ABDULLAH HUKUM', sub: 'ANALISIS TAPAK · MEMUATKAN', subErr: 'ANALISIS TAPAK', app: 'Aplikasi', data: 'Data peta (OpenStreetMap)', scene: 'Adegan 3D', fonts: 'Fon', frame: 'Bingkai pertama', slow: 'Ini mengambil masa lebih lama daripada biasa.', reload: 'Muat semula', webglTitle: 'Paparan 3D tidak dapat dimulakan', webgl: 'Halaman ini memerlukan WebGL, yang tidak tersedia atau dimatikan dalam pelayar ini. Cuba hidupkan pecutan perkakasan, gunakan pelayar lain, atau muat semula.', initTitle: 'Gagal dimuatkan', init: 'Berlaku ralat semasa memulakan halaman. Sila muat semula.' }
         }[lg];
-        var STEPS = ['app', 'data', 'scene', 'fonts', 'frame'];
-        var L = window.__loader = { strings: S, isReady: false, failed: false, t0: Date.now(),
+        // The loader deliberately stays up for at least MIN_LOADER_MS after navigation start so a load is clearly
+        // visible (3 s under prefers-reduced-motion; ?skipLoader=1 bypasses it for dev / screenshots). It hides at
+        // max(app truly ready, minimum). Visual progress is paced across the minimum: it follows elapsed time but
+        // never runs ahead of the real steps, and a step only shows as done when it is really done AND the paced
+        // bar has reached it. The slow-load note appears only if the app is still not ready after SLOW_MS.
+        var MIN_LOADER_MS = 6000, MIN_LOADER_MS_REDUCED = 3000, SLOW_MS = 12000;
+        var skip = /^(1|true|yes)$/.test(q.get('skipLoader') || '');
+        var MIN = skip ? 0 : rm ? MIN_LOADER_MS_REDUCED : MIN_LOADER_MS;
+        var now = function () { return window.performance && performance.now ? performance.now() : Date.now() - L.t0; };
+        var STEPS = ['app', 'data', 'scene', 'fonts', 'frame'], N = STEPS.length;
+        var real = { app: 'active' }, appReady = false, timer = 0, revealCb = [];
+        var L = window.__loader = { strings: S, isReady: false, failed: false, t0: Date.now(), minMs: MIN, revealedAt: null,
           el: function () { return document.getElementById('loader'); },
-          step: function (id, state) {
-            var el = L.el(); if (!el || L.isReady) return;
-            var li = el.querySelector('[data-step="' + id + '"]'); if (!li) return;
-            li.className = state;
-            var done = el.querySelectorAll('.ld-steps .done').length;
-            el.querySelector('.ld-fill').style.width = Math.round((done / STEPS.length) * 100) + '%';
-          },
-          ready: function () {
-            var el = L.el(); if (L.isReady || L.failed) return; L.isReady = true;
-            d.classList.remove('mv-loading');
-            if (!el) return;
-            el.querySelector('.ld-fill').style.width = '100%';
-            el.classList.add('is-done');
-            setTimeout(function () { el.hidden = true; el.remove(); }, rm ? 0 : 520);
-          },
+          step: function (id, state) { if (L.isReady || L.failed) return; real[id] = state; render(); },
+          ready: function () { if (L.isReady || L.failed || appReady) return; appReady = true; render(); },
+          onReveal: function (cb) { if (L.isReady) cb(); else revealCb.push(cb); },
           error: function (kind, detail) {
-            var el = L.el(); if (L.isReady || !el) return; L.failed = true;
+            var el = L.el(); if (L.isReady || !el) return; L.failed = true; clearTimeout(timer);
             el.classList.add('is-error');
             el.querySelector('#ld-sub').textContent = S.subErr;
             el.querySelector('#ld-err-title').textContent = kind === 'webgl' ? S.webglTitle : S.initTitle;
@@ -51,8 +49,37 @@
             el.querySelector('#ld-err-reload').focus();
           }
         };
-        // never trap the user: note after 8 s; JS errors before ready show the error state
-        setTimeout(function () { var el = L.el(); if (el && !L.isReady && !L.failed) el.classList.add('is-slow'); }, 8000);
+        function reveal() {
+          var el = L.el(); L.isReady = true; L.revealedAt = now(); clearTimeout(timer);
+          d.classList.remove('mv-loading');
+          if (el) {
+            el.querySelector('.ld-fill').style.width = '100%';
+            [].forEach.call(el.querySelectorAll('.ld-steps li'), function (li) { li.className = 'done'; });
+            el.classList.add('is-done');
+            setTimeout(function () { el.hidden = true; el.remove(); }, rm || skip ? 0 : 520);
+          }
+          revealCb.splice(0).forEach(function (cb) { try { cb(); } catch (e) {} });
+        }
+        function render() {
+          clearTimeout(timer); if (L.isReady || L.failed) return;
+          var el = L.el(), t = now();
+          var realDone = 0; while (realDone < N && real[STEPS[realDone]] === 'done') realDone++;
+          if (appReady) realDone = N;
+          // paced progress: elapsed share of the minimum, capped just short of the next unfinished real step
+          var timeFrac = MIN > 0 ? Math.min(1, t / MIN) : 1;
+          var cap = realDone >= N ? 1 : (realDone + 0.85) / N;
+          var p = Math.min(timeFrac, cap);
+          if (realDone >= N && t >= MIN) { reveal(); return; }
+          if (el) {
+            var shown = Math.min(realDone, Math.floor(p * N + 1e-6));
+            for (var i = 0; i < N; i++) { var li = el.querySelector('[data-step="' + STEPS[i] + '"]'); if (li) li.className = i < shown ? 'done' : i === shown ? 'active' : ''; }
+            // reduced motion: no animated bar; it moves in whole steps only
+            el.querySelector('.ld-fill').style.width = (rm ? (shown / N) * 100 : p * 100).toFixed(2) + '%';
+            if (t >= SLOW_MS && !appReady) el.classList.add('is-slow');
+          }
+          timer = setTimeout(render, rm ? 250 : 40);
+        }
+        L.render = render;
         window.addEventListener('error', function (e) {
           if (L.isReady) return;
           var t = e.target;
@@ -77,7 +104,7 @@
       #loader .ld-title { font-size: 14px; letter-spacing: 0.14em; }
       #loader .ld-sub { color: var(--ld-grey); font-size: 12px; letter-spacing: 0.14em; margin-top: 4px; }
       #loader .ld-bar { position: relative; height: 2px; background: var(--ld-line); margin: 28px 0 18px; overflow: hidden; }
-      #loader .ld-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--ld-ink); transition: width 0.35s ease; }
+      #loader .ld-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--ld-ink); transition: width 0.06s linear; }
       #loader .ld-bar::after { content: ''; position: absolute; top: 0; bottom: 0; width: 22%; left: -22%; background: linear-gradient(90deg, transparent, var(--ld-grey), transparent); opacity: 0.55; animation: ld-sweep 1.6s ease-in-out infinite; }
       @keyframes ld-sweep { to { left: 100%; } }
       #loader .ld-steps { list-style: none; margin: 0; padding: 0; color: var(--ld-grey); font-size: 12px; }
@@ -132,6 +159,7 @@
         ['app', 'data', 'scene', 'fonts', 'frame'].forEach(function (k) { el.querySelector('[data-step="' + k + '"] span').textContent = S[k]; });
         document.getElementById('ld-slow-text').textContent = S.slow;
         ['ld-slow-reload', 'ld-err-reload'].forEach(function (id) { var b = document.getElementById(id); b.textContent = S.reload; b.onclick = function () { location.reload(); }; });
+        window.__loader.render();
       })();
     </script>
     <div id="viewport">

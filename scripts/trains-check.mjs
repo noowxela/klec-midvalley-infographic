@@ -17,8 +17,8 @@ async function open(name, q, { rm = false, panels = null, trains = null } = {}) 
   page.on('pageerror', (e) => errors.push(`[${name}] pageerror: ${e.message}`));
   await page.evaluateOnNewDocument((panels, trains) => { localStorage.removeItem('mv-panels'); localStorage.removeItem('mv-trains'); if (panels) localStorage.setItem('mv-panels', panels); if (trains) localStorage.setItem('mv-trains', trains); }, panels, trains);
   await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
-  await page.goto(`${base}?${q}`, { waitUntil: 'networkidle0' });
-  await page.waitForFunction(() => window.__mv?.ready === true, { timeout: 20000 });
+  await page.goto(`${base}?skipLoader=1&${q}`, { waitUntil: 'networkidle0' });
+  await page.waitForFunction(() => window.__mv?.revealed === true, { timeout: 20000 });
   return page;
 }
 

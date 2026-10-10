@@ -123,6 +123,7 @@ export function buildChapters(): Chapter[] {
     return s;
   };
 
+  const jamekPodium = landmarks.find((l) => l.podium)?.podium ?? null;
   const Z = T.ch0; const zs = meta.zones as unknown as Record<string, { blocks: number; footprintM2: number; centroid: XY; tallest: { height: number } | null }>;
   const zoneTop = (z: string) => Math.max(40, ...buildings.filter((b) => b.zone === z).map((b) => b.height)) * 0.55;
   return [
@@ -130,11 +131,11 @@ export function buildChapters(): Chapter[] {
     {
       id: 0, label: Z.label, tab: Z.tab, title: Z.title, lead: Z.lead,
       stats: ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ fig: fmt(zs[z].footprintM2 / 10000, 1), unit: U.ha, cap: Z.statZone(Z.zones[z], zs[z].blocks), swatch: `var(--z-${z})` })),
-      source: Z.source(OSM_SRC),
+      source: Z.source(OSM_SRC, jamekPodium ? Z.podiumNote(jamekPodium.name, jamekPodium.levels ?? 0, jamekPodium.storeyM ?? 0, jamekPodium.roof) : ''),
       view: { target: [-10, 0, -30], azimuth: 0.2, polar: 0.7, distance: 2350 }, // turned so Masjid Jamek is not hidden behind the KL Eco City towers
       mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'zone', precincts: false, landmarks: true },
       pins: nn([
-        ...landmarks.map((l) => { const jamek = l.name === 'Masjid Jamek Abdullah Hukum'; return { id: `mosque-${l.id}`, title: jamek ? Z.mosqueJamek : Z.mosqueAnNur, value: jamek ? Z.mosqueJamekSub : Z.mosqueAnNurSub, at: D(l.c, l.height + 1), kind: 'minor' as const, accent: 'var(--landmark)' }; }),
+        ...landmarks.map((l) => { const jamek = l.name === 'Masjid Jamek Abdullah Hukum'; return { id: `mosque-${l.id}`, title: jamek ? Z.mosqueJamek : Z.mosqueAnNur, value: jamek ? (l.podium?.levels ? Z.mosqueOnPodium(l.podium.levels) : Z.mosqueJamekSub) : Z.mosqueAnNurSub, at: D(l.c, l.height + 1), kind: 'minor' as const, accent: 'var(--landmark)' }; }),
         ...ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ id: `zone-${z}`, title: Z.zones[z], value: Z.pinBlocks(zs[z].blocks), at: D(zs[z].centroid, zoneTop(z)), kind: 'major' as const, accent: `var(--z-${z})` })),
         stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
         stationPin('KD01', 'ktm', N.kj17, 'KTM · KD01'),
@@ -143,7 +144,7 @@ export function buildChapters(): Chapter[] {
       // legend lives in the side panel (precinct colours + landmark mosques)
       panel: (el) => {
         const s = h('section', { class: 'ov-legend' }); s.append(h('h3', {}, Z.legendTitle));
-        const rows = [...ZONES.map((z) => ({ swatch: `var(--z-${z})`, label: Z.zones[z], desc: Z.zoneDesc[z] })), ...(landmarks.length ? [{ swatch: 'var(--landmark)', label: Z.mosques, desc: Z.mosquesDesc }] : [])];
+        const rows = [...ZONES.map((z) => ({ swatch: `var(--z-${z})`, label: Z.zones[z], desc: Z.zoneDesc[z] })), ...(landmarks.length ? [{ swatch: 'var(--landmark)', label: Z.mosques, desc: Z.mosquesDesc }] : []), ...(jamekPodium ? [{ swatch: 'var(--podium)', label: Z.podiumLabel, desc: Z.podiumDesc(jamekPodium.name, jamekPodium.levels ?? 0, jamekPodium.storeyM ?? 0, jamekPodium.roof) }] : [])];
         for (const r of rows) s.append(h('div', { class: 'ov-legend-row' }, `<span class="swatch box" style="background:${r.swatch}"></span><div><div class="lg-label">${r.label}</div><div class="lg-desc">${r.desc}</div></div>`));
         el.append(s);
       },
