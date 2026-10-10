@@ -185,6 +185,11 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ---------- top buttons ----------
+// trains on the LRT viaduct: on by default, user choice persisted
+const btnTrains = $('#btn-trains');
+const applyTrains = (on: boolean) => { world.setTrains(on); btnTrains.setAttribute('aria-pressed', String(on)); };
+applyTrains(localStorage.getItem('mv-trains') !== 'off');
+btnTrains.addEventListener('click', () => { const on = !world.trainsVisible; localStorage.setItem('mv-trains', on ? 'on' : 'off'); applyTrains(on); });
 const btnAuto = $('#btn-autoplay'), btnSound = $('#btn-sound'), btnTheme = $('#btn-theme'), btnFs = $('#btn-fullscreen');
 let autoplay = false; let autoStart = 0; const AUTO_MS = 10000; const autoFill = $('#autoplay-fill');
 function stopAutoplay() { autoplay = false; btnAuto.setAttribute('aria-pressed', 'false'); btnAuto.querySelector('.ico')!.textContent = '▶'; autoFill.style.width = '0'; }
@@ -228,7 +233,7 @@ function applyStaticText() {
   document.title = T.doc.title; document.querySelector('meta[name="description"]')?.setAttribute('content', T.doc.description);
   $('#brand-name').textContent = U.brand; $('#brand-sub').textContent = U.brandSub;
   $('#top-buttons').setAttribute('aria-label', U.toolbar);
-  for (const [id, txt] of [['#btn-autoplay', U.autoplay], ['#btn-sound', U.sound], ['#btn-theme', U.theme], ['#btn-fullscreen', U.fullscreen], ['#btn-maponly', U.mapOnly]] as const) { $(id).title = txt; $(id).setAttribute('aria-label', txt); }
+  for (const [id, txt] of [['#btn-autoplay', U.autoplay], ['#btn-sound', U.sound], ['#btn-theme', U.theme], ['#btn-fullscreen', U.fullscreen], ['#btn-maponly', U.mapOnly], ['#btn-trains', U.trains]] as const) { $(id).title = txt; $(id).setAttribute('aria-label', txt); }
   langSwitch.setAttribute('aria-label', U.language);
   langSwitch.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === getLang())));
   $('#compass').title = U.compass; $('#north').setAttribute('aria-label', U.northArrow); $('#north-n').textContent = U.north;
@@ -248,4 +253,4 @@ onLangChange(() => {
 const fromHash = parseInt((params.get('chapter') ?? location.hash.slice(1)) || '0', 10);
 const startIdx = Math.max(0, chapters.findIndex((c) => c.id === fromHash));
 goTo(startIdx, true);
-(window as unknown as { __mv: unknown }).__mv = { ready: true, goTo: (id: number) => goTo(chapters.findIndex((c) => c.id === id), true), chapters: chapters.map((c) => c.id), setLang: (l: Lang) => setLang(l), lang: getLang };
+(window as unknown as { __mv: unknown }).__mv = { ready: true, goTo: (id: number) => goTo(chapters.findIndex((c) => c.id === id), true), chapters: chapters.map((c) => c.id), setLang: (l: Lang) => setLang(l), lang: getLang, world };

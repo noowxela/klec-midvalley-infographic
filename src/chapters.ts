@@ -1,6 +1,6 @@
 // Chapter definitions. Numbering follows the full plan; only built chapters are listed.
 // Every figure is computed from the processed data in ./data (see source lines); all text comes from ./i18n.
-import { ZONES, buildings, lines, areas, routes, walks, anchors, meta, stats, station, findPlace, fmt, type XY, type Route, type Building, type Share } from './data';
+import { ZONES, landmarks, buildings, lines, areas, routes, walks, anchors, meta, stats, station, findPlace, fmt, type XY, type Route, type Building, type Share } from './data';
 import type { SceneMode, View, World } from './scene';
 import { t, getLang } from './i18n';
 import { sunPosition, mytDate, solarNoon, compassIndex } from './sun';
@@ -129,12 +129,13 @@ export function buildChapters(): Chapter[] {
     // ---------------- 00 overview ----------------
     {
       id: 0, label: Z.label, tab: Z.tab, title: Z.title, lead: Z.lead,
-      legend: { title: Z.legendTitle, items: ZONES.map((z) => ({ swatch: `var(--z-${z})`, label: Z.zones[z], desc: Z.zoneDesc[z] })) },
+      legend: { title: Z.legendTitle, items: [...ZONES.map((z) => ({ swatch: `var(--z-${z})`, label: Z.zones[z], desc: Z.zoneDesc[z] })), ...(landmarks.length ? [{ swatch: 'var(--landmark)', label: Z.mosques, desc: Z.mosquesDesc }] : [])] },
       stats: ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ fig: fmt(zs[z].footprintM2 / 10000, 1), unit: U.ha, cap: Z.statZone(Z.zones[z], zs[z].blocks), swatch: `var(--z-${z})` })),
       source: Z.source(OSM_SRC),
-      view: { target: [-10, 0, -30], azimuth: -0.42, polar: 0.72, distance: 2350 },
-      mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'zone', precincts: false },
+      view: { target: [-10, 0, -30], azimuth: 0.2, polar: 0.7, distance: 2350 }, // turned so Masjid Jamek is not hidden behind the KL Eco City towers
+      mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'zone', precincts: false, landmarks: true },
       pins: nn([
+        ...landmarks.map((l) => { const jamek = l.name === 'Masjid Jamek Abdullah Hukum'; return { id: `mosque-${l.id}`, title: jamek ? Z.mosqueJamek : Z.mosqueAnNur, value: jamek ? Z.mosqueJamekSub : Z.mosqueAnNurSub, at: D(l.c, l.height + 1), kind: 'minor' as const, accent: 'var(--landmark)' }; }),
         ...ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ id: `zone-${z}`, title: Z.zones[z], value: Z.pinBlocks(zs[z].blocks), at: D(zs[z].centroid, zoneTop(z)), kind: 'major' as const, accent: `var(--z-${z})` })),
         stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
         stationPin('KD01', 'ktm', N.kj17, 'KTM · KD01'),

@@ -91,3 +91,28 @@ Chapter numbering (plan numbers; unbuilt chapters are skipped in the tab bar, `?
 Footprint per precinct = union of block footprints on a 1 m grid.
 
 **Panels**: the text panel and side panel collapse with the chevron tabs on their inner edges; the top-bar button or **M** hides both. State is saved in localStorage (`mv-panels`) and kept across chapters; the 3D view recentres on the free space.
+
+## v4: trains and landmark mosques
+
+**Trains (`src/trains.ts`)**
+- What runs: LRT Kelana Jaya trains only, on the two OSM track ways through the study area. The ways are chained into one continuous track per direction, resampled every metre and smoothed (plan ±4 m, deck height ramped over about 30 m, so there is no step where the deck goes from 9 m to 10.5 m).
+- Map edges: each track is extended 160 m in a straight line past the map edge. Trains enter and leave there and are clipped at the study frame.
+- Trainsets: repeating per track, 4-2-4 cars on track 1 and 2-4-4 cars on track 2. Cars are separate instances placed by their two bogie points on the track, so a train bends through curves.
+- Car proportions (illustrative): 17 m car, 0.8 m gap, 2.65 m wide, 3.3 m tall, floor 0.45 m above the deck.
+- Motion: cruise at 16 m/s (≈58 km/h), brake at 1.0 m/s², stop with the train centred on KJ17, dwell 15 s, accelerate at 1.0 m/s².
+- Headway: 48 s per track, with track 2 offset by half a headway. This is compressed for the visual and is not a timetable.
+- Spacing: every train on a track follows the same run profile shifted by the headway, so trains cannot overlap. The check script measured a minimum gap of about 200 m.
+- Rendering: 4 instanced meshes (cab and middle bodies, window band, accent stripe) plus one dynamic LineSegments for the outlines. Nothing is allocated per frame, and an update takes about 0.005 ms.
+- Theme colours: `--train-body`, `--train-window`, `--train-accent`.
+- Clock: advances only while the page is visible, clamped to 0.1 s per frame.
+- prefers-reduced-motion: trains are shown static, with one 4-car train standing at KJ17.
+- Toggle: the top-bar trains button (aria-pressed), persisted in localStorage `mv-trains`. Trains are on by default and are hidden in chapters that hide the LRT line.
+- Other lines: `chainWays` / `buildTrack` are generic and could take KTM/ERL chains. That is not enabled.
+- Checks: `scripts/trains-check.mjs`.
+
+**Landmark mosques (Overview)**
+- Selection: OSM buildings named "Masjid Jamek Abdullah Hukum" (way/659511483) and "Masjid An Nur" (relation/12622827, alt_name "Balai Islam An-Nur TNB Bangsar"). Both are religion=muslim.
+- An Nur: its footprint centroid is about 8 m west of the study square. It is drawn from its full OSM outline (already in the existing Overpass pull) but not counted in the study-area blocks, so all stats are unchanged.
+- Masjid Jamek: OSM maps an unnamed 5-level building (way/594385371) whose outline encloses the mosque outline. On the Overview that building is drawn translucent so the mosque is visible.
+- Colour: `--landmark` (warm charcoal in light theme, ivory in dark).
+- Overview camera: turned (azimuth 0.2) so Masjid Jamek is not hidden behind the KL Eco City towers.
