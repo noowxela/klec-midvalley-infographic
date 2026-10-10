@@ -220,7 +220,7 @@ a { color: inherit; }
 .slider output { font-family: var(--font-mono); font-size: 14px; }
 .slider input[type='range'] { grid-column: 1 / -1; width: 100%; accent-color: var(--ink); }
 .station-list, .step-list { list-style: none; padding: 0; margin: 0; }
-.station-list li { display: grid; grid-template-columns: 58px 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--hairline); }
+.station-list li { display: grid; grid-template-columns: 92px 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--hairline); }
 .station-list li:last-child { border-bottom: none; }
 /* station code badge, KVITS style (Wikipedia Template:KLRT code): line-coloured box, rounded 3px, bold white code */
 .badge { font-family: Helvetica, Arial, var(--font-sans); font-weight: 700; font-size: 12px; line-height: 18px; padding: 0 6px; border-radius: 3px; color: #fff; text-align: center; align-self: start; }
@@ -367,3 +367,12 @@ a { color: inherit; }
   .text-panel, .side-panel, .pin, .panel-tab, .scrim, .tab, .arr { transition: none !important; }
   #stage.tp-collapsed .text-panel * { transition: none; }
 }
+
+/* KTM Komuter line pills (src/linePill.ts): line identity next to the station code badge */
+.line-pill { display: inline-block; flex: none; height: 16px; width: 30.67px; vertical-align: -3px; }
+.st-ids { display: flex; align-items: flex-start; gap: 6px; }
+.st-ids .line-pill { height: 18px; width: 34.5px; }
+.legend-row .line-pill, .toggle .line-pill { height: 16px; width: 30.67px; }
+.toggle .pills { display: inline-flex; gap: 4px; margin-left: -4px; }
+.pin .tag .v .line-pill { height: 15px; width: 28.75px; margin-right: 6px; vertical-align: -3px; }
+.pin .tag .v .line-pill .lp-bg { stroke: #fff; stroke-width: 1.4; } /* white ring: the pill sits on a tag of its own colour */

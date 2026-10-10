@@ -64,6 +64,7 @@ function setPins(defs: PinDef[]) {
     el.innerHTML = `<div class="stem"></div><div class="dot"></div><div class="tag"${def.color ? ` style="background:${def.color}"` : ''}><div class="t"></div>${def.value ? '<div class="v"></div>' : ''}</div>`;
     (el.querySelector('.t') as HTMLElement).textContent = def.title;
     if (def.value) (el.querySelector('.v') as HTMLElement).textContent = def.value;
+    if (def.icon) (el.querySelector('.v') ?? el.querySelector('.t'))!.insertAdjacentHTML('afterbegin', def.icon); // own SVG markup (linePill), not user data
     if (def.color) (el.querySelector('.dot') as HTMLElement).style.background = def.color;
     if (def.accent) { (el.querySelector('.tag') as HTMLElement).style.borderLeft = `7px solid ${def.accent}`; (el.querySelector('.dot') as HTMLElement).style.background = def.accent; }
     pinLayer.append(el);

@@ -149,12 +149,25 @@ Checked against Wikipedia, [Klang Valley Integrated Transit System](https://en.w
 |---|---|---|---|
 | Abdullah Hukum LRT | KJ17 | 5 Kelana Jaya Line | `#E0115F` (`--c-lrt`, also `--train-accent`) |
 | Abdullah Hukum KTM | KD01 | 2 Tanjung Malim–Port Klang Line | `#DC2420` (`--c-ktm2`) |
-| Mid Valley KTM | KB01 | 1 Batu Caves–Pulau Sebang Line | `#3C5A9F` (`--c-ktm1`) |
+| Mid Valley KTM | KB01 (shown as "KTM · 10") | 1 Batu Caves–Pulau Sebang Line | `#3C5A9F` (`--c-ktm1`) |
 
 - The official colours are used unchanged in both themes.
 - KTM track line: the Overpass pull has no route relations, so `raw/ktm-routes.json` stores the KTM Komuter route relations of each KTM track way (OSM API, 2026-10-10). `process-osm.mjs` writes `route` (1 or 2) per KTM segment. Ways in no Komuter relation (one crossover, three short connectors) take the line of the nearest referenced segment and carry `routeInferred: true`. In the study area the west corridor (through KD01) is line 2 and the east corridor (through KB01) is line 1. OSM also puts the west corridor in the Skypark Link relation, a service Wikipedia lists as suspended since 15 February 2023, so it is not drawn.
 - ERL tracks carry both KLIA Ekspres (`#8C238F`) and KLIA Transit (`#33A8B5`) and neither stops in the study area. They stay as neutral grey context (`--c-erl`).
 - Station badges and station pins follow Wikipedia's Template:KLRT code: a line-coloured box with 3 px corners and the code in bold white.
+- **KTM line pills** (`src/linePill.ts`): inline-SVG pills after the official KTM Komuter line icons: a fully rounded pill with the line number in bold white and the same white front-facing train glyph on both. Line 1 (Batu Caves–Pulau Sebang) is blue and Line 2 (Tanjung Malim–Port Klang) is red. The pills use the official line colours (`--c-ktm1` #3C5A9F, `--c-ktm2` #DC2420), so pill, track and legend match. The reference icons are darker (navy #0F2D92, crimson #AB2632). Each pill has `role="img"`, an `aria-label` and a `<title>` (EN "KTM Line 1, Batu Caves–Pulau Sebang Line"; zh "KTM 1 号线，芙蓉线"; ms "KTM Laluan 1, Laluan Batu Caves–Pulau Sebang").
+- Where the pills appear:
+  - on every KTM station pin (KB01, KD01), with a white ring because the tag is the same colour;
+  - in the 01 legend;
+  - on the 02 KTM layer toggle;
+  - in the 02 station list next to the code badge.
+  The code badges (KJ17, KD01, KB01) are unchanged: the pill identifies the line, the badge the station.
+- **Line 5 pill** (LRT Kelana Jaya): the same pill in `--c-lrt` #E0115F with a bold white "5". Following the Rapid KL reference, it adds two thin lighter rings, one round the number and one round the train, overlapping in the middle. The reference is ruby #C52936. Its aria-label is "LRT Line 5, Kelana Jaya Line" (zh "LRT 5 号线，格拉那再也线"; ms "LRT Laluan 5, Laluan Kelana Jaya"). It is used on the KJ17 pin, in the 01 legend, on the 02 LRT toggle and in the station list.
+- **Mid Valley shown as "KTM · 10".** Riders know Mid Valley as stop 10 on Line 1 counting from Batu Caves: KC05–KC01 and KA04–KA01, then Mid Valley (Wikipedia, "Batu Caves–Pulau Sebang Line", Stations table). The pins, station list, stats caption and chapter text show "KTM · 10" with the Line 1 pill. The official code KB01 appears only in the 02 source note ("Official station code KB01 (Wikipedia); shown as stop 10 from Batu Caves", in EN/zh/ms) and in this README. `PUBLIC_CODE` in `src/chapters.ts` holds the mapping. rail-check fails if KB01 appears in any user-facing text, aria-label or title outside a source note. KJ17 and KD01 are unchanged for now. For reference:
+  - Abdullah Hukum KTM (KD01) is stop 17 from Tanjung Malim, counting the 2026 infill Segambut Utara (KA05A), or stop 19 from Port Klang.
+  - Abdullah Hukum LRT (KJ17) is stop 17 from Gombak (KJ1) or stop 21 from Putra Heights (KJ37).
+- The keyboard hint ("Press → or Space to begin · F fullscreen · M map only · drag to rotate", in EN/zh/ms) moved from 01 (the old cover) to the 00 Overview text panel, since 00 is now the first page. Its style is unchanged. It fits in all three languages; rail-check checks that it appears on 00 only and that the text panel does not overflow.
+- 01 Transit hub labels all three stations, including KD01 (Tanjung Malim–Port Klang Line), using the same stacking that keeps pin labels apart. `scripts/rail-check.mjs` checks colours, pills (aria and fill) and that no visible pin labels overlap each other or the panels. It also writes pill close-ups to `shots-rail/`.
 
 ## Chapter rail (bottom bar)
 

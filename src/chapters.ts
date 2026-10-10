@@ -1,13 +1,14 @@
 // Chapter definitions. Numbering follows the full plan; only built chapters are listed.
 // Every figure is computed from the processed data in ./data (see source lines); all text comes from ./i18n.
 import { ZONES, landmarks, buildings, lines, areas, routes, walks, anchors, meta, stats, station, findPlace, fmt, type XY, type Route, type Building, type Share } from './data';
+import { linePill } from './linePill';
 import type { SceneMode, View, World } from './scene';
 import { t, getLang } from './i18n';
 import { sunPosition, mytDate, solarNoon, compassIndex } from './sun';
 import { groundSamples, routeSampleSets } from './shade';
 import climate from './data/climate.json';
 
-export interface PinDef { id: string; title: string; value?: string; at: [number, number, number]; kind: 'station' | 'major' | 'minor'; color?: string; accent?: string }
+export interface PinDef { id: string; title: string; value?: string; at: [number, number, number]; kind: 'station' | 'major' | 'minor'; color?: string; accent?: string; icon?: string /* trusted inline SVG, shown before the value */ }
 export interface StatDef { fig: string; unit?: string; cap: string; swatch?: string }
 export interface Chapter {
   id: number; label: string; tab: string; title: string[]; lead: string; stats: StatDef[]; hint?: string; source: string;
@@ -18,6 +19,11 @@ export interface PanelCtx { flyTo: (v: View) => void; chapterView: View; onClean
 
 const D = (n: XY, y = 0): [number, number, number] => [n[0], y, -n[1]];
 // official KVITS line colours (styles.css): KJ = Kelana Jaya, KB = Batu Caves–Pulau Sebang (KTM 1), KD = Tanjung Malim–Port Klang (KTM 2)
+// Public-facing station numbers. Mid Valley (official code KB01) is shown the way riders know it: stop 10 on
+// Line 1 counting from Batu Caves (KC05–KC01, KA04–KA01, then Mid Valley; Wikipedia, Batu Caves–Pulau Sebang Line,
+// "Stations"). KB01 appears only in the 02 source note and the README.
+const PUBLIC_CODE: Record<string, string> = { KB01: '10' };
+const showCode = (ref: string | null) => (ref ? PUBLIC_CODE[ref] ?? ref : '—');
 const lineColor = { lrt: 'var(--c-lrt)', ktm1: 'var(--c-ktm1)', ktm2: 'var(--c-ktm2)', erl: 'var(--c-erl)' } as const;
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -99,7 +105,8 @@ export function buildChapters(): Chapter[] {
   const T = t(); const N = T.names; const U = T.units;
   const stationPin = (ref: string, line: 'lrt' | 'ktm1' | 'ktm2', title: string, value?: string): PinDef | null => {
     const s = station(ref); if (!s) return null;
-    return { id: `st-${ref}`, title, value: value ?? `${ref} · ${T.common.osm}`, at: D(s.c, 13), kind: 'station', color: lineColor[line] };
+    const icon = line === 'ktm1' ? linePill(1, N.ktmLine1) : line === 'ktm2' ? linePill(2, N.ktmLine2) : line === 'lrt' ? linePill(5, N.lrtLine5) : undefined;
+    return { id: `st-${ref}`, title, value: value ?? `${ref} · ${T.common.osm}`, at: D(s.c, 13), kind: 'station', color: lineColor[line], icon };
   };
   const placePin = (name: string, title = name, value?: string, kind: PinDef['kind'] = 'major'): PinDef | null => {
     const p = findPlace(name); if (!p) return null;
@@ -108,10 +115,11 @@ export function buildChapters(): Chapter[] {
   const textPin = (id: string, title: string, at: XY | null, y = 2, value?: string): PinDef | null => (at ? { id, title, value, at: D(at, y), kind: 'minor' } : null);
   const corePins = () => nn([
     stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
+    stationPin('KD01', 'ktm2', N.kj17, 'KTM · KD01'),
     placePin('Strata Office', N.ecoCity, undefined, 'major'),
     placePin('The Gardens Mall', N.gardens),
     placePin('Mid Valley Megamall', N.megamall),
-    stationPin('KB01', 'ktm1', N.kb01, 'KTM · KB01'),
+    stationPin('KB01', 'ktm1', N.kb01, `KTM · ${showCode('KB01')}`),
   ]);
   const tallestNames = stats.citedTallest.map((b) => b.name).join(' · ');
   const tallestH = stats.citedTallest[0]?.height;
@@ -129,7 +137,7 @@ export function buildChapters(): Chapter[] {
   return [
     // ---------------- 00 overview ----------------
     {
-      id: 0, label: Z.label, tab: Z.tab, title: Z.title, lead: Z.lead,
+      id: 0, label: Z.label, tab: Z.tab, title: Z.title, lead: Z.lead, hint: Z.hint,
       stats: ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ fig: fmt(zs[z].footprintM2 / 10000, 1), unit: U.ha, cap: Z.statZone(Z.zones[z], zs[z].blocks), swatch: `var(--z-${z})` })),
       source: Z.source(T.common.osmSrc(stats.fetchedDate), jamekPodium ? Z.podiumNote(jamekPodium.name, jamekPodium.levels ?? 0, jamekPodium.storeyM ?? 0, jamekPodium.roof) : ''),
       view: { target: [-10, 0, -30], azimuth: 0.2, polar: 0.7, distance: 2350 }, // turned so Masjid Jamek is not hidden behind the KL Eco City towers
@@ -139,7 +147,7 @@ export function buildChapters(): Chapter[] {
         ...ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ id: `zone-${z}`, title: Z.zones[z], value: Z.pinBlocks(zs[z].blocks), at: D(zs[z].centroid, zoneTop(z)), kind: 'major' as const, accent: `var(--z-${z})` })),
         stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
         stationPin('KD01', 'ktm2', N.kj17, 'KTM · KD01'),
-        stationPin('KB01', 'ktm1', N.kb01, 'KTM · KB01'),
+        stationPin('KB01', 'ktm1', N.kb01, `KTM · ${showCode('KB01')}`),
       ]),
       // legend lives in the side panel (precinct colours + landmark mosques)
       panel: (el) => {
@@ -158,7 +166,6 @@ export function buildChapters(): Chapter[] {
         ...(tallestH ? [{ fig: fmt(tallestH), unit: U.m, cap: T.ch1.statTallest(tallestNames) }] : []),
         { fig: fmt(stats.routeTotalM), unit: U.m, cap: T.ch1.statWalk(fmt(stats.routeMinutes)) },
       ],
-      hint: T.ch1.hint,
       source: T.ch1.source(stats.heightCited),
       view: { target: [0, 0, -40], azimuth: -0.72, polar: 0.95, distance: 1950 },
       mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: false },
@@ -168,8 +175,9 @@ export function buildChapters(): Chapter[] {
         s1.append(h('div', { class: 'small' }, T.ch1.studyText(meta.center.lat.toFixed(4), meta.center.lon.toFixed(4), fmt(meta.halfSizeM * 2), `S ${meta.bbox.south} · W ${meta.bbox.west} · N ${meta.bbox.north} · E ${meta.bbox.east}`)));
         const s2 = h('section'); s2.append(h('h3', {}, T.ch1.onModel));
         const L = T.ch1.legend;
-        for (const [sw, txt] of [['var(--scene-building)', L.building], ['var(--c-water)', L.water], ['var(--c-green)', L.green], ['var(--c-lrt)', L.lrt], ['var(--c-ktm2)', L.ktm2], ['var(--c-ktm1)', L.ktm1]] as const)
-          s2.append(h('div', { class: 'legend-row' }, `<span class="swatch box" style="background:${sw}"></span>${txt}`));
+        const box = (sw: string) => `<span class="swatch box" style="background:${sw}"></span>`;
+        for (const [ic, txt] of [[box('var(--scene-building)'), L.building], [box('var(--c-water)'), L.water], [box('var(--c-green)'), L.green], [linePill(5, N.lrtLine5), L.lrt], [linePill(2, N.ktmLine2), L.ktm2], [linePill(1, N.ktmLine1), L.ktm1]] as const)
+          s2.append(h('div', { class: 'legend-row' }, `${ic}${txt}`));
         const s3 = h('section'); s3.append(h('h3', {}, T.ch1.quality));
         s3.append(h('div', { class: 'small' }, T.ch1.qualityText(stats.heightCited, stats.heightOsm, stats.heightLevels, stats.heightEstimate)));
         el.append(s1, s2, s3);
@@ -179,7 +187,7 @@ export function buildChapters(): Chapter[] {
     {
       id: 2, label: T.ch2.label, tab: T.ch2.tab, title: T.ch2.title, lead: T.ch2.lead,
       stats: [
-        { fig: fmt(stats.stationCount), unit: U.stations, cap: T.ch2.statStations(nn([kj17, kd01, kb01]).map((s) => s.ref).join(', ')) },
+        { fig: fmt(stats.stationCount), unit: U.stations, cap: T.ch2.statStations(nn([kj17, kd01, kb01]).map((s) => (s === kb01 ? `KTM · ${showCode(s.ref)}` : s.ref)).join(', ')) },
         ...(stats.straightKJ17toKB01 ? [{ fig: fmt(stats.straightKJ17toKB01), unit: U.m, cap: T.ch2.statStraight }] : []),
         { fig: fmt(stats.railCorridors), unit: U.lines, cap: T.ch2.statCorridors },
       ],
@@ -189,7 +197,7 @@ export function buildChapters(): Chapter[] {
       pins: nn([
         stationPin('KJ17', 'lrt', N.kj17, T.ch2.pinLrtLine),
         stationPin('KD01', 'ktm2', N.kj17, T.ch2.pinKtm('KD01')),
-        stationPin('KB01', 'ktm1', N.kb01, T.ch2.pinKtm('KB01')),
+        stationPin('KB01', 'ktm1', N.kb01, T.ch2.pinKtm(showCode('KB01'))),
         textPin('lbl-river', N.river, longestNamed(lines.waterLines, 'Klang River'), 1),
         textPin('lbl-fed', N.fedHwy, longestNamed(lines.roads, 'Lebuhraya Persekutuan'), 1, N.fedHwy === N.fedHwyLocal ? undefined : N.fedHwyLocal),
         textPin('lbl-bangsar', N.bangsar, longestNamed(lines.roads, 'Jalan Bangsar'), 1),
@@ -198,14 +206,14 @@ export function buildChapters(): Chapter[] {
       ]),
       panel: (el, world) => {
         const s1 = h('section'); s1.append(h('h3', {}, T.common.layers));
-        toggle(s1, N.lrtLine, true, (v) => world.setMode({ rails: { ...world.mode.rails, lrt: v ? 'highlight' : 'hidden' } }), 'var(--c-lrt)');
-        toggle(s1, N.ktm, true, (v) => world.setMode({ rails: { ...world.mode.rails, ktm: v ? 'highlight' : 'hidden' } }), 'linear-gradient(90deg, var(--c-ktm2) 50%, var(--c-ktm1) 50%)');
+        toggle(s1, N.lrtLine, true, (v) => world.setMode({ rails: { ...world.mode.rails, lrt: v ? 'highlight' : 'hidden' } })).insertAdjacentHTML('afterend', `<span class="pills">${linePill(5, N.lrtLine5)}</span>`);
+        toggle(s1, N.ktm, true, (v) => world.setMode({ rails: { ...world.mode.rails, ktm: v ? 'highlight' : 'hidden' } })).insertAdjacentHTML('afterend', `<span class="pills">${linePill(2, N.ktmLine2)}${linePill(1, N.ktmLine1)}</span>`);
         toggle(s1, N.erl, true, (v) => world.setMode({ rails: { ...world.mode.rails, erl: v ? 'context' : 'hidden' } }), 'var(--c-erl)');
         toggle(s1, T.ch2.precinctToggle, true, (v) => world.setMode({ precincts: v }));
         const s2 = h('section'); s2.append(h('h3', {}, T.ch2.stationsInOsm));
         const ul = h('ul', { class: 'station-list' });
         for (const [s, line] of [[kj17, 'lrt'], [kd01, 'ktm2'], [kb01, 'ktm1']] as const) if (s)
-          ul.append(h('li', {}, `<span class="badge" style="background:${lineColor[line]}">${s.ref ?? '—'}</span><div><div>${s.name}</div><div class="small">${s.operator ?? T.ch2.operatorMissing}</div></div>`));
+          ul.append(h('li', {}, `<span class="st-ids"><span class="badge" style="background:${lineColor[line]}">${showCode(s.ref)}</span>${line === 'ktm1' ? linePill(1, N.ktmLine1) : line === 'ktm2' ? linePill(2, N.ktmLine2) : linePill(5, N.lrtLine5)}</span><div><div>${s.name}</div><div class="small">${s.operator ?? T.ch2.operatorMissing}</div></div>`));
         s2.append(ul, h('div', { class: 'small' }, T.ch2.stationsNote));
         el.append(s1, s2);
       },
@@ -294,7 +302,7 @@ export function buildChapters(): Chapter[] {
       mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'faint', routeSet: 'walks', walkFocus: walks[0]?.id ?? null, xray: true, buildingStyle: 'default', precincts: false },
       pins: nn([
         stationPin('KJ17', 'lrt', T.anchor.KJ17, 'KJ17'),
-        stationPin('KB01', 'ktm1', T.anchor.KB01, 'KB01'),
+        stationPin('KB01', 'ktm1', T.anchor.KB01, `KTM · ${showCode('KB01')}`),
         placePin('The Gardens Mall', N.gardens),
         placePin('Mid Valley Megamall', N.megamall),
         anchors.ECO ? placePin(ecoTower, T.anchor.ECO(ecoTower)) : null,
@@ -432,7 +440,7 @@ export function buildChapters(): Chapter[] {
       mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'rain', routeSet: 'walks', walkFocus: null, routeStyle: 'rain', muteWater: true, xray: true, buildingStyle: 'default', precincts: false },
       pins: nn([
         stationPin('KJ17', 'lrt', T.anchor.KJ17, 'KJ17'),
-        stationPin('KB01', 'ktm1', T.anchor.KB01, 'KB01'),
+        stationPin('KB01', 'ktm1', T.anchor.KB01, `KTM · ${showCode('KB01')}`),
         placePin('The Gardens Mall', N.gardens),
         placePin('Mid Valley Megamall', N.megamall),
       ]),
