@@ -3,6 +3,11 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "homepage": "https://noowxela.github.io/klec-midvalley-infographic/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/noowxela/klec-midvalley-infographic.git"
+  },
   "description": "3D site-analysis infographic demo: Mid Valley – Abdullah Hukum transit hub, Kuala Lumpur",
   "scripts": {
     "dev": "vite",

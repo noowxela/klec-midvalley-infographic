@@ -1,5 +1,7 @@
 # klec-midvalley-infographic
 
+**Live:** https://noowxela.github.io/klec-midvalley-infographic/ · **Repo:** https://github.com/noowxela/klec-midvalley-infographic
+
 A 3D scrollytelling infographic of the rail-and-mall cluster on both banks of the Klang River in Kuala Lumpur: KL Eco City, The Gardens Mall and Mid Valley Megamall, around Abdullah Hukum station (LRT Kelana Jaya Line and KTM) and Mid Valley KTM. Nine chapters walk through the site with a fixed 1920×1080 stage, a Three.js block model built from OpenStreetMap and short, sourced text in English, 简体中文 and Bahasa Malaysia. The layout and chapter rail are inspired by the [Banqiao Station infographic](https://a767thycode.github.io/banqiao-station-infographic/). The massing is illustrative, not a survey.
 
 ## Chapters
@@ -84,6 +86,10 @@ node scripts/firstload.mjs <outDir> [query] [rm|nowebgl]   # cold throttled firs
 
 Each check takes an optional base URL argument (default `http://127.0.0.1:4173/`); firstload reads it from `BASE`.
 
+## Deployment
+
+Every push to `main` runs `.github/workflows/deploy.yml` (npm ci, npm run build, then actions/upload-pages-artifact + actions/deploy-pages) and publishes `dist/` to GitHub Pages at https://noowxela.github.io/klec-midvalley-infographic/. The relative Vite base (`./`) makes all assets resolve under that subpath. It can also be run by hand from the Actions tab (workflow_dispatch).
+
 ## Chapter numbers: old to new
 
 Since v16 the chapters are numbered 00–08 in a row. Links made earlier open the chapter that now has that number.
@@ -109,6 +115,5 @@ Since v16 the chapters are numbered 00–08 in a row. Links made earlier open th
   - KL Eco City underground roads (in the data, not drawn) need a cutaway;
   - KTM trains are not animated;
   - KJ17 has no public stop number.
-- **No git remote and no deployment yet.**
 
 More detail (per-version design notes, precinct rule, trains, loader, rail codes, bottom bar, compass) is in [`docs/design-notes.md`](docs/design-notes.md).
