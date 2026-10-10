@@ -141,6 +141,21 @@ Footprint per precinct = union of block footprints on a 1 m grid.
 - **Loader minimum:** the loader hides at max(app ready, `MIN_LOADER_MS` = 6000 ms since navigation start). Under `prefers-reduced-motion` the minimum is 3000 ms (`MIN_LOADER_MS_REDUCED`) and the bar moves in whole steps with no animation. Progress is paced across the minimum and never runs ahead of the real steps. The slow note appears at 12 s (`SLOW_MS`). `?skipLoader=1` bypasses the minimum (used by `scripts/screenshots.mjs`, `trains-check.mjs` and `v7-check.mjs`). `window.__mv.ready` = app ready; `window.__mv.revealed` = loader gone.
 - `scripts/v7-check.mjs`: loader timeline on an unthrottled load plus mid-load shots; mosque close-ups; Overview; ch08 shadows.
 
+## Rail line colours and station codes
+
+Checked against Wikipedia, [Klang Valley Integrated Transit System](https://en.wikipedia.org/wiki/Klang_Valley_Integrated_Transit_System) ("System network" table; the same hex values are in Module:Adjacent stations/KLRT), and the station articles. Fetched 2026-10-10.
+
+| Shown | Code(s) | Line | Colour (CSS) |
+|---|---|---|---|
+| Abdullah Hukum LRT | KJ17 | 5 Kelana Jaya Line | `#E0115F` (`--c-lrt`, also `--train-accent`) |
+| Abdullah Hukum KTM | KD01 | 2 Tanjung Malim–Port Klang Line | `#DC2420` (`--c-ktm2`) |
+| Mid Valley KTM | KB01 | 1 Batu Caves–Pulau Sebang Line | `#3C5A9F` (`--c-ktm1`) |
+
+- The official colours are used unchanged in both themes.
+- KTM track line: the Overpass pull has no route relations, so `raw/ktm-routes.json` stores the KTM Komuter route relations of each KTM track way (OSM API, 2026-10-10). `process-osm.mjs` writes `route` (1 or 2) per KTM segment. Ways in no Komuter relation (one crossover, three short connectors) take the line of the nearest referenced segment and carry `routeInferred: true`. In the study area the west corridor (through KD01) is line 2 and the east corridor (through KB01) is line 1. OSM also puts the west corridor in the Skypark Link relation, a service Wikipedia lists as suspended since 15 February 2023, so it is not drawn.
+- ERL tracks carry both KLIA Ekspres (`#8C238F`) and KLIA Transit (`#33A8B5`) and neither stops in the study area. They stay as neutral grey context (`--c-erl`).
+- Station badges and station pins follow Wikipedia's Template:KLRT code: a line-coloured box with 3 px corners and the code in bold white.
+
 ## Chapter rail (bottom bar)
 
 The bottom bar follows the Banqiao Station infographic's `#rail`: equal-width segments 3 px apart, each with a 1 px

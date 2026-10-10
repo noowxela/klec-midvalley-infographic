@@ -17,7 +17,8 @@ export interface Chapter {
 export interface PanelCtx { flyTo: (v: View) => void; chapterView: View; onCleanup: (f: () => void) => void }
 
 const D = (n: XY, y = 0): [number, number, number] => [n[0], y, -n[1]];
-const lineColor = { lrt: 'var(--c-lrt)', ktm: 'var(--c-ktm)', erl: 'var(--c-erl)' } as const;
+// official KVITS line colours (styles.css): KJ = Kelana Jaya, KB = Batu Caves–Pulau Sebang (KTM 1), KD = Tanjung Malim–Port Klang (KTM 2)
+const lineColor = { lrt: 'var(--c-lrt)', ktm1: 'var(--c-ktm1)', ktm2: 'var(--c-ktm2)', erl: 'var(--c-erl)' } as const;
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ---------- static derived figures (language independent) ----------
@@ -96,7 +97,7 @@ function shareBar(r: { byShare: Partial<Record<Share, number>>; length: number }
 // ---------- chapters (rebuilt on language change) ----------
 export function buildChapters(): Chapter[] {
   const T = t(); const N = T.names; const U = T.units;
-  const stationPin = (ref: string, line: 'lrt' | 'ktm', title: string, value?: string): PinDef | null => {
+  const stationPin = (ref: string, line: 'lrt' | 'ktm1' | 'ktm2', title: string, value?: string): PinDef | null => {
     const s = station(ref); if (!s) return null;
     return { id: `st-${ref}`, title, value: value ?? `${ref} · ${T.common.osm}`, at: D(s.c, 13), kind: 'station', color: lineColor[line] };
   };
@@ -110,7 +111,7 @@ export function buildChapters(): Chapter[] {
     placePin('Strata Office', N.ecoCity, undefined, 'major'),
     placePin('The Gardens Mall', N.gardens),
     placePin('Mid Valley Megamall', N.megamall),
-    stationPin('KB01', 'ktm', N.kb01, 'KTM · KB01'),
+    stationPin('KB01', 'ktm1', N.kb01, 'KTM · KB01'),
   ]);
   const tallestNames = stats.citedTallest.map((b) => b.name).join(' · ');
   const tallestH = stats.citedTallest[0]?.height;
@@ -137,8 +138,8 @@ export function buildChapters(): Chapter[] {
         ...landmarks.map((l) => { const jamek = l.name === 'Masjid Jamek Abdullah Hukum'; return { id: `mosque-${l.id}`, title: jamek ? Z.mosqueJamek : Z.mosqueAnNur, value: jamek ? (l.podium?.levels ? Z.mosqueOnPodium(l.podium.levels) : Z.mosqueJamekSub) : Z.mosqueAnNurSub, at: D(l.c, l.height + 1), kind: 'minor' as const, accent: 'var(--landmark)' }; }),
         ...ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ id: `zone-${z}`, title: Z.zones[z], value: Z.pinBlocks(zs[z].blocks), at: D(zs[z].centroid, zoneTop(z)), kind: 'major' as const, accent: `var(--z-${z})` })),
         stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
-        stationPin('KD01', 'ktm', N.kj17, 'KTM · KD01'),
-        stationPin('KB01', 'ktm', N.kb01, 'KTM · KB01'),
+        stationPin('KD01', 'ktm2', N.kj17, 'KTM · KD01'),
+        stationPin('KB01', 'ktm1', N.kb01, 'KTM · KB01'),
       ]),
       // legend lives in the side panel (precinct colours + landmark mosques)
       panel: (el) => {
@@ -167,7 +168,7 @@ export function buildChapters(): Chapter[] {
         s1.append(h('div', { class: 'small' }, T.ch1.studyText(meta.center.lat.toFixed(4), meta.center.lon.toFixed(4), fmt(meta.halfSizeM * 2), `S ${meta.bbox.south} · W ${meta.bbox.west} · N ${meta.bbox.north} · E ${meta.bbox.east}`)));
         const s2 = h('section'); s2.append(h('h3', {}, T.ch1.onModel));
         const L = T.ch1.legend;
-        for (const [sw, txt] of [['var(--scene-building)', L.building], ['var(--c-water)', L.water], ['var(--c-green)', L.green], ['var(--c-lrt)', L.lrt], ['var(--c-ktm)', L.ktm]] as const)
+        for (const [sw, txt] of [['var(--scene-building)', L.building], ['var(--c-water)', L.water], ['var(--c-green)', L.green], ['var(--c-lrt)', L.lrt], ['var(--c-ktm2)', L.ktm2], ['var(--c-ktm1)', L.ktm1]] as const)
           s2.append(h('div', { class: 'legend-row' }, `<span class="swatch box" style="background:${sw}"></span>${txt}`));
         const s3 = h('section'); s3.append(h('h3', {}, T.ch1.quality));
         s3.append(h('div', { class: 'small' }, T.ch1.qualityText(stats.heightCited, stats.heightOsm, stats.heightLevels, stats.heightEstimate)));
@@ -187,8 +188,8 @@ export function buildChapters(): Chapter[] {
       mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: true },
       pins: nn([
         stationPin('KJ17', 'lrt', N.kj17, T.ch2.pinLrtLine),
-        stationPin('KD01', 'ktm', N.kj17, T.ch2.pinKtm('KD01')),
-        stationPin('KB01', 'ktm', N.kb01, T.ch2.pinKtm('KB01')),
+        stationPin('KD01', 'ktm2', N.kj17, T.ch2.pinKtm('KD01')),
+        stationPin('KB01', 'ktm1', N.kb01, T.ch2.pinKtm('KB01')),
         textPin('lbl-river', N.river, longestNamed(lines.waterLines, 'Klang River'), 1),
         textPin('lbl-fed', N.fedHwy, longestNamed(lines.roads, 'Lebuhraya Persekutuan'), 1, N.fedHwy === N.fedHwyLocal ? undefined : N.fedHwyLocal),
         textPin('lbl-bangsar', N.bangsar, longestNamed(lines.roads, 'Jalan Bangsar'), 1),
@@ -198,12 +199,12 @@ export function buildChapters(): Chapter[] {
       panel: (el, world) => {
         const s1 = h('section'); s1.append(h('h3', {}, T.common.layers));
         toggle(s1, N.lrtLine, true, (v) => world.setMode({ rails: { ...world.mode.rails, lrt: v ? 'highlight' : 'hidden' } }), 'var(--c-lrt)');
-        toggle(s1, N.ktm, true, (v) => world.setMode({ rails: { ...world.mode.rails, ktm: v ? 'highlight' : 'hidden' } }), 'var(--c-ktm)');
+        toggle(s1, N.ktm, true, (v) => world.setMode({ rails: { ...world.mode.rails, ktm: v ? 'highlight' : 'hidden' } }), 'linear-gradient(90deg, var(--c-ktm2) 50%, var(--c-ktm1) 50%)');
         toggle(s1, N.erl, true, (v) => world.setMode({ rails: { ...world.mode.rails, erl: v ? 'context' : 'hidden' } }), 'var(--c-erl)');
         toggle(s1, T.ch2.precinctToggle, true, (v) => world.setMode({ precincts: v }));
         const s2 = h('section'); s2.append(h('h3', {}, T.ch2.stationsInOsm));
         const ul = h('ul', { class: 'station-list' });
-        for (const [s, line] of [[kj17, 'lrt'], [kd01, 'ktm'], [kb01, 'ktm']] as const) if (s)
+        for (const [s, line] of [[kj17, 'lrt'], [kd01, 'ktm2'], [kb01, 'ktm1']] as const) if (s)
           ul.append(h('li', {}, `<span class="badge" style="background:${lineColor[line]}">${s.ref ?? '—'}</span><div><div>${s.name}</div><div class="small">${s.operator ?? T.ch2.operatorMissing}</div></div>`));
         s2.append(ul, h('div', { class: 'small' }, T.ch2.stationsNote));
         el.append(s1, s2);
@@ -260,7 +261,7 @@ export function buildChapters(): Chapter[] {
         stationPin('KJ17', 'lrt', T.anchor.KJ17, T.ch6.pinStart),
         placePin('The Gardens Mall', N.gardens, routes[0] ? T.ch6.pinFromLrt(routes[0].length) : undefined),
         placePin('Mid Valley Megamall', N.megamall, routes[1] ? T.ch6.pinPlus(routes[1].length) : undefined),
-        stationPin('KB01', 'ktm', T.anchor.KB01, routes[2] ? T.ch6.pinEnd(routes[2].length) : T.common.end),
+        stationPin('KB01', 'ktm1', T.anchor.KB01, routes[2] ? T.ch6.pinEnd(routes[2].length) : T.common.end),
         routeBridgeEnclosed ? textPin('lbl-bridge', T.ch6.bridgePin, routeBridgeEnclosed.pts[Math.floor(routeBridgeEnclosed.pts.length / 2)], 12, T.ch6.bridgeValue(routeBridgeEnclosed.length)) : null,
       ]),
       panel: (el, world, ctx) => {
@@ -293,7 +294,7 @@ export function buildChapters(): Chapter[] {
       mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'faint', routeSet: 'walks', walkFocus: walks[0]?.id ?? null, xray: true, buildingStyle: 'default', precincts: false },
       pins: nn([
         stationPin('KJ17', 'lrt', T.anchor.KJ17, 'KJ17'),
-        stationPin('KB01', 'ktm', T.anchor.KB01, 'KB01'),
+        stationPin('KB01', 'ktm1', T.anchor.KB01, 'KB01'),
         placePin('The Gardens Mall', N.gardens),
         placePin('Mid Valley Megamall', N.megamall),
         anchors.ECO ? placePin(ecoTower, T.anchor.ECO(ecoTower)) : null,
@@ -431,7 +432,7 @@ export function buildChapters(): Chapter[] {
       mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'rain', routeSet: 'walks', walkFocus: null, routeStyle: 'rain', muteWater: true, xray: true, buildingStyle: 'default', precincts: false },
       pins: nn([
         stationPin('KJ17', 'lrt', T.anchor.KJ17, 'KJ17'),
-        stationPin('KB01', 'ktm', T.anchor.KB01, 'KB01'),
+        stationPin('KB01', 'ktm1', T.anchor.KB01, 'KB01'),
         placePin('The Gardens Mall', N.gardens),
         placePin('Mid Valley Megamall', N.megamall),
       ]),

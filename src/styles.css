@@ -22,8 +22,10 @@
   /* meaning colours */
   --c-water: #7fb3b8;
   --c-green: #b7c9a4;
-  --c-lrt: #b0126b;
-  --c-ktm: #1f5aa6;
+  /* rail line colours: official KVITS line colours (en.wikipedia.org/wiki/Klang_Valley_Integrated_Transit_System, "System network" table) */
+  --c-lrt: #e0115f; /* 5 Kelana Jaya Line */
+  --c-ktm1: #3c5a9f; /* 1 Batu Caves–Pulau Sebang Line (KB codes) */
+  --c-ktm2: #dc2420; /* 2 Tanjung Malim–Port Klang Line (KD codes) */
   --c-erl: #8d8d8a;
   --c-route: #e2552f;
   --c-amber: #e0a020;
@@ -39,7 +41,7 @@
   --podium: #d3cdc0; /* block a landmark stands on (car park under Masjid Jamek) */
   --train-body: #f4f3ef;
   --train-window: #7d8791;
-  --train-accent: #c97aa3;
+  --train-accent: #e0115f; /* Kelana Jaya Line colour */
   --c-covered: #1b7fa6;
   --scene-water-muted: #dfe3e3;
   --c-open: #8e8e88;
@@ -73,8 +75,9 @@
   --scene-shadow: 0.45;
   --c-water: #3f6f74;
   --c-green: #3f4f36;
-  --c-lrt: #e2449b;
-  --c-ktm: #5b93e0;
+  --c-lrt: #e0115f; /* official line colours, same in both themes */
+  --c-ktm1: #3c5a9f;
+  --c-ktm2: #dc2420;
   --c-erl: #77776f;
   --c-route: #ff7a4d;
   --src-osm: #f0f0ec;
@@ -88,7 +91,7 @@
   --podium: #57534b;
   --train-body: #a9a8a2;
   --train-window: #3b4048;
-  --train-accent: #a2557e;
+  --train-accent: #e0115f;
   --c-covered: #4cc3e0;
   --scene-water-muted: #22292a;
   --c-open: #77776f;
@@ -219,7 +222,8 @@ a { color: inherit; }
 .station-list, .step-list { list-style: none; padding: 0; margin: 0; }
 .station-list li { display: grid; grid-template-columns: 58px 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--hairline); }
 .station-list li:last-child { border-bottom: none; }
-.badge { font-family: var(--font-mono); font-size: 12px; padding: 2px 6px; border-radius: 3px; color: #fff; text-align: center; align-self: start; }
+/* station code badge, KVITS style (Wikipedia Template:KLRT code): line-coloured box, rounded 3px, bold white code */
+.badge { font-family: Helvetica, Arial, var(--font-sans); font-weight: 700; font-size: 12px; line-height: 18px; padding: 0 6px; border-radius: 3px; color: #fff; text-align: center; align-self: start; }
 .small { font-size: 12.5px; color: var(--grey-2); line-height: 1.45; }
 .legend-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 14px; }
 .bars { display: grid; grid-template-columns: 140px 1fr 52px; gap: 5px 10px; align-items: center; font-size: 13px; }
@@ -310,7 +314,8 @@ a { color: inherit; }
 .pin .tag { position: absolute; left: -1px; bottom: 34px; white-space: nowrap; background: var(--paper); border: 1px solid var(--ink); padding: 4px 8px 4px 8px; font-size: 14px; line-height: 1.25; }
 .pin .tag .t { font-weight: 600; }
 .pin .tag .v { font-family: var(--font-mono); font-size: 12.5px; color: var(--grey-1); }
-.pin.station .tag { border-color: transparent; color: #fff; }
+.pin.station .tag { border-color: transparent; color: #fff; border-radius: 3px; }
+.pin.station .tag .t { font-weight: 700; }
 .pin.station .tag .v { color: rgba(255, 255, 255, 0.85); }
 .pin.minor .tag { font-size: 12.5px; padding: 2px 6px; }
 
