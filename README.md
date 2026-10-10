@@ -51,3 +51,18 @@ Map data © OpenStreetMap contributors, ODbL.
 `npm run build && npx vite preview --port 4173 &` then `npm run shots`
 (uses local Google Chrome via puppeteer-core; also checks console errors and
 keyboard handling). Output in `shots/` (git-ignored).
+
+## v2 (demo 0.2)
+
+- **Cited heights**: `scripts/height-sources.json` → applied in `scripts/process-osm.mjs` as `heightSource: "cited"` with a `heightRef` (value, unit, floors, storey height, publisher, URL, fetch date). Full table and limitations: `docs/height-sources.md`.
+- **New chapters**: 06 Walking routes, 07 Sun & shade (NOAA solar position, real shadow map, raycast sidewalk shade), 08 Rain & monsoon (covered vs open-air pedestrian ways; climate normals from the cited WMO table in `src/data/climate.json`).
+- **Languages**: English, 简体中文 (zh-Hans, Malaysia), Bahasa Malaysia. Switch in the top bar, `?lang=en|zh|ms`, remembered in localStorage (`mv-lang`).
+
+### Adding or changing a UI string
+
+1. Add the key to `src/i18n/en.ts` (this file defines the `Dict` type). Use a function when the text contains a computed number, e.g. `statFoo: (m: number) => \`${n(m)} m of footway\``; never type numbers into the text.
+2. Add the same key to `src/i18n/zh.ts` and `src/i18n/ms.ts`. TypeScript (`npm run typecheck`) fails until every locale has it.
+3. Use it via `t().section.key` (chapters are rebuilt on language change, so read `t()` inside `buildChapters()` or a panel, not at module load).
+4. Static page chrome (top bar, credit, reset button) is set in `applyStaticText()` in `src/main.ts`.
+
+Chinese glyphs come from `@fontsource/noto-sans-sc` (Simplified Chinese subset), imported dynamically only when `zh` is active; IBM Plex stays first in the stack so Latin text and digits keep the Plex look.

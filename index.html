@@ -18,14 +18,15 @@
         <div class="grain" aria-hidden="true"></div>
 
         <header class="brand">
-          <span class="mono">MID VALLEY – ABDULLAH HUKUM</span>
-          <span class="mono muted">SITE ANALYSIS · DEMO 0.1</span>
+          <span class="mono" id="brand-name">MID VALLEY – ABDULLAH HUKUM</span>
+          <span class="mono muted" id="brand-sub">SITE ANALYSIS · DEMO 0.2</span>
         </header>
 
         <section id="text-panel" class="text-panel"></section>
         <aside id="side-panel" class="side-panel"></aside>
 
-        <div class="top-buttons" role="toolbar" aria-label="Display controls">
+        <div class="top-buttons" id="top-buttons" role="toolbar" aria-label="Display controls">
+          <div id="lang-switch" class="lang-switch" role="group" aria-label="Language"></div>
           <button id="btn-autoplay" class="icon-btn" aria-pressed="false" title="Autoplay chapters"><span class="ico">▶</span></button>
           <button id="btn-sound" class="icon-btn" aria-pressed="false" title="Sound (chapter chime)"><span class="ico">♪</span></button>
           <button id="btn-theme" class="icon-btn" aria-pressed="false" title="Dark / light"><span class="ico">◐</span></button>
@@ -33,12 +34,12 @@
         </div>
 
         <div class="map-furniture">
-          <div class="compass" title="North arrow follows the camera">
+          <div class="compass" id="compass" title="North arrow follows the camera">
             <svg id="north" viewBox="-30 -30 60 60" width="60" height="60" aria-label="North arrow">
               <circle r="27" class="ring" />
               <g id="north-needle">
                 <path d="M0,-22 L6,4 L0,0 L-6,4 Z" class="needle" />
-                <text y="-8" x="0" text-anchor="middle" class="n">N</text>
+                <text id="north-n" y="-8" x="0" text-anchor="middle" class="n">N</text>
               </g>
             </svg>
           </div>
@@ -49,7 +50,7 @@
         <footer class="bottom-bar">
           <nav id="chapter-tabs" class="tabs" aria-label="Chapters"></nav>
           <div class="progress"><div id="progress-fill"></div><div id="autoplay-fill"></div></div>
-          <div class="credit mono">Illustrative block massing · Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a></div>
+          <div class="credit mono"><span id="credit-prefix">Illustrative block massing · Map data ©</span> <a id="credit-link" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a></div>
         </footer>
       </div>
     </div>

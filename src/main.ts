@@ -6,7 +6,8 @@ import '@fontsource/ibm-plex-mono/600.css';
 import './styles.css';
 import * as THREE from 'three';
 import { World, DEFAULT_MODE, prefersReducedMotion, type View } from './scene';
-import { chapters, type Chapter, type PinDef } from './chapters';
+import { buildChapters, type Chapter, type PinDef } from './chapters';
+import { t, setLang, initialLang, onLangChange, getLang, LANGS, dictFor, type Lang } from './i18n';
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector(sel) as T;
 const stage = $('#stage');
@@ -15,6 +16,10 @@ const params = new URLSearchParams(location.search);
 // ---------- theme (before the scene reads CSS variables) ----------
 const storedTheme = params.get('theme') || localStorage.getItem('mv-theme');
 if (storedTheme === 'dark' || storedTheme === 'light') document.documentElement.dataset.theme = storedTheme;
+
+// ---------- language (before chapters are built) ----------
+setLang(initialLang(), false);
+let chapters: Chapter[] = buildChapters();
 
 // ---------- fit the 1920x1080 stage to the window ----------
 const world = new World($('#gl'));
@@ -85,30 +90,45 @@ world.onFrame.push(updatePins, updateFurniture);
 const tabs = $('#chapter-tabs'); const progressFill = $('#progress-fill');
 let current = -1;
 const pad = (n: number) => String(n).padStart(2, '0');
-chapters.forEach((c, i) => {
-  const b = document.createElement('button'); b.className = 'tab'; b.innerHTML = `<span class="n">${pad(c.id)}</span>${c.label.split(' · ')[0]}`;
-  b.addEventListener('click', () => { stopAutoplay(); goTo(i); }); tabs.append(b);
-});
+function buildTabs() {
+  tabs.innerHTML = '';
+  chapters.forEach((c, i) => {
+    const b = document.createElement('button'); b.className = 'tab'; b.innerHTML = `<span class="n">${pad(c.id)}</span>${c.tab}`;
+    b.addEventListener('click', () => { stopAutoplay(); goTo(i); }); tabs.append(b);
+  });
+  [...tabs.children].forEach((t, k) => (k === current ? t.setAttribute('aria-current', 'step') : t.removeAttribute('aria-current')));
+}
+buildTabs();
+let cleanups: (() => void)[] = [];
+const runCleanups = () => { for (const f of cleanups) f(); cleanups = []; };
+function mountPanel(c: Chapter) {
+  runCleanups(); sidePanel.innerHTML = '';
+  world.setMode({ ...structuredClone(DEFAULT_MODE), ...c.mode });
+  c.panel?.(sidePanel, world, { flyTo: (v: View) => world.flyTo(v), chapterView: c.view, onCleanup: (f) => cleanups.push(f) });
+}
 
 function renderText(c: Chapter) {
   const stats = c.stats.map((s) => `<div class="stat"><div class="fig">${s.fig}<span class="unit">${s.unit ?? ''}</span></div><div class="cap">${s.cap}</div></div>`).join('');
   textPanel.innerHTML = `
     <div class="chapter-label"><span class="num">${pad(c.id)}</span><span class="rule"></span><span>${c.label}</span></div>
-    <h1 class="headline"><span>${c.title[0]}</span><span>${c.title[1]}</span></h1>
+    <h1 class="headline">${c.title.map((x) => `<span>${x}</span>`).join('')}</h1>
     <p class="lead">${c.lead}</p>
     <div class="stats">${stats}</div>
     ${c.hint ? `<div class="hint">${c.hint}</div>` : ''}
     <div class="source">${c.source}</div>`;
+  // shrink any figure that does not fit its 180 px column (long ranges, long units)
+  textPanel.querySelectorAll<HTMLElement>('.stat .fig').forEach((f) => {
+    let size = 52;
+    while (f.scrollWidth > f.parentElement!.clientWidth + 1 && size > 30) { size -= 4; f.style.fontSize = `${size}px`; }
+  });
 }
 function goTo(i: number, instant = false) {
   i = (i + chapters.length) % chapters.length; if (i === current) return;
-  current = i; const c = chapters[i];
+  current = i; const c = chapters[i]; runCleanups();
   [...tabs.children].forEach((t, k) => (k === i ? t.setAttribute('aria-current', 'step') : t.removeAttribute('aria-current')));
   progressFill.style.width = `${((i + 1) / chapters.length) * 100}%`;
   const swap = () => {
-    renderText(c); sidePanel.innerHTML = '';
-    world.setMode({ ...structuredClone(DEFAULT_MODE), ...c.mode });
-    c.panel?.(sidePanel, world, { flyTo: (v: View) => world.flyTo(v), chapterView: c.view });
+    renderText(c); mountPanel(c);
     textPanel.classList.remove('out'); sidePanel.classList.remove('out');
   };
   setPins(c.pins);
@@ -165,8 +185,35 @@ function toggleFullscreen() { if (document.fullscreenElement) document.exitFulls
 btnFs.addEventListener('click', toggleFullscreen);
 $('#btn-reset').addEventListener('click', () => world.flyTo(chapters[current].view));
 
+// ---------- language switcher & static text ----------
+const langSwitch = $('#lang-switch');
+for (const l of LANGS) {
+  const b = document.createElement('button'); b.type = 'button'; b.dataset.lang = l; b.lang = l === 'zh' ? 'zh-Hans' : l;
+  b.textContent = dictFor(l).switchLabel; b.title = dictFor(l).langName;
+  b.addEventListener('click', () => setLang(l as Lang)); langSwitch.append(b);
+}
+function applyStaticText() {
+  const T = t(); const U = T.ui;
+  document.title = T.doc.title; document.querySelector('meta[name="description"]')?.setAttribute('content', T.doc.description);
+  $('#brand-name').textContent = U.brand; $('#brand-sub').textContent = U.brandSub;
+  $('#top-buttons').setAttribute('aria-label', U.toolbar);
+  for (const [id, txt] of [['#btn-autoplay', U.autoplay], ['#btn-sound', U.sound], ['#btn-theme', U.theme], ['#btn-fullscreen', U.fullscreen]] as const) { $(id).title = txt; $(id).setAttribute('aria-label', txt); }
+  langSwitch.setAttribute('aria-label', U.language);
+  langSwitch.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === getLang())));
+  $('#compass').title = U.compass; $('#north').setAttribute('aria-label', U.northArrow); $('#north-n').textContent = U.north;
+  $('#btn-reset').textContent = U.reset; $('#btn-reset').title = U.resetTitle;
+  tabs.setAttribute('aria-label', U.chapters); stage.setAttribute('aria-label', U.stage);
+  $('#credit-prefix').textContent = U.creditPrefix; $('#credit-link').textContent = U.creditLink;
+}
+applyStaticText();
+onLangChange(() => {
+  applyStaticText();
+  chapters = buildChapters(); buildTabs();
+  const c = chapters[current]; renderText(c); mountPanel(c); setPins(c.pins);
+});
+
 // ---------- start ----------
 const fromHash = parseInt((params.get('chapter') ?? location.hash.slice(1)) || '0', 10);
 const startIdx = Math.max(0, chapters.findIndex((c) => c.id === fromHash));
 goTo(startIdx, true);
-(window as unknown as { __mv: unknown }).__mv = { ready: true, goTo: (id: number) => goTo(chapters.findIndex((c) => c.id === id), true), chapters: chapters.map((c) => c.id) };
+(window as unknown as { __mv: unknown }).__mv = { ready: true, goTo: (id: number) => goTo(chapters.findIndex((c) => c.id === id), true), chapters: chapters.map((c) => c.id), setLang: (l: Lang) => setLang(l), lang: getLang };
