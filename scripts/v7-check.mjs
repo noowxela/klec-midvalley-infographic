@@ -8,8 +8,9 @@ mkdirSync('shots-v7', { recursive: true });
 const browser = await puppeteer.launch({ executablePath: chrome, headless: true, args: ['--ignore-gpu-blocklist', '--enable-webgl', '--use-angle=metal', '--hide-scrollbars'] });
 const errors = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function newPage(name, { dark = false, rm = false } = {}) {
+async function newPage(name, { dark = false, rm = false, cpu = 1 } = {}) {
   const page = await browser.newPage();
+  if (cpu > 1) await page.emulateCPUThrottling(cpu); // slow-device case: the scene is genuinely not ready at the minimum
   await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' }, ...(rm ? [{ name: 'prefers-reduced-motion', value: 'reduce' }] : [])]);
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`[${name}] console.${m.type()}: ${m.text()}`); });
   page.on('pageerror', (e) => errors.push(`[${name}] pageerror: ${e.message}`));
@@ -37,10 +38,12 @@ async function timeline(name, q, opts = {}, shotAt = []) {
   console.log('  ', every.join('  '));
   await page.close();
 }
-await timeline('loader-en', 'chapter=0&lang=en', {}, [{ t: 1000, name: 'loader-mid-1s-en' }, { t: 3000, name: 'loader-mid-3s-en' }, { t: 5500, name: 'loader-mid-5.5s-en' }]);
-await timeline('loader-zh-dark', 'chapter=0&lang=zh', { dark: true }, [{ t: 3000, name: 'loader-mid-3s-zh-dark' }]);
-await timeline('loader-en-reduced-motion', 'chapter=0&lang=en', { rm: true }, [{ t: 1500, name: 'loader-mid-1.5s-en-reduced-motion' }]);
+await timeline('loader-en', 'chapter=0&lang=en', {}, [{ t: 1000, name: 'loader-mid-1s-en' }, { t: 1500, name: 'loader-mid-1.5s-en' }, { t: 2700, name: 'loader-mid-2.7s-en' }]);
+await timeline('loader-zh-dark', 'chapter=0&lang=zh', { dark: true }, [{ t: 1500, name: 'loader-mid-1.5s-zh-dark' }]);
+await timeline('loader-en-reduced-motion', 'chapter=0&lang=en', { rm: true }, [{ t: 750, name: 'loader-mid-0.75s-en-reduced-motion' }]);
 await timeline('loader-skip', 'skipLoader=1&chapter=0&lang=en');
+await timeline('loader-en-cpu20x', 'chapter=0&lang=en', { cpu: 20 }); // scene genuinely slow: reveal must wait for ready (> 3 s)
+if (process.env.LOADER_ONLY) { await browser.close(); console.log(errors.length ? errors.join('\n') : 'No console errors or warnings (v7 loader).'); process.exit(0); }
 
 // ---------- 2. mosque on the car park ----------
 async function shot(name, q, setup, opts = {}) {

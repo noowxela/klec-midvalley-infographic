@@ -24,11 +24,11 @@
           ms: { title: 'MID VALLEY – ABDULLAH HUKUM', sub: 'ANALISIS TAPAK · MEMUATKAN', subErr: 'ANALISIS TAPAK', app: 'Aplikasi', data: 'Data peta (OpenStreetMap)', scene: 'Adegan 3D', fonts: 'Fon', frame: 'Bingkai pertama', slow: 'Ini mengambil masa lebih lama daripada biasa.', reload: 'Muat semula', webglTitle: 'Paparan 3D tidak dapat dimulakan', webgl: 'Halaman ini memerlukan WebGL, yang tidak tersedia atau dimatikan dalam pelayar ini. Cuba hidupkan pecutan perkakasan, gunakan pelayar lain, atau muat semula.', initTitle: 'Gagal dimuatkan', init: 'Berlaku ralat semasa memulakan halaman. Sila muat semula.' }
         }[lg];
         // The loader deliberately stays up for at least MIN_LOADER_MS after navigation start so a load is clearly
-        // visible (3 s under prefers-reduced-motion; ?skipLoader=1 bypasses it for dev / screenshots). It hides at
+        // visible (about 3 s; 1.5 s under prefers-reduced-motion, the same 1:2 ratio as before; ?skipLoader=1 bypasses it for dev / screenshots). It hides at
         // max(app truly ready, minimum). Visual progress is paced across the minimum: it follows elapsed time but
         // never runs ahead of the real steps, and a step only shows as done when it is really done AND the paced
         // bar has reached it. The slow-load note appears only if the app is still not ready after SLOW_MS.
-        var MIN_LOADER_MS = 6000, MIN_LOADER_MS_REDUCED = 3000, SLOW_MS = 12000;
+        var MIN_LOADER_MS = 3000, MIN_LOADER_MS_REDUCED = 1500, SLOW_MS = 12000;
         var skip = /^(1|true|yes)$/.test(q.get('skipLoader') || '');
         var MIN = skip ? 0 : rm ? MIN_LOADER_MS_REDUCED : MIN_LOADER_MS;
         var now = function () { return window.performance && performance.now ? performance.now() : Date.now() - L.t0; };
