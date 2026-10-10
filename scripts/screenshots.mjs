@@ -38,16 +38,16 @@ const shots = [
   { name: '02-cover', q: 'chapter=2&lang=en' },
   // smaller left-panel text (compare with before-*.png)
   { name: 'after-01-cover-en-1440x900', q: 'chapter=2&lang=en', w: 1440, h: 900 },
-  { name: 'after-04-massing-ms', q: 'chapter=5&lang=ms' },
-  { name: 'after-08-sun-zh', q: 'chapter=9&lang=zh' },
-  { name: '10-rain-ms', q: 'chapter=10&lang=ms' },
+  { name: 'after-04-massing-ms', q: 'chapter=4&lang=ms' },
+  { name: 'after-08-sun-zh', q: 'chapter=7&lang=zh' },
+  { name: '08-rain-ms', q: 'chapter=8&lang=ms' },
   // collapsible panels
-  { name: '05-massing-panels-open', q: 'chapter=5&lang=en' },
-  { name: '05-massing-left-collapsed', q: 'chapter=5&lang=en', act: async (p) => { await p.click('#tp-toggle'); } },
-  { name: '05-massing-map-only', q: 'chapter=5&lang=en', act: async (p) => { await p.click('#btn-maponly'); } },
-  { name: '08-walking-map-only-key-M', q: 'chapter=8&lang=en', act: async (p) => { await p.keyboard.press('m'); }, wait: 4500 },
-  { name: '07-connections-left-collapsed-dark', q: 'chapter=7&lang=en&theme=dark', act: async (p) => { await p.click('#tp-toggle'); } },
-  { name: '09-sun-right-collapsed-zh', q: 'chapter=9&lang=zh', act: async (p) => { await p.click('#sp-toggle'); } },
+  { name: '04-massing-panels-open', q: 'chapter=4&lang=en' },
+  { name: '04-massing-left-collapsed', q: 'chapter=4&lang=en', act: async (p) => { await p.click('#tp-toggle'); } },
+  { name: '04-massing-map-only', q: 'chapter=4&lang=en', act: async (p) => { await p.click('#btn-maponly'); } },
+  { name: '06-walking-map-only-key-M', q: 'chapter=6&lang=en', act: async (p) => { await p.keyboard.press('m'); }, wait: 4500 },
+  { name: '05-connections-left-collapsed-dark', q: 'chapter=5&lang=en&theme=dark', act: async (p) => { await p.click('#tp-toggle'); } },
+  { name: '07-sun-right-collapsed-zh', q: 'chapter=7&lang=zh', act: async (p) => { await p.click('#sp-toggle'); } },
 ];
 for (const s of shots) {
   if (only && !only.test(s.name)) continue;
@@ -95,10 +95,10 @@ if (!only) {
   const h1 = await page.evaluate(() => location.hash);
   await page.keyboard.press('ArrowRight'); await sleep(900);
   const h2 = await page.evaluate(() => location.hash);
-  await page.evaluate(() => window.__mv.goTo(5)); await sleep(600);
+  await page.evaluate(() => window.__mv.goTo(4)); await sleep(600);
   await page.focus('#thr'); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight'); await sleep(600);
   const h3 = await page.evaluate(() => location.hash); const thr = await page.$eval('#thr', (e) => e.value);
-  await page.evaluate(() => window.__mv.goTo(9)); await sleep(800);
+  await page.evaluate(() => window.__mv.goTo(7)); await sleep(800);
   const before = await page.$eval('#sun-time', (e) => e.value);
   await page.focus('#sun-time'); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowLeft'); await page.keyboard.press('ArrowLeft'); await sleep(600);
   const h4 = await page.evaluate(() => location.hash); const after = await page.$eval('#sun-time', (e) => e.value);

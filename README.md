@@ -14,7 +14,7 @@ npm run build      # type-check (tsc) + production build into dist/
 npm run preview    # serve dist/ on http://127.0.0.1:4173/
 ```
 
-Deep links: `?chapter=0|1|2|3|5|7|8|9|10` (or `#00` … `#10`), `?theme=dark`. Since v14 the numbers are the v14 chapter numbers below; links made before v14 (e.g. `#01` for Transit hub) now open the chapter with that new number.
+Deep links: `?chapter=0` … `?chapter=8` (or `#00` … `#08`), `?theme=dark`. The numbers are the current (v16) chapter numbers below; links made before v16 open the chapter that now has that number.
 Keys: → / ↓ / Space next chapter, ← / ↑ previous, Home overview, F fullscreen, M map only (hide both panels)
 (ignored while a slider or input has focus). Drag to rotate, scroll to zoom,
 right-drag to pan, RESET VIEW returns to the chapter camera.
@@ -78,26 +78,24 @@ Chinese glyphs come from `@fontsource/noto-sans-sc` (Simplified Chinese subset),
 
 Chapter numbering (plan numbers; unbuilt chapters are skipped in the tab bar, `?chapter=` takes these numbers):
 
-Since v14 (a new 01 Landmarks chapter; every later chapter moved up by one). Notes further down that predate v14 use the old numbers (old 01 = new 02, 02 = 03, 04 = 05, 06 = 07, 07 = 08, 08 = 09, 09 = 10).
+Since v16 the chapters are numbered consecutively 00–08 (unbuilt plan chapters are no longer reserved). Notes further down use the numbers that were current when they were written.
 
-| # | Chapter | Status | before v14 |
+| # | Chapter | v14–v15 | before v14 |
 |---|---|---|---|
-| 00 | Overview (text panel only, no side panel; the model fills the area right of the text; slow turntable orbit, v15) | built | 00 |
-| 01 | Landmarks: precincts, landmark mosques, car park (the former 00 side panel, map colouring and pins) | built | — |
-| 02 | Transit hub (cover) | built | 01 |
-| 03 | Location | built | 02 |
-| 04 | Timeline | planned | 03 |
-| 05 | Massing | built | 04 |
-| 06 | Uses | planned | 05 |
-| 07 | Connections | built | 06 |
-| 08 | Walking routes | built | 07 |
-| 09 | Sun & shade | built | 08 |
-| 10 | Rain & monsoon | built | 09 |
+| 00 | Overview (text panel only; model fills the area right of the text; slow turntable orbit) | 00 | 00 |
+| 01 | Landmarks: precincts, landmark mosques, car park | 01 | — |
+| 02 | Transit hub (cover) | 02 | 01 |
+| 03 | Location | 03 | 02 |
+| 04 | Massing | 05 | 04 |
+| 05 | Connections | 07 | 06 |
+| 06 | Walking routes | 08 | 07 |
+| 07 | Sun & shade | 09 | 08 |
+| 08 | Rain & monsoon | 10 | 09 |
 
-**Precinct rule (chapter 01 Landmarks; chapter 00 before v14)**, computed in `scripts/process-osm.mjs` (`zone` on each block, stats in `meta.zones`):
+**Precinct rule (chapter 01 Landmarks; chapter 00 before v14; rule 3 changed in v16)**, computed in `scripts/process-osm.mjs` (`zone` on each block, stats in `meta.zones`):
 1. *The Gardens*: blocks named The Gardens Mall / North Tower / South Tower / St. Giles The Gardens Residences / The Gardens Hotel, or parts of an outline with one of those names (the towers are mapped as parts of the "The Gardens Mall" outline). The Gardens Hotel has no named OSM footprint.
 2. *KL Eco City*: other blocks whose centroid is inside the OSM landuse polygon "KL Eco City".
-3. *Mid Valley*: other blocks whose centroid is inside the OSM landuse polygon "Mid Valley City" (The Gardens lies inside it and is split out by rule 1).
+3. *Mid Valley Megamall* (v16): the OSM building "Mid Valley Megamall" (way/922804567, building=mall) and the building:parts mapped inside that outline: 73 blocks, about 5.6 ha of footprint. Before v16 this precinct was every remaining block in the OSM landuse polygon "Mid Valley City" (97 blocks, about 7.7 ha, including the Boulevard offices, MidValley Tower of Light, Cititel, South Point and Northpoint).
 Footprint per precinct = union of block footprints on a 1 m grid.
 
 **Panels**: the text panel and side panel collapse with the chevron tabs on their inner edges; the top-bar button or **M** hides both. State is saved in localStorage (`mv-panels`) and kept across chapters; the 3D view recentres on the free space.
@@ -201,3 +199,9 @@ make room for the footer note). Check with `scripts/bar-check.mjs`.
 - RESET VIEW on 00 ignores the bearing: it appears only when pitch, zoom or target change.
 - Leaving 00 stops the orbit; the next chapter's flight starts from the current bearing. The compass, pins and trains update every frame as before.
 - `scripts/orbit-check.mjs` checks all of this and writes two 00 screenshots 4 s apart to `shots-orbit/`.
+
+## v16: three precincts, consecutive chapter numbers
+
+- The three precincts are KL Eco City, The Gardens and Mid Valley Megamall (zh 谷中城购物广场). The Mid Valley precinct now covers only the Megamall outline and its parts (rule 3 above), so the coloured area matches the name. On 01 the precinct pin carries the Megamall name, so the separate v13 Megamall label was removed (no duplicate).
+- "Mid Valley City" no longer appears in user-facing text (precinct description, leads in 00 / 03 / 04, the 03 outline label; the 03 map draws only the KL Eco City outline). The OSM polygon name stays in the 01 source note. rail-check fails if it appears on screen outside a source note.
+- Chapters renumbered 00–08 (table above): ids, tabs, hashes / `?chapter=`, cross-references in all three locales, comments and test scripts.

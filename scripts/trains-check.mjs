@@ -63,7 +63,7 @@ const run = await page.evaluate(async () => { const tr = window.__mv.world.train
 console.log('clock', JSON.stringify(run));
 await page.click('#btn-trains');
 const tog = await page.evaluate(() => ({ visible: window.__mv.world.trains.group.visible, pressed: document.querySelector('#btn-trains').getAttribute('aria-pressed'), label: document.querySelector('#btn-trains').getAttribute('aria-label'), stored: localStorage.getItem('mv-trains') }));
-await page.evaluate(() => window.__mv.goTo(7)); await sleep(300);
+await page.evaluate(() => window.__mv.goTo(5)); await sleep(300);
 const tog2 = await page.evaluate(() => window.__mv.world.trains.group.visible);
 console.log('toggle', JSON.stringify(tog), 'after chapter change visible:', tog2);
 for (const l of ['zh', 'ms']) { await page.evaluate((l) => window.__mv.setLang(l), l); await sleep(200); console.log('label', l, await page.evaluate(() => document.querySelector('#btn-trains').getAttribute('aria-label'))); }

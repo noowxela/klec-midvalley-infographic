@@ -165,7 +165,6 @@ export function buildChapters(): Chapter[] {
         stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
         stationPin('KD01', 'ktm2', N.kj17, `KTM · ${showCode('KD01')}`),
         stationPin('KB01', 'ktm1', N.kb01, `KTM · ${showCode('KB01')}`),
-        placePin('Mid Valley Megamall', N.megamall, undefined, 'minor'), // landmark label: the mall itself (not the wider Mid Valley City)
       ]),
       // legend lives in the side panel (precinct colours + landmark mosques)
       panel: (el) => {
@@ -220,7 +219,6 @@ export function buildChapters(): Chapter[] {
         textPin('lbl-fed', N.fedHwy, longestNamed(lines.roads, 'Lebuhraya Persekutuan'), 1, N.fedHwy === N.fedHwyLocal ? undefined : N.fedHwyLocal),
         textPin('lbl-bangsar', N.bangsar, longestNamed(lines.roads, 'Jalan Bangsar'), 1),
         precinct('KL Eco City') ? textPin('lbl-eco', N.ecoCity, centroid(precinct('KL Eco City')!.ring), 70, T.ch2.precinctPin) : null,
-        precinct('Mid Valley City') ? textPin('lbl-mvc', N.mvCity, centroid(precinct('Mid Valley City')!.ring), 120, T.ch2.precinctPin) : null,
       ]),
       panel: (el, world) => {
         const s1 = h('section'); s1.append(h('h3', {}, T.common.layers));
@@ -236,9 +234,9 @@ export function buildChapters(): Chapter[] {
         el.append(s1, s2);
       },
     },
-    // ---------------- 05 massing ----------------
+    // ---------------- 04 massing ----------------
     {
-      id: 5, label: T.ch4.label, tab: T.ch4.tab, title: T.ch4.title, lead: T.ch4.lead,
+      id: 4, label: T.ch4.label, tab: T.ch4.tab, title: T.ch4.title, lead: T.ch4.lead,
       stats: [
         ...(tallestH ? [{ fig: fmt(tallestH), unit: U.m, cap: T.ch4.statTallest(tallestNames) }] : []),
         { fig: fmt(stats.heightCited), unit: U.blocks, cap: T.ch4.statCited(stats.citedNamed) },
@@ -272,9 +270,9 @@ export function buildChapters(): Chapter[] {
         el.append(s1, s2);
       },
     },
-    // ---------------- 07 connections ----------------
+    // ---------------- 05 connections ----------------
     {
-      id: 7, label: T.ch6.label, tab: T.ch6.tab, title: T.ch6.title, lead: T.ch6.lead(fmt(stats.routeTotalM)),
+      id: 5, label: T.ch6.label, tab: T.ch6.tab, title: T.ch6.title, lead: T.ch6.lead(fmt(stats.routeTotalM)),
       stats: [
         { fig: fmt(stats.routeTotalM), unit: U.m, cap: T.ch6.statLength },
         { fig: `≈${fmt(stats.routeMinutes)}`, unit: U.min, cap: T.ch6.statTime },
@@ -307,9 +305,9 @@ export function buildChapters(): Chapter[] {
         el.append(s1, s2);
       },
     },
-    // ---------------- 08 walking routes ----------------
+    // ---------------- 06 walking routes ----------------
     {
-      id: 8, label: T.ch7.label, tab: T.ch7.tab, title: T.ch7.title, lead: T.ch7.lead,
+      id: 6, label: T.ch7.label, tab: T.ch7.tab, title: T.ch7.title, lead: T.ch7.lead,
       stats: [
         { fig: fmt(walks.length), unit: U.routes, cap: T.ch7.statCount },
         { fig: `${fmt(walkTotals.min)}–${fmt(walkTotals.max)}`, unit: U.m, cap: T.ch7.statRange },
@@ -351,9 +349,9 @@ export function buildChapters(): Chapter[] {
         if (walks[0]) show(walks[0], false);
       },
     },
-    // ---------------- 09 sun & shade ----------------
+    // ---------------- 07 sun & shade ----------------
     {
-      id: 9, label: T.ch8.label, tab: T.ch8.tab, title: T.ch8.title,
+      id: 7, label: T.ch8.label, tab: T.ch8.tab, title: T.ch8.title,
       lead: T.ch8.lead(meta.center.lat.toFixed(1), fmt(noon.jun.pos.altitude, 1), fmt(noon.dec.pos.altitude, 1)),
       stats: (['mar', 'jun', 'dec'] as PresetKey[]).map((k) => ({ fig: fmt(noon[k].pos.altitude, 1), unit: U.deg, cap: T.ch8.statNoon(T.ch8.presetDates[k], T.ch8.dir[noonDir(k)]) })),
       source: T.ch8.source(meta.center.lat.toFixed(4), meta.center.lon.toFixed(4), groundSamples.length),
@@ -444,9 +442,9 @@ export function buildChapters(): Chapter[] {
         update(true);
       },
     },
-    // ---------------- 10 rain & monsoon ----------------
+    // ---------------- 08 rain & monsoon ----------------
     {
-      id: 10, label: T.ch9.label, tab: T.ch9.tab, title: T.ch9.title,
+      id: 8, label: T.ch9.label, tab: T.ch9.tab, title: T.ch9.title,
       lead: T.ch9.lead(fmt(climate.yearPrecipitationMm), fmt(climate.yearPrecipitationDays, 1), T.monthsLong[wettestIdx]),
       stats: [
         { fig: fmt(stats.shelteredFootPct), unit: U.pct, cap: T.ch9.statFoot(stats.shelteredFootM, stats.footwayM) },

@@ -59,11 +59,11 @@ console.log(bad.length ? 'BAD\n' + bad.join('\n') : 'credit OK on every chapter 
 const collapsed = JSON.stringify({ tp: true, sp: true });
 const shots = [
   ['00-overview-en-panels-open', 'chapter=0&lang=en'], ['00-overview-en-panels-collapsed', 'chapter=0&lang=en', { panels: collapsed }],
-  ['09-sun-en-panels-open', 'chapter=9&lang=en'], ['09-sun-en-panels-collapsed', 'chapter=9&lang=en', { panels: collapsed }],
+  ['07-sun-en-panels-open', 'chapter=7&lang=en'], ['07-sun-en-panels-collapsed', 'chapter=7&lang=en', { panels: collapsed }],
   ['00-overview-zh-panels-open', 'chapter=0&lang=zh'], ['00-overview-zh-panels-collapsed', 'chapter=0&lang=zh', { panels: collapsed }],
-  ['09-sun-zh-panels-open', 'chapter=9&lang=zh'], ['05-massing-ms-dark', 'chapter=5&lang=ms&theme=dark'],
+  ['07-sun-zh-panels-open', 'chapter=7&lang=zh'], ['04-massing-ms-dark', 'chapter=4&lang=ms&theme=dark'],
   ['00-overview-en-1440x900', 'chapter=0&lang=en', { w: 1440, h: 900 }],
-  ['00-overview-en-mobile-390x844', 'chapter=0&lang=en', { w: 390, h: 844, dpr: 2 }], ['09-sun-en-mobile-landscape-844x390-dark', 'chapter=9&lang=en&theme=dark', { w: 844, h: 390, dpr: 2 }],
+  ['00-overview-en-mobile-390x844', 'chapter=0&lang=en', { w: 390, h: 844, dpr: 2 }], ['07-sun-en-mobile-landscape-844x390-dark', 'chapter=7&lang=en&theme=dark', { w: 844, h: 390, dpr: 2 }],
 ];
 for (const [name, q, o = {}] of shots) {
   const pg = await open(name, q, o); await sleep(2200);

@@ -53,7 +53,8 @@ const probe = () => {
   const tp = document.querySelector('#text-panel').getBoundingClientRect(), bar = document.querySelector('.bottom-bar').getBoundingClientRect(), sp = document.querySelector('#side-panel');
   const fit = { textBottom: Math.round(tp.bottom), barTop: Math.round(bar.top), sideScroll: sp.scrollHeight > sp.clientHeight + 1 };
   const side = { n: document.getElementById('side-panel').childElementCount, toggle: getComputedStyle(document.getElementById('sp-toggle')).display };
-  return { side, vars, pins, badges, legend, tags: tags.map((t) => t.t), overlaps, pills, kb, hint, fit, chapter: window.__mv?.current ?? null };
+  const mvc = []; { const w = document.createTreeWalker(document.getElementById('stage'), NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { if (n.parentElement.closest('.source')) continue; if (/Mid Valley City/.test(n.textContent) && n.parentElement.getClientRects().length) mvc.push(n.textContent.trim().slice(0, 80)); } }
+  return { mvc, side, vars, pins, badges, legend, tags: tags.map((t) => t.t), overlaps, pills, kb, hint, fit, chapter: window.__mv?.current ?? null };
 };
 const check = (name, s) => {
   for (const [k, v] of Object.entries(OFFICIAL)) if (s.vars[k] !== v) bad.push(`${name} ${k}=${s.vars[k]}`);
@@ -70,7 +71,9 @@ const check = (name, s) => {
   if (/^02-/.test(name)) for (const c of ['KD · 16', 'KB · 10']) if (!s.legend.some(([t]) => t.includes(c))) bad.push(`${name} legend missing ${c}`);
   // 01 Landmarks: the Mid Valley Megamall label is shown; no 'Mid Valley City' landmark label
   if (/^00-/.test(name) && (s.side.n || s.side.toggle !== 'none')) bad.push(`${name} side panel on 00 (${JSON.stringify(s.side)})`);
-  if (/^01-/.test(name)) { if (!s.tags.some((t) => t.startsWith('Mid Valley Megamall'))) bad.push(`${name} no visible Mid Valley Megamall label`); if (s.tags.some((t) => /Mid Valley City/.test(t))) bad.push(`${name} Mid Valley City label on 01`); }
+  if (/^01-/.test(name)) { const mm = s.tags.filter((t) => /^(Mid Valley Megamall|谷中城购物广场)/.test(t)); if (mm.length !== 1) bad.push(`${name} Mid Valley Megamall labels: ${mm.length} (want exactly 1)`); }
+  // no 'Mid Valley City' wording anywhere on screen outside source notes (v16)
+  if (s.mvc.length) bad.push(`${name} Mid Valley City on screen: ${s.mvc.join(' | ')}`);
   if (/^02-/.test(name)) for (const c of ['KJ17', 'KTM · 16', 'KTM · 10']) if (!s.tags.some((t) => t.includes(c))) bad.push(`${name} no visible ${c} label`);
   for (const b of s.badges) { if (BADGE[b.code] && b.bg !== BADGE[b.code]) bad.push(`${name} badge ${b.code} ${b.bg}`); if (b.code === '—') bad.push(`${name} badge without code`); }
 };

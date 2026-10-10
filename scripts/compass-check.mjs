@@ -101,7 +101,7 @@ for (const [name, q, opt, setup] of [
   ['mobile-390x844', 'chapter=2&lang=en', { w: 390, h: 844, dpr: 2, mobile: true }],
   ['mobile-landscape-844x390', 'chapter=2&lang=en', { w: 844, h: 390, dpr: 2, mobile: true }],
   ['mobile-360x640-zh', 'chapter=3&lang=zh', { w: 360, h: 640, dpr: 2, mobile: true }],
-  ['mobile-667x375-ms', 'chapter=5&lang=ms', { w: 667, h: 375, dpr: 2, mobile: true }],
+  ['mobile-667x375-ms', 'chapter=4&lang=ms', { w: 667, h: 375, dpr: 2, mobile: true }],
   ['small-window-1100x700', 'chapter=2&lang=en', { w: 1100, h: 700 }],
   ['reduced-motion', 'chapter=2&lang=en', { rm: true }],
 ]) {
