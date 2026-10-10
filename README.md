@@ -178,3 +178,15 @@ current or hovered; on hover the hairline becomes a 2 px accent. ← / → butto
 and its top sits 86 px above the stage bottom, as on Banqiao; the "Illustrative block massing" note and the corner OSM
 credit sit below it. The bottom fade matches Banqiao's: solid, then 70 % at 64 px, then clear (ours is 20 px taller to
 make room for the footer note). Check with `scripts/bar-check.mjs`.
+
+## Compass and RESET VIEW
+
+- **Compass.** An inline SVG dial with a hairline ring (`--hairline`), four subtle ticks (`--grey-2`) and a symmetric needle centred on the dial. The north half is solid ink and the south half is outlined (`--grey-1`), with a small hub. The "N" sits inside the dial, in line with the needle tip. The whole rose turns with the camera bearing (`world.northAngle()`). Strokes are non-scaling, so the dial stays crisp at any stage scale and in both themes. Clicking the compass does nothing, the same as before.
+- **RESET VIEW.** The button sits immediately left of the compass and is vertically centred with it. It appears only after the user has moved the camera (OrbitControls `start`: drag, wheel or touch) and while the camera is away from the chapter's preset. "Away" means target more than 8 m, bearing or tilt more than about 2°, or distance more than 4 % (`World.isNear`).
+- It hides again:
+  - when clicked;
+  - when the camera is back near the preset;
+  - while a flight animates;
+  - on chapter change.
+- It fades and slides 8 px over 0.22 s, instantly under reduced motion. While hidden it has `visibility: hidden`, `tabindex=-1` and `aria-hidden`, so it is out of the tab order. Its translated label and title are unchanged.
+- `scripts/compass-check.mjs` checks the button: hidden on load, after a chapter change and after a click; visible and focusable after a drag or zoom; centred with the compass. It also checks for overlap with the credit, bottom bar, side panel (open or collapsed) and scale bar at 1920×1080, 1440×900 and on mobile. Close-ups go to `shots-compass/`.

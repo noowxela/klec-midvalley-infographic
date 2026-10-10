@@ -192,17 +192,22 @@
         </div>
 
         <div class="map-furniture">
+          <div class="scalebar mono"><div id="scale-bar" class="bar"></div><span id="scale-label">100 m</span></div>
+          <!-- shown only while the camera is away from the chapter's preset (see updateResetBtn in main.ts) -->
+          <button id="btn-reset" class="text-btn mono is-hidden" type="button" tabindex="-1" aria-hidden="true" title="Reset camera to this chapter's view">RESET VIEW</button>
           <div class="compass" id="compass" title="North arrow follows the camera">
-            <svg id="north" viewBox="-30 -30 60 60" width="60" height="60" aria-label="North arrow">
+            <!-- dial: hairline ring; the whole rose (4 ticks, needle, N) turns with the camera bearing -->
+            <svg id="north" viewBox="-30 -30 60 60" width="60" height="60" role="img" aria-label="North arrow">
               <circle r="27" class="ring" />
               <g id="north-needle">
-                <path d="M0,-22 L6,4 L0,0 L-6,4 Z" class="needle" />
-                <text id="north-n" y="-8" x="0" text-anchor="middle" class="n">N</text>
+                <path d="M0,-27V-23.2M27,0H23.2M0,27V23.2M-27,0H-23.2" class="ticks" />
+                <path d="M0,-12.5L3.6,0H-3.6Z" class="needle-n" />
+                <path d="M0,12.5L3.6,0H-3.6Z" class="needle-s" />
+                <circle r="1.5" class="hub" />
+                <text id="north-n" x="0" y="-17.6" text-anchor="middle" dominant-baseline="central" class="n">N</text>
               </g>
             </svg>
           </div>
-          <div class="scalebar mono"><div id="scale-bar" class="bar"></div><span id="scale-label">100 m</span></div>
-          <button id="btn-reset" class="text-btn mono" title="Reset camera to this chapter's view">RESET VIEW</button>
         </div>
 
         <footer class="bottom-bar">

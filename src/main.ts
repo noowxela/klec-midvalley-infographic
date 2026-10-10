@@ -133,7 +133,19 @@ function updateFurniture() {
   const nice = [10, 20, 25, 50, 100, 200, 250, 500, 1000].find((m) => m * ppm >= 90) ?? 1000;
   scaleBar.style.width = `${(nice * ppm).toFixed(1)}px`; scaleLabel.textContent = `${nice} m`;
 }
-world.onFrame.push(updatePins, updateFurniture);
+// RESET VIEW: only while the user has moved the camera away from this chapter's preset. userMoved is set by
+// OrbitControls 'start' (drag, wheel, touch, keys) and cleared on chapter change and on reset; the button also hides
+// whenever the camera is back near the preset or a flight is animating.
+const btnReset = $('#btn-reset') as HTMLButtonElement;
+let userMoved = false;
+function updateResetBtn() {
+  const show = userMoved && current >= 0 && !world.isFlying() && !world.isNear(chapters[current].view);
+  if (btnReset.classList.contains('is-hidden') === show) {
+    if (!show && document.activeElement === btnReset) btnReset.blur();
+    btnReset.classList.toggle('is-hidden', !show); btnReset.setAttribute('aria-hidden', String(!show)); btnReset.tabIndex = show ? 0 : -1;
+  }
+}
+world.onFrame.push(updatePins, updateFurniture, updateResetBtn);
 
 // ---------- chapters ----------
 const tabs = $('#chapter-tabs');
@@ -178,7 +190,7 @@ function renderText(c: Chapter) {
 }
 function goTo(i: number, instant = false) {
   i = (i + chapters.length) % chapters.length; if (i === current) return;
-  current = i; const c = chapters[i]; runCleanups();
+  current = i; const c = chapters[i]; runCleanups(); userMoved = false; // the camera flies to the new preset
   [...tabs.children].forEach((t, k) => (k === i ? t.setAttribute('aria-current', 'step') : t.removeAttribute('aria-current')));
   const swap = () => {
     renderText(c); mountPanel(c);
@@ -223,7 +235,7 @@ btnAuto.addEventListener('click', () => { autoplay = !autoplay; btnAuto.setAttri
   if (autoplay) { const k = (performance.now() - autoStart) / AUTO_MS; setRun(true, k); if (k >= 1) goTo(current + 1); }
   requestAnimationFrame(tick);
 })();
-world.onUserInteract = () => stopAutoplay();
+world.onUserInteract = () => { stopAutoplay(); userMoved = true; };
 
 let sound = false; let actx: AudioContext | null = null;
 btnSound.addEventListener('click', () => { sound = !sound; btnSound.setAttribute('aria-pressed', String(sound)); if (sound) { actx ??= new AudioContext(); chime(); } });
@@ -244,7 +256,7 @@ btnTheme.addEventListener('click', () => {
 syncThemeBtn();
 function toggleFullscreen() { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.().catch(() => {}); }
 btnFs.addEventListener('click', toggleFullscreen);
-$('#btn-reset').addEventListener('click', () => world.flyTo(chapters[current].view));
+$('#btn-reset').addEventListener('click', () => { userMoved = false; updateResetBtn(); world.flyTo(chapters[current].view); });
 
 // ---------- language switcher & static text ----------
 const langSwitch = $('#lang-switch');
