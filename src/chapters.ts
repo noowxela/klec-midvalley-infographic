@@ -129,7 +129,6 @@ export function buildChapters(): Chapter[] {
     // ---------------- 00 overview ----------------
     {
       id: 0, label: Z.label, tab: Z.tab, title: Z.title, lead: Z.lead,
-      legend: { title: Z.legendTitle, items: [...ZONES.map((z) => ({ swatch: `var(--z-${z})`, label: Z.zones[z], desc: Z.zoneDesc[z] })), ...(landmarks.length ? [{ swatch: 'var(--landmark)', label: Z.mosques, desc: Z.mosquesDesc }] : [])] },
       stats: ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ fig: fmt(zs[z].footprintM2 / 10000, 1), unit: U.ha, cap: Z.statZone(Z.zones[z], zs[z].blocks), swatch: `var(--z-${z})` })),
       source: Z.source(OSM_SRC),
       view: { target: [-10, 0, -30], azimuth: 0.2, polar: 0.7, distance: 2350 }, // turned so Masjid Jamek is not hidden behind the KL Eco City towers
@@ -141,6 +140,13 @@ export function buildChapters(): Chapter[] {
         stationPin('KD01', 'ktm', N.kj17, 'KTM · KD01'),
         stationPin('KB01', 'ktm', N.kb01, 'KTM · KB01'),
       ]),
+      // legend lives in the side panel (precinct colours + landmark mosques)
+      panel: (el) => {
+        const s = h('section', { class: 'ov-legend' }); s.append(h('h3', {}, Z.legendTitle));
+        const rows = [...ZONES.map((z) => ({ swatch: `var(--z-${z})`, label: Z.zones[z], desc: Z.zoneDesc[z] })), ...(landmarks.length ? [{ swatch: 'var(--landmark)', label: Z.mosques, desc: Z.mosquesDesc }] : [])];
+        for (const r of rows) s.append(h('div', { class: 'ov-legend-row' }, `<span class="swatch box" style="background:${r.swatch}"></span><div><div class="lg-label">${r.label}</div><div class="lg-desc">${r.desc}</div></div>`));
+        el.append(s);
+      },
     },
     // ---------------- 01 cover ----------------
     {

@@ -23,6 +23,12 @@ async function open(name, q, w = 1920, h = 1080, rm = false) {
   return page;
 }
 const shots = [
+  // v5: overview legend moved to the side panel
+  { name: 'v5-00-overview-en', q: 'chapter=0&lang=en' },
+  { name: 'v5-00-overview-en-1440x900', q: 'chapter=0&lang=en', w: 1440, h: 900 },
+  { name: 'v5-00-overview-zh', q: 'chapter=0&lang=zh' },
+  { name: 'v5-00-overview-ms-dark', q: 'chapter=0&lang=ms&theme=dark' },
+  { name: 'v5-00-overview-en-side-collapsed', q: 'chapter=0&lang=en', act: async (p) => { await p.click('#sp-toggle'); } },
   // v3: overview + renumbered cover
   { name: '00-overview', q: 'chapter=0&lang=en' },
   { name: '00-overview-dark', q: 'chapter=0&lang=en&theme=dark' },

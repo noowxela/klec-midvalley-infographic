@@ -177,6 +177,12 @@ a { color: inherit; }
 .tp-legend-row .lg-label { font-weight: 600; }
 .tp-legend-row .lg-desc { color: var(--grey-1); font-size: 12px; }
 :root[data-lang='zh'] .tp-legend-row { grid-template-columns: 16px 150px 1fr; }
+/* overview legend in the side panel */
+.ov-legend-row { display: grid; grid-template-columns: 16px 1fr; gap: 12px; align-items: start; margin: 0 0 14px; }
+.ov-legend-row:last-child { margin-bottom: 0; }
+.ov-legend-row .swatch.box { width: 16px; height: 16px; margin-top: 2px; border-radius: 2px; }
+.ov-legend-row .lg-label { font-weight: 600; font-size: 15px; line-height: 1.3; }
+.ov-legend-row .lg-desc { color: var(--grey-1); font-size: 13px; line-height: 1.45; margin-top: 2px; }
 
 /* collapsible panels */
 .panel-tab { position: absolute; top: 140px; width: 26px; height: 64px; border: 1px solid var(--hairline); background: var(--panel-bg); cursor: pointer; display: grid; place-items: center; font-size: 18px; color: var(--grey-1); z-index: 5;
