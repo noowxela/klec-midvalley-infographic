@@ -92,7 +92,7 @@ export const zh: Dict = {
   ch0: {
     label: '概览',
     tab: '概览',
-    title: ['三个片区，', '一个交通枢纽'],
+    title: ['三大商圈，', '汇聚城市交通'],
     lead: '吉隆坡生态城位于巴生河西岸；The Gardens 与 Mid Valley Megamall 同属东岸的谷中城。Abdullah Hukum 站（轻快铁 KJ17、KTM · 16）与谷中城 KTM 站（KTM · 10）把整个聚落串连起来，其间以人行天桥和商场通道相连。',
     hint: '按 → 或空格键开始 · F 全屏 · M 仅显示地图 · 拖动旋转',
     dataTitle: '数据',
@@ -126,7 +126,7 @@ export const zh: Dict = {
     studyArea: '研究范围',
     studyText: (lat: string, lon: string, size: string, bbox: string) => `中心 北纬 ${lat}°，东经 ${lon}° · ${size} 米 × ${size} 米（虚线框）。<br/>边界框 ${bbox}`,
     onModel: '模型图例',
-    legend: { building: '建筑体块（OSM 轮廓拉伸）', water: '巴生河与水体', green: '公园与草地', lrt: '格拉那再也线轻快铁（OSM）', ktm2: 'KTM 巴生港线（Tanjung Malim–Port Klang，KD）（OSM）', ktm1: 'KTM 芙蓉线（Batu Caves–Pulau Sebang，KB）（OSM）' },
+    legend: { building: '建筑体块（OSM 轮廓拉伸）', water: '巴生河与水体', green: '公园与草地', lrt: '格拉那再也线轻快铁（OSM）', ktm2: (code: string) => `KTM 巴生港线（Tanjung Malim–Port Klang，${code}）（OSM）`, ktm1: (code: string) => `KTM 芙蓉线（Batu Caves–Pulau Sebang，${code}）（OSM）` },
     quality: '数据质量',
     qualityText: (cited: number, osm: number, levels: number, est: number) => `${n(cited)} 个体块采用有出处的高度，${n(osm)} 个有 OSM 高度标签，${n(levels)} 个有楼层数；${n(est)} 个皆无，使用占位高度（5–9 米，或沿用母轮廓的楼层数）。见第 04 章。`,
   },

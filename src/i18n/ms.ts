@@ -91,7 +91,7 @@ export const ms: Dict = {
   ch0: {
     label: 'Gambaran keseluruhan',
     tab: 'Gambaran',
-    title: ['Tiga presint,', 'satu hab transit'],
+    title: ['Tiga daerah komersial,', 'satu hab transit bandar'],
     lead: 'KL Eco City terletak di tebing barat Sungai Klang; The Gardens dan Mid Valley Megamall berkongsi Mid Valley City di tebing timur. Stesen Abdullah Hukum (LRT KJ17, KTM · 16) dan Stesen KTM Mid Valley (KTM · 10) menyatukan gugusan ini, dihubungkan oleh jejantas dan koridor pusat beli-belah.',
     hint: 'Tekan → atau Space untuk mula · F skrin penuh · M peta sahaja · seret untuk putar',
     dataTitle: 'Data',
@@ -125,7 +125,7 @@ export const ms: Dict = {
     studyArea: 'Kawasan kajian',
     studyText: (lat: string, lon: string, size: string, bbox: string) => `Pusat ${lat}° U, ${lon}° T · ${size} m × ${size} m (bingkai putus-putus).<br/>BBox ${bbox}`,
     onModel: 'Pada model',
-    legend: { building: 'Blok bangunan (tapak OSM, diekstrud)', water: 'Sungai Klang & air', green: 'Taman & rumput', lrt: 'Laluan LRT Kelana Jaya (OSM)', ktm2: 'Laluan KTM Tanjung Malim–Pelabuhan Klang, KD (OSM)', ktm1: 'Laluan KTM Batu Caves–Pulau Sebang, KB (OSM)' },
+    legend: { building: 'Blok bangunan (tapak OSM, diekstrud)', water: 'Sungai Klang & air', green: 'Taman & rumput', lrt: 'Laluan LRT Kelana Jaya (OSM)', ktm2: (code: string) => `Laluan KTM Tanjung Malim–Pelabuhan Klang, ${code} (OSM)`, ktm1: (code: string) => `Laluan KTM Batu Caves–Pulau Sebang, ${code} (OSM)` },
     quality: 'Kualiti data',
     qualityText: (cited: number, osm: number, levels: number, est: number) => `${n(cited)} blok menggunakan ketinggian bersumber, ${n(osm)} tag height OSM dan ${n(levels)} bilangan tingkat; ${n(est)} tiada semua ini dan menggunakan nilai sementara (5–9 m, atau tingkat garis luar induk). Lihat bab 04.`,
   },

@@ -33,6 +33,7 @@ function fit() {
   stage.style.transform = `translate(${(window.innerWidth - 1920 * s) / 2}px, ${(window.innerHeight - 1080 * s) / 2}px) scale(${s})`;
   world.setPixelRatio(s);
   placeCredit(s);
+  placeFurniture(s);
 }
 // OSM credit: unscaled text in the stage's bottom-right corner, level with the footer line (right of the
 // "Illustrative block massing" note, below the reset / scale furniture). When the stage is letterboxed with
@@ -48,6 +49,26 @@ function placeCredit(s: number) {
   el.style.fontSize = below ? '' : `${fs}px`; el.style.lineHeight = below ? '' : `${lh}px`;
   el.style.bottom = below ? `${Math.round(gapY - 20)}px` : `${Math.round(gapY + Math.max(1, Math.min(12 * s, 40 * s - lh - 1)))}px`;
   el.classList.toggle('below-stage', below);
+}
+// compass + RESET VIEW: on small / touch screens the uniformly scaled stage would shrink the compass to ~12 px, so the
+// furniture is counter-scaled to a minimum on-screen compass of 42 px (reset stays half that height, to its left and
+// centred), lifted so it stays 8 px clear of the chapter bar, with a >= 44 px invisible touch target on RESET VIEW. The
+// side panel's max height is capped to end above it. The touch target is >= 44 screen px at every size.
+const COMPASS_MIN_PX = 42, TOUCH_MIN_PX = 44;
+function placeFurniture(s: number) {
+  const f = document.querySelector<HTMLElement>('.map-furniture'); const bar = document.querySelector<HTMLElement>('.bottom-bar');
+  const sp = document.getElementById('side-panel'); const btn = document.getElementById('btn-reset');
+  if (!f || !bar || !sp || !btn) return;
+  const k = Math.max(1, COMPASS_MIN_PX / (60 * s));
+  const local = k * s; // screen px per furniture px
+  f.style.setProperty('--reset-hit-y', `${Math.max(8, (TOUCH_MIN_PX / local - 30) / 2)}px`);
+  f.style.setProperty('--reset-hit-x', `${Math.max(4, (TOUCH_MIN_PX / local - btn.offsetWidth) / 2)}px`);
+  if (k === 1) { f.style.transform = ''; f.style.bottom = ''; sp.style.maxHeight = ''; return; }
+  const half = 30 * k; const barTop = 1080 - 22 - bar.offsetHeight; // stage px
+  const c = Math.min(1080 - 128 - 30, barTop - 8 / s - half); // centre line of compass + reset
+  f.style.transform = `scale(${k})`; f.style.bottom = `${1080 - c - 30}px`;
+  const cs = getComputedStyle(sp); const extra = cs.boxSizing === 'border-box' ? 0 : parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+  sp.style.maxHeight = `${Math.min(720, c - half - 8 / s - (parseFloat(cs.top) || 150) - extra)}px`;
 }
 window.addEventListener('resize', fit); fit();
 
@@ -184,12 +205,24 @@ function renderText(c: Chapter) {
     <div class="stats">${stats}</div>
     ${c.hint ? `<div class="hint">${c.hint}</div>` : ''}
     ${c.source ? `<div class="source">${c.source}</div>` : ''}`;
+  fitHeadline();
   // shrink any figure that does not fit its 180 px column (long ranges, long units)
   textPanel.querySelectorAll<HTMLElement>('.stat .fig').forEach((f) => {
     let size = parseFloat(getComputedStyle(f).fontSize);
     while (f.scrollWidth > f.parentElement!.clientWidth + 1 && size > 26) { size -= 3; f.style.fontSize = `${size}px`; }
   });
 }
+// headline lines are set one per span; if a line would wrap in the 520 px text column (long EN / MS titles), step the
+// headline size down (min 38 px) so every line stays on one line. Re-run when web fonts finish loading.
+function fitHeadline() {
+  const hl = textPanel.querySelector<HTMLElement>('.headline'); if (!hl) return;
+  hl.style.fontSize = '';
+  const spans = [...hl.children] as HTMLElement[];
+  const widest = () => Math.max(...spans.map((s) => { s.style.whiteSpace = 'nowrap'; const w = s.scrollWidth; s.style.whiteSpace = ''; return w; }));
+  let size = parseFloat(getComputedStyle(hl).fontSize);
+  while (widest() > hl.clientWidth + 1 && size > 38) { size -= 2; hl.style.fontSize = `${size}px`; }
+}
+document.fonts?.addEventListener('loadingdone', fitHeadline);
 function goTo(i: number, instant = false) {
   i = (i + chapters.length) % chapters.length; if (i === current) return;
   current = i; const c = chapters[i]; runCleanups(); userMoved = false; // the camera flies to the new preset

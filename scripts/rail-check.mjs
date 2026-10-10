@@ -64,6 +64,11 @@ const check = (name, s) => {
   if (/^00-/.test(name) !== !!s.hint) bad.push(`${name} hint ${s.hint ? 'present' : 'missing'}`);
   if (s.fit.textBottom > s.fit.barTop - 8) bad.push(`${name} text panel overflows (${s.fit.textBottom} vs bar ${s.fit.barTop})`);
   if (s.kb.length) bad.push(`${name} user-facing KB01/KD01: ${s.kb.join(', ')}`);
+  // legends: KD / KB line letters are fine only with our station's stop number (KD · 16, KB · 10)
+  for (const [t] of s.legend) if (/\bK[BD]\b(?! · \d)/.test(t)) bad.push(`${name} legend line letters without stop number: ${t}`);
+  if (/^01-/.test(name)) for (const c of ['KD · 16', 'KB · 10']) if (!s.legend.some(([t]) => t.includes(c))) bad.push(`${name} legend missing ${c}`);
+  // 00 landmarks: the Mid Valley Megamall label is shown; no 'Mid Valley City' landmark label
+  if (/^00-/.test(name)) { if (!s.tags.some((t) => t.startsWith('Mid Valley Megamall'))) bad.push(`${name} no visible Mid Valley Megamall label`); if (s.tags.some((t) => /Mid Valley City/.test(t))) bad.push(`${name} Mid Valley City label on 00`); }
   if (/^01-/.test(name)) for (const c of ['KJ17', 'KTM · 16', 'KTM · 10']) if (!s.tags.some((t) => t.includes(c))) bad.push(`${name} no visible ${c} label`);
   for (const b of s.badges) { if (BADGE[b.code] && b.bg !== BADGE[b.code]) bad.push(`${name} badge ${b.code} ${b.bg}`); if (b.code === '—') bad.push(`${name} badge without code`); }
 };

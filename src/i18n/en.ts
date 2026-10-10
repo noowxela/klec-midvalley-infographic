@@ -93,7 +93,7 @@ export const en = {
   ch0: {
     label: 'Overview',
     tab: 'Overview',
-    title: ['Three precincts,', 'one transit hub'],
+    title: ['Three districts,', 'one city transit hub'],
     lead: 'KL Eco City sits on the west bank of the Klang River; The Gardens and Mid Valley Megamall share Mid Valley City on the east bank. Abdullah Hukum station (LRT KJ17, KTM · 16) and Mid Valley KTM (KTM · 10) tie the cluster together, linked by footbridges and mall corridors.',
     hint: 'Press → or Space to begin · F fullscreen · M map only · drag to rotate',
     dataTitle: 'Data',
@@ -127,7 +127,7 @@ export const en = {
     studyArea: 'Study area',
     studyText: (lat: string, lon: string, size: string, bbox: string) => `Centre ${lat}° N, ${lon}° E · ${size} m × ${size} m (dashed frame).<br/>BBox ${bbox}`,
     onModel: 'On the model',
-    legend: { building: 'Building block (OSM footprint, extruded)', water: 'Klang River & water', green: 'Parks & grass', lrt: 'LRT Kelana Jaya Line (OSM)', ktm2: 'KTM Tanjung Malim–Port Klang Line, KD (OSM)', ktm1: 'KTM Batu Caves–Pulau Sebang Line, KB (OSM)' },
+    legend: { building: 'Building block (OSM footprint, extruded)', water: 'Klang River & water', green: 'Parks & grass', lrt: 'LRT Kelana Jaya Line (OSM)', ktm2: (code: string) => `KTM Tanjung Malim–Port Klang Line, ${code} (OSM)`, ktm1: (code: string) => `KTM Batu Caves–Pulau Sebang Line, ${code} (OSM)` },
     quality: 'Data quality',
     qualityText: (cited: number, osm: number, levels: number, est: number) => `${n(cited)} blocks use a cited height, ${n(osm)} an OSM height tag and ${n(levels)} a level count; ${n(est)} have none of these and use a placeholder (5–9 m, or the parent outline’s levels). See chapter 04.`,
   },

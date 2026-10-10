@@ -72,13 +72,23 @@ if (!only) {
         const lines = [...hl.children].map((s) => Math.round(s.getBoundingClientRect().height / parseFloat(getComputedStyle(hl).lineHeight)));
         const tabs = document.querySelector('#chapter-tabs'); const tabsOverflow = tabs.scrollWidth > tabs.clientWidth + 1;
         const statsOverflow = [...document.querySelectorAll('.stat .fig')].some((f) => f.scrollWidth > f.parentElement.clientWidth + 2);
-        return { textBottom: Math.round(tp.bottom), barTop: Math.round(bar.top), sideScroll: sp.scrollHeight > sp.clientHeight + 1, headlineLines: lines, tabsOverflow, statsOverflow, htmlLang: document.documentElement.lang };
+        return { textBottom: Math.round(tp.bottom), barTop: Math.round(bar.top), sideScroll: sp.scrollHeight > sp.clientHeight + 1, headlineLines: lines, tabsOverflow, statsOverflow, htmlLang: document.documentElement.lang, headline: hl.textContent, headlinePx: parseFloat(getComputedStyle(hl).fontSize), cjkOk: document.fonts.check(`600 ${getComputedStyle(hl).fontSize} "Noto Sans SC"`, hl.textContent) };
       });
-      fit.push({ lang, id, ...r, ok: r.textBottom < r.barTop - 8 && !r.tabsOverflow && !r.statsOverflow });
+      fit.push({ lang, id, ...r, ok: r.textBottom < r.barTop - 8 && !r.tabsOverflow && !r.statsOverflow && (id !== 0 || r.headlineLines.every((n) => n === 1)) && (lang !== 'zh' || r.cjkOk) });
     }
     await page.close();
   }
   for (const f of fit) console.log('fit', f.lang, String(f.id).padStart(2, '0'), f.ok ? 'OK ' : 'BAD', JSON.stringify(f));
+  // 00 headline at 1920x1080 and 1440x900 in every language: one line per span, CJK glyphs loaded; v13 shots of 00
+  for (const [w, h] of [[1920, 1080], [1440, 900]]) for (const lang of ['en', 'zh', 'ms']) {
+    const page = await open(`h00-${lang}-${w}`, `chapter=0&lang=${lang}`, w, h);
+    const r = await page.evaluate(() => { const hl = document.querySelector('.headline'); const lh = parseFloat(getComputedStyle(hl).lineHeight); const tp = document.querySelector('#text-panel').getBoundingClientRect();
+      return { text: [...hl.children].map((s) => s.textContent), lines: [...hl.children].map((s) => Math.round(s.getBoundingClientRect().height / (lh * (tp.width / document.querySelector('#text-panel').offsetWidth)))), px: parseFloat(getComputedStyle(hl).fontSize), widest: Math.max(...[...hl.children].map((s) => s.scrollWidth)), col: hl.clientWidth, cjk: document.fonts.check(`600 54px "Noto Sans SC"`, hl.textContent) }; });
+    const ok = r.lines.every((n) => n === 1) && r.widest <= r.col + 1 && (lang !== 'zh' || r.cjk);
+    console.log('headline00', lang, `${w}x${h}`, ok ? 'OK ' : 'BAD', JSON.stringify(r));
+    if (w === 1920) await page.screenshot({ path: `shots/v13-00-overview-${lang}.png` });
+    await page.close();
+  }
   // keyboard check: Space/ArrowRight change chapter; arrows inside sliders must not
   const page = await open('keys', 'chapter=0&lang=en');
   await page.keyboard.press('Space'); await sleep(600);

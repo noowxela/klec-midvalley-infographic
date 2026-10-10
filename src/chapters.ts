@@ -18,6 +18,7 @@ export interface Chapter {
 export interface PanelCtx { flyTo: (v: View) => void; chapterView: View; onCleanup: (f: () => void) => void }
 
 const D = (n: XY, y = 0): [number, number, number] => [n[0], y, -n[1]];
+// legend: line letters (KD / KB) + the local stop number of our station (Abdullah Hukum 16, Mid Valley 10)
 // official KVITS line colours (styles.css): KJ = Kelana Jaya, KB = Batu Caves–Pulau Sebang (KTM 1), KD = Tanjung Malim–Port Klang (KTM 2)
 // Public-facing station numbers. Mid Valley (official code KB01) is shown the way riders know it: stop 10 on
 // Line 1 counting from Batu Caves (KC05–KC01, KA04–KA01, then Mid Valley; Wikipedia, Batu Caves–Pulau Sebang Line,
@@ -150,6 +151,7 @@ export function buildChapters(): Chapter[] {
         stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
         stationPin('KD01', 'ktm2', N.kj17, `KTM · ${showCode('KD01')}`),
         stationPin('KB01', 'ktm1', N.kb01, `KTM · ${showCode('KB01')}`),
+        placePin('Mid Valley Megamall', N.megamall, undefined, 'minor'), // landmark label: the mall itself (not the wider Mid Valley City)
       ]),
       // legend lives in the side panel (precinct colours + landmark mosques)
       panel: (el) => {
@@ -178,7 +180,7 @@ export function buildChapters(): Chapter[] {
         const s2 = h('section'); s2.append(h('h3', {}, T.ch1.onModel));
         const L = T.ch1.legend;
         const box = (sw: string) => `<span class="swatch box" style="background:${sw}"></span>`;
-        for (const [ic, txt] of [[box('var(--scene-building)'), L.building], [box('var(--c-water)'), L.water], [box('var(--c-green)'), L.green], [linePill(5, N.lrtLine5), L.lrt], [linePill(2, N.ktmLine2), L.ktm2], [linePill(1, N.ktmLine1), L.ktm1]] as const)
+        for (const [ic, txt] of [[box('var(--scene-building)'), L.building], [box('var(--c-water)'), L.water], [box('var(--c-green)'), L.green], [linePill(5, N.lrtLine5), L.lrt], [linePill(2, N.ktmLine2), L.ktm2(`KD · ${showCode('KD01')}`)], [linePill(1, N.ktmLine1), L.ktm1(`KB · ${showCode('KB01')}`)]] as const)
           s2.append(h('div', { class: 'legend-row' }, `${ic}${txt}`));
         const s3 = h('section'); s3.append(h('h3', {}, T.ch1.quality));
         s3.append(h('div', { class: 'small' }, T.ch1.qualityText(stats.heightCited, stats.heightOsm, stats.heightLevels, stats.heightEstimate)));
