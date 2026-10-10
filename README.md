@@ -82,7 +82,7 @@ Since v14 (a new 01 Landmarks chapter; every later chapter moved up by one). Not
 
 | # | Chapter | Status | before v14 |
 |---|---|---|---|
-| 00 | Overview (text panel only, no side panel; the model fills the area right of the text) | built | 00 |
+| 00 | Overview (text panel only, no side panel; the model fills the area right of the text; slow turntable orbit, v15) | built | 00 |
 | 01 | Landmarks: precincts, landmark mosques, car park (the former 00 side panel, map colouring and pins) | built | — |
 | 02 | Transit hub (cover) | built | 01 |
 | 03 | Location | built | 02 |
@@ -193,3 +193,11 @@ make room for the footer note). Check with `scripts/bar-check.mjs`.
   - on chapter change.
 - It fades and slides 8 px over 0.22 s, instantly under reduced motion. While hidden it has `visibility: hidden`, `tabindex=-1` and `aria-hidden`, so it is out of the tab order. Its translated label and title are unchanged.
 - `scripts/compass-check.mjs` checks the button: hidden on load, after a chapter change and after a click; visible and focusable after a drag or zoom; centred with the compass. It also checks for overlap with the credit, bottom bar, side panel (open or collapsed) and scale bar at 1920×1080, 1440×900 and on mobile. Close-ups go to `shots-compass/`.
+
+## v15: 00 turntable
+
+- On 00 Overview the camera orbits the site centre continuously, 360° every 75 s (`World.TURN_PERIOD_S`), at the preset pitch and distance, starting from the preset bearing once the flight to 00 has landed.
+- It pauses while the user drags or zooms (OrbitControls `start` / `end`) and resumes 3 s after they stop (`World.TURN_RESUME_MS`), pauses while the tab is hidden, and never runs under prefers-reduced-motion.
+- RESET VIEW on 00 ignores the bearing: it appears only when pitch, zoom or target change.
+- Leaving 00 stops the orbit; the next chapter's flight starts from the current bearing. The compass, pins and trains update every frame as before.
+- `scripts/orbit-check.mjs` checks all of this and writes two 00 screenshots 4 s apart to `shots-orbit/`.

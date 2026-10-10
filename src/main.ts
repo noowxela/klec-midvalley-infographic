@@ -162,7 +162,8 @@ function updateFurniture() {
 const btnReset = $('#btn-reset') as HTMLButtonElement;
 let userMoved = false;
 function updateResetBtn() {
-  const show = userMoved && current >= 0 && !world.isFlying() && !world.isNear(chapters[current].view);
+  // on the 00 turntable the bearing changes by itself, so only pitch / zoom / target count as 'moved'
+  const show = userMoved && current >= 0 && !world.isFlying() && !world.isNear(chapters[current].view, !!chapters[current].turntable);
   if (btnReset.classList.contains('is-hidden') === show) {
     if (!show && document.activeElement === btnReset) btnReset.blur();
     btnReset.classList.toggle('is-hidden', !show); btnReset.setAttribute('aria-hidden', String(!show)); btnReset.tabIndex = show ? 0 : -1;
@@ -232,6 +233,7 @@ function goTo(i: number, instant = false) {
     textPanel.classList.remove('out'); sidePanel.classList.remove('out');
   };
   setPins(c.pins);
+  world.setTurntable(!!c.turntable); // off when leaving 00: the next flight starts from the current bearing
   world.flyTo(c.view, instant || prefersReducedMotion());
   if (instant || prefersReducedMotion()) swap();
   else { textPanel.classList.add('out'); sidePanel.classList.add('out'); setTimeout(swap, 380); }

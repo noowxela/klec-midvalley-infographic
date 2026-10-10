@@ -13,7 +13,7 @@ export interface StatDef { fig: string; unit?: string; cap: string; swatch?: str
 export interface Chapter {
   id: number; label: string; tab: string; title: string[]; lead: string; stats: StatDef[]; hint?: string; source: string;
   legend?: { title: string; items: { swatch: string; label: string; desc: string }[] };
-  view: View; mode: Partial<SceneMode>; pins: PinDef[]; panel?: (el: HTMLElement, world: World, ctx: PanelCtx) => void;
+  view: View; mode: Partial<SceneMode>; pins: PinDef[]; turntable?: boolean; panel?: (el: HTMLElement, world: World, ctx: PanelCtx) => void;
 }
 export interface PanelCtx { flyTo: (v: View) => void; chapterView: View; onCleanup: (f: () => void) => void }
 
@@ -144,6 +144,7 @@ export function buildChapters(): Chapter[] {
       stats: [],
       source: T.common.osmSrc(stats.fetchedDate),
       view: { target: [-10, 0, -30], azimuth: 0.2, polar: 0.7, distance: 2200 },
+      turntable: true, // slow 360° showcase orbit from this preset (World.setTurntable)
       mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: false },
       pins: nn([
         stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),

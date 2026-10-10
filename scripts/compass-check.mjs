@@ -97,7 +97,7 @@ const clipFurn = async (p, path, dpr = 1) => { const r = await p.evaluate(() => 
 for (const [name, q, opt, setup] of [
   ['sp-collapsed-en', 'chapter=2&lang=en', {}, async (p) => { await p.click('#sp-toggle'); await sleep(600); }],
   ['zh-1440x900', 'chapter=3&lang=zh', { w: 1440, h: 900 }],
-  ['ms-1920-dark', 'chapter=0&lang=ms', { dark: true }],
+  ['ms-1920-dark', 'chapter=1&lang=ms', { dark: true }], // 00 turntable: bearing-only drags do not count (orbit-check)
   ['mobile-390x844', 'chapter=2&lang=en', { w: 390, h: 844, dpr: 2, mobile: true }],
   ['mobile-landscape-844x390', 'chapter=2&lang=en', { w: 844, h: 390, dpr: 2, mobile: true }],
   ['mobile-360x640-zh', 'chapter=3&lang=zh', { w: 360, h: 640, dpr: 2, mobile: true }],
@@ -133,7 +133,7 @@ for (const [name, q, opt] of [['v12-full-en-light', 'chapter=2&lang=en', {}], ['
   for (const [tag, w, h] of [['portrait-390x844', 390, 844], ['landscape-844x390', 844, 390]]) {
     for (const c of ids) {
       const p = await open(`m-${tag}-${c}`, `chapter=${c}&lang=en`, { w, h, dpr: 1, mobile: true });
-      await drag(p, w < 600 ? 80 : 160, 10);
+      await drag(p, w < 600 ? 80 : 160, c === 0 ? 120 : 10); // 00 turntable ignores bearing: change the pitch there
       const s = await p.evaluate(state); expect(`mobile ${tag} ch${c}`, s, true);
       if (Math.abs(s.centreDy) > 1.5) bad.push(`mobile ${tag} ch${c}: reset not centred (dy ${s.centreDy})`);
       if (c === 2) console.log(`mobile ${tag}`, JSON.stringify({ compassH: s.compassH, resetH: s.resetH, hit: `${s.hitW}x${s.hitH}`, gap: s.gap, centreDy: s.centreDy }));
