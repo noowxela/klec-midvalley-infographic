@@ -46,6 +46,13 @@ nearest pedestrian node. Walking time = distance ÷ 80 m/min.
 
 Map data © OpenStreetMap contributors, ODbL.
 
+Attribution in the app: one persistent credit, `© OpenStreetMap contributors`, sits in the bottom-right corner of
+the map view and links to https://www.openstreetmap.org/copyright. It is the same text in every language, with a translated aria-label. It
+lives outside the scaled 1920×1080 stage so it stays legible at any window size; on narrow or letterboxed windows it moves just
+below the stage. The full wording (ODbL licence link, Overpass API fetch date, how heights are sourced) is in the
+"Data" note in the 00 Overview side panel. Chapter source lines no longer repeat the OSM line; they keep only their own
+method notes and non-OSM sources.
+
 ## Screenshots
 
 `npm run build && npx vite preview --port 4173 &` then `npm run shots`

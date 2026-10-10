@@ -96,7 +96,6 @@ function shareBar(r: { byShare: Partial<Record<Share, number>>; length: number }
 // ---------- chapters (rebuilt on language change) ----------
 export function buildChapters(): Chapter[] {
   const T = t(); const N = T.names; const U = T.units;
-  const OSM_SRC = T.common.osmSrc(stats.fetchedDate);
   const stationPin = (ref: string, line: 'lrt' | 'ktm', title: string, value?: string): PinDef | null => {
     const s = station(ref); if (!s) return null;
     return { id: `st-${ref}`, title, value: value ?? `${ref} · ${T.common.osm}`, at: D(s.c, 13), kind: 'station', color: lineColor[line] };
@@ -131,7 +130,7 @@ export function buildChapters(): Chapter[] {
     {
       id: 0, label: Z.label, tab: Z.tab, title: Z.title, lead: Z.lead,
       stats: ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ fig: fmt(zs[z].footprintM2 / 10000, 1), unit: U.ha, cap: Z.statZone(Z.zones[z], zs[z].blocks), swatch: `var(--z-${z})` })),
-      source: Z.source(OSM_SRC, jamekPodium ? Z.podiumNote(jamekPodium.name, jamekPodium.levels ?? 0, jamekPodium.storeyM ?? 0, jamekPodium.roof) : ''),
+      source: Z.source(jamekPodium ? Z.podiumNote(jamekPodium.name, jamekPodium.levels ?? 0, jamekPodium.storeyM ?? 0, jamekPodium.roof) : ''),
       view: { target: [-10, 0, -30], azimuth: 0.2, polar: 0.7, distance: 2350 }, // turned so Masjid Jamek is not hidden behind the KL Eco City towers
       mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'zone', precincts: false, landmarks: true },
       pins: nn([
@@ -146,7 +145,8 @@ export function buildChapters(): Chapter[] {
         const s = h('section', { class: 'ov-legend' }); s.append(h('h3', {}, Z.legendTitle));
         const rows = [...ZONES.map((z) => ({ swatch: `var(--z-${z})`, label: Z.zones[z], desc: Z.zoneDesc[z] })), ...(landmarks.length ? [{ swatch: 'var(--landmark)', label: Z.mosques, desc: Z.mosquesDesc }] : []), ...(jamekPodium ? [{ swatch: 'var(--podium)', label: Z.podiumLabel, desc: Z.podiumDesc(jamekPodium.name, jamekPodium.levels ?? 0, jamekPodium.storeyM ?? 0, jamekPodium.roof) }] : [])];
         for (const r of rows) s.append(h('div', { class: 'ov-legend-row' }, `<span class="swatch box" style="background:${r.swatch}"></span><div><div class="lg-label">${r.label}</div><div class="lg-desc">${r.desc}</div></div>`));
-        el.append(s);
+        const ds = h('section', { class: 'ov-data' }); ds.append(h('h3', {}, Z.dataTitle), h('div', { class: 'small' }, Z.dataNote(stats.fetchedDate)));
+        el.append(s, ds);
       },
     },
     // ---------------- 01 cover ----------------
@@ -158,7 +158,7 @@ export function buildChapters(): Chapter[] {
         { fig: fmt(stats.routeTotalM), unit: U.m, cap: T.ch1.statWalk(fmt(stats.routeMinutes)) },
       ],
       hint: T.ch1.hint,
-      source: T.ch1.source(OSM_SRC, stats.heightCited),
+      source: T.ch1.source(stats.heightCited),
       view: { target: [0, 0, -40], azimuth: -0.72, polar: 0.95, distance: 1950 },
       mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: false },
       pins: corePins(),
@@ -182,7 +182,7 @@ export function buildChapters(): Chapter[] {
         ...(stats.straightKJ17toKB01 ? [{ fig: fmt(stats.straightKJ17toKB01), unit: U.m, cap: T.ch2.statStraight }] : []),
         { fig: fmt(stats.railCorridors), unit: U.lines, cap: T.ch2.statCorridors },
       ],
-      source: T.ch2.source(OSM_SRC),
+      source: T.ch2.source(),
       view: { target: [30, 0, -20], azimuth: -0.06, polar: 0.5, distance: 2250 },
       mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: true },
       pins: nn([
@@ -217,7 +217,7 @@ export function buildChapters(): Chapter[] {
         { fig: fmt(stats.heightCited), unit: U.blocks, cap: T.ch4.statCited(stats.citedNamed) },
         { fig: fmt(stats.heightEstimate), unit: U.blocks, cap: T.ch4.statEstimate },
       ],
-      source: T.ch4.source(OSM_SRC, meta.heightSourcesFetched),
+      source: T.ch4.source(meta.heightSourcesFetched),
       view: { target: [-30, 80, -70], azimuth: -0.38, polar: 1.08, distance: 1750 },
       mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: false },
       pins: nn(tallestNamed.filter((b) => b.precinct).slice(0, 8).map((b) => placePin(b.name!, b.name!, heightLabel(b)))),
@@ -253,7 +253,7 @@ export function buildChapters(): Chapter[] {
         { fig: `≈${fmt(stats.routeMinutes)}`, unit: U.min, cap: T.ch6.statTime },
         { fig: fmt(stats.routeBridgeShare), unit: U.pct, cap: T.ch6.statBridge(stats.routeBridgeM) },
       ],
-      source: T.ch6.source(OSM_SRC),
+      source: T.ch6.source(),
       view: { target: [8, 0, -70], azimuth: 0, polar: 0.62, distance: 1900 },
       mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'faint', routeSet: 'legs', routeFocus: null, xray: true, buildingStyle: 'default', precincts: false },
       pins: nn([
@@ -288,7 +288,7 @@ export function buildChapters(): Chapter[] {
         { fig: `${fmt(walkTotals.min)}–${fmt(walkTotals.max)}`, unit: U.m, cap: T.ch7.statRange },
         { fig: fmt(walkTotals.bridgeIndoorPct), unit: U.pct, cap: T.ch7.statShare },
       ],
-      source: T.ch7.source(OSM_SRC, ecoTower),
+      source: T.ch7.source(ecoTower),
       view: { target: [-20, 0, -40], azimuth: 0.15, polar: 0.72, distance: 1500 },
       mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'faint', routeSet: 'walks', walkFocus: walks[0]?.id ?? null, xray: true, buildingStyle: 'default', precincts: false },
       pins: nn([
@@ -426,7 +426,7 @@ export function buildChapters(): Chapter[] {
         { fig: fmt(pct(legsSheltered, legsTotal)), unit: U.pct, cap: T.ch9.statLegs },
         { fig: fmt(climate.yearPrecipitationMm), unit: U.mm, cap: T.ch9.statRain(T.ch9.station) },
       ],
-      source: T.ch9.source(OSM_SRC, T.ch9.station, climate.period, climate.fetched),
+      source: T.ch9.source(T.ch9.station, climate.period, climate.fetched),
       view: { target: [-10, 0, -60], azimuth: 0.12, polar: 0.66, distance: 1650 },
       mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'rain', routeSet: 'walks', walkFocus: null, routeStyle: 'rain', muteWater: true, xray: true, buildingStyle: 'default', precincts: false },
       pins: nn([

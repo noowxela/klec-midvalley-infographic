@@ -31,6 +31,19 @@ function fit() {
   const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
   stage.style.transform = `translate(${(window.innerWidth - 1920 * s) / 2}px, ${(window.innerHeight - 1080 * s) / 2}px) scale(${s})`;
   world.setPixelRatio(s);
+  placeCredit(s);
+}
+// OSM credit: unscaled text in the stage's bottom-right corner, level with the footer line (right of the
+// "Illustrative block massing" note, below the reset / scale furniture). When the stage is letterboxed with
+// room to spare (narrow / portrait windows) it sits just below the stage instead, so it never covers the tabs.
+function placeCredit(s: number) {
+  const el = document.getElementById('osm-credit'); if (!el) return;
+  const gapX = (window.innerWidth - 1920 * s) / 2, gapY = (window.innerHeight - 1080 * s) / 2;
+  const below = gapY >= 24;
+  el.style.right = `${Math.round(gapX + Math.max(8, 48 * s))}px`;
+  // inside: level with the footer note (36 px up at full size) but always below the chapter progress line (~64 px up)
+  el.style.bottom = below ? `${Math.round(gapY - 20)}px` : `${Math.round(gapY + Math.max(2, Math.min(36 * s, 64 * s - 18)))}px`;
+  el.classList.toggle('below-stage', below);
 }
 window.addEventListener('resize', fit); fit();
 
@@ -150,7 +163,7 @@ function renderText(c: Chapter) {
     ${legend}
     <div class="stats">${stats}</div>
     ${c.hint ? `<div class="hint">${c.hint}</div>` : ''}
-    <div class="source">${c.source}</div>`;
+    ${c.source ? `<div class="source">${c.source}</div>` : ''}`;
   // shrink any figure that does not fit its 180 px column (long ranges, long units)
   textPanel.querySelectorAll<HTMLElement>('.stat .fig').forEach((f) => {
     let size = parseFloat(getComputedStyle(f).fontSize);
@@ -244,7 +257,7 @@ function applyStaticText() {
   $('#compass').title = U.compass; $('#north').setAttribute('aria-label', U.northArrow); $('#north-n').textContent = U.north;
   $('#btn-reset').textContent = U.reset; $('#btn-reset').title = U.resetTitle;
   tabs.setAttribute('aria-label', U.chapters); stage.setAttribute('aria-label', U.stage);
-  $('#credit-prefix').textContent = U.creditPrefix; $('#credit-link').textContent = U.creditLink;
+  $('#credit-prefix').textContent = U.creditPrefix; $('#osm-credit').setAttribute('aria-label', U.osmCreditAria);
   applyPanels(true);
 }
 applyStaticText();

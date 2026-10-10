@@ -208,9 +208,11 @@
         <footer class="bottom-bar">
           <nav id="chapter-tabs" class="tabs" aria-label="Chapters"></nav>
           <div class="progress"><div id="progress-fill"></div><div id="autoplay-fill"></div></div>
-          <div class="credit mono"><span id="credit-prefix">Illustrative block massing · Map data ©</span> <a id="credit-link" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a></div>
+          <div class="credit mono"><span id="credit-prefix">Illustrative block massing</span></div>
         </footer>
       </div>
+      <!-- map data credit: outside the scaled stage so it stays legible at any window size; positioned by fit() -->
+      <a id="osm-credit" class="osm-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" aria-label="Map data © OpenStreetMap contributors: copyright and licence (opens in a new tab)">© OpenStreetMap contributors</a>
     </div>
     <script type="module" src="/src/boot.ts"></script>
   </body>
