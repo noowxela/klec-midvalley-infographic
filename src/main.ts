@@ -41,8 +41,11 @@ function placeCredit(s: number) {
   const gapX = (window.innerWidth - 1920 * s) / 2, gapY = (window.innerHeight - 1080 * s) / 2;
   const below = gapY >= 24;
   el.style.right = `${Math.round(gapX + Math.max(8, 48 * s))}px`;
-  // inside: level with the footer note (36 px up at full size) but always below the chapter progress line (~64 px up)
-  el.style.bottom = below ? `${Math.round(gapY - 20)}px` : `${Math.round(gapY + Math.max(2, Math.min(36 * s, 64 * s - 18)))}px`;
+  // inside: level with the footer note (12 px up at full size), always below the chapter labels / arrows; on very small
+  // stages the text shrinks (min 9 px) so it still fits in the strip under the rail
+  const fs = Math.max(9, Math.min(11, 15 * s)); const lh = Math.round(fs * 1.35);
+  el.style.fontSize = below ? '' : `${fs}px`; el.style.lineHeight = below ? '' : `${lh}px`;
+  el.style.bottom = below ? `${Math.round(gapY - 20)}px` : `${Math.round(gapY + Math.max(1, Math.min(12 * s, 40 * s - lh - 1)))}px`;
   el.classList.toggle('below-stage', below);
 }
 window.addEventListener('resize', fit); fit();
@@ -132,18 +135,20 @@ function updateFurniture() {
 world.onFrame.push(updatePins, updateFurniture);
 
 // ---------- chapters ----------
-const tabs = $('#chapter-tabs'); const progressFill = $('#progress-fill');
+const tabs = $('#chapter-tabs');
 let current = -1;
 const pad = (n: number) => String(n).padStart(2, '0');
 function buildTabs() {
   tabs.innerHTML = '';
   chapters.forEach((c, i) => {
-    const b = document.createElement('button'); b.className = 'tab'; b.innerHTML = `<span class="n">${pad(c.id)}</span>${c.tab}`;
+    const b = document.createElement('button'); b.className = 'tab'; b.type = 'button'; b.innerHTML = `<i class="bar" aria-hidden="true"></i><span class="n">${pad(c.id)}</span><span class="lbl">${c.tab}</span>`;
     b.addEventListener('click', () => { stopAutoplay(); goTo(i); }); tabs.append(b);
   });
   [...tabs.children].forEach((t, k) => (k === current ? t.setAttribute('aria-current', 'step') : t.removeAttribute('aria-current')));
 }
 buildTabs();
+$('#btn-prev').addEventListener('click', () => { stopAutoplay(); goTo(current - 1); });
+$('#btn-next').addEventListener('click', () => { stopAutoplay(); goTo(current + 1); });
 let cleanups: (() => void)[] = [];
 const runCleanups = () => { for (const f of cleanups) f(); cleanups = []; };
 function mountPanel(c: Chapter) {
@@ -174,7 +179,6 @@ function goTo(i: number, instant = false) {
   i = (i + chapters.length) % chapters.length; if (i === current) return;
   current = i; const c = chapters[i]; runCleanups();
   [...tabs.children].forEach((t, k) => (k === i ? t.setAttribute('aria-current', 'step') : t.removeAttribute('aria-current')));
-  progressFill.style.width = `${((i + 1) / chapters.length) * 100}%`;
   const swap = () => {
     renderText(c); mountPanel(c);
     textPanel.classList.remove('out'); sidePanel.classList.remove('out');
@@ -209,11 +213,13 @@ const applyTrains = (on: boolean) => { world.setTrains(on); btnTrains.setAttribu
 applyTrains(localStorage.getItem('mv-trains') !== 'off');
 btnTrains.addEventListener('click', () => { const on = !world.trainsVisible; localStorage.setItem('mv-trains', on ? 'on' : 'off'); applyTrains(on); });
 const btnAuto = $('#btn-autoplay'), btnSound = $('#btn-sound'), btnTheme = $('#btn-theme'), btnFs = $('#btn-fullscreen');
-let autoplay = false; let autoStart = 0; const AUTO_MS = 10000; const autoFill = $('#autoplay-fill');
-function stopAutoplay() { autoplay = false; btnAuto.setAttribute('aria-pressed', 'false'); btnAuto.querySelector('.ico')!.textContent = '▶'; autoFill.style.width = '0'; }
-btnAuto.addEventListener('click', () => { autoplay = !autoplay; btnAuto.setAttribute('aria-pressed', String(autoplay)); btnAuto.querySelector('.ico')!.textContent = autoplay ? '❚❚' : '▶'; autoStart = performance.now(); if (!autoplay) autoFill.style.width = '0'; });
+let autoplay = false; let autoStart = 0; const AUTO_MS = 10000;
+// autoplay progress fills the current chapter's bar (Banqiao: button.run + --pr)
+const setRun = (on: boolean, k = 0) => { for (const [n, t] of [...tabs.children].entries()) { const el = t as HTMLElement; el.classList.toggle('run', on && n === current); if (on && n === current) el.style.setProperty('--pr', `${Math.min(1, k) * 100}%`); } };
+function stopAutoplay() { autoplay = false; btnAuto.setAttribute('aria-pressed', 'false'); btnAuto.querySelector('.ico')!.textContent = '▶'; setRun(false); }
+btnAuto.addEventListener('click', () => { autoplay = !autoplay; btnAuto.setAttribute('aria-pressed', String(autoplay)); btnAuto.querySelector('.ico')!.textContent = autoplay ? '❚❚' : '▶'; autoStart = performance.now(); if (!autoplay) setRun(false); });
 (function tick() {
-  if (autoplay) { const k = (performance.now() - autoStart) / AUTO_MS; autoFill.style.width = `${Math.min(1, k) * 100}%`; if (k >= 1) goTo(current + 1); }
+  if (autoplay) { const k = (performance.now() - autoStart) / AUTO_MS; setRun(true, k); if (k >= 1) goTo(current + 1); }
   requestAnimationFrame(tick);
 })();
 world.onUserInteract = () => stopAutoplay();
@@ -258,6 +264,7 @@ function applyStaticText() {
   $('#btn-reset').textContent = U.reset; $('#btn-reset').title = U.resetTitle;
   tabs.setAttribute('aria-label', U.chapters); stage.setAttribute('aria-label', U.stage);
   $('#credit-prefix').textContent = U.creditPrefix; $('#osm-credit').setAttribute('aria-label', U.osmCreditAria);
+  $('#btn-prev').setAttribute('aria-label', U.prevChapter); $('#btn-next').setAttribute('aria-label', U.nextChapter); $('.rail').setAttribute('aria-label', U.chaptersNav);
   applyPanels(true);
 }
 applyStaticText();

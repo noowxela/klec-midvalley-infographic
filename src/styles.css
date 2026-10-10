@@ -130,8 +130,8 @@ a { color: inherit; }
 .scrim { transition: opacity 0.5s ease; }
 .scrim-left { left: 0; top: 0; bottom: 0; width: 800px;
   background: linear-gradient(90deg, rgba(var(--paper-rgb), 0.96) 0%, rgba(var(--paper-rgb), 0.86) 38%, rgba(var(--paper-rgb), 0) 100%); }
-.scrim-bottom { left: 0; right: 0; bottom: 0; height: 220px;
-  background: linear-gradient(0deg, rgba(var(--paper-rgb), 0.95) 0%, rgba(var(--paper-rgb), 0) 100%); }
+.scrim-bottom { left: 0; right: 0; bottom: 0; height: 160px; /* Banqiao .scrimB: solid -> 70 % at 64 px -> clear at 140 px (+20 px for our footer note) */
+  background: linear-gradient(0deg, rgba(var(--paper-rgb), 1) 0, rgba(var(--paper-rgb), 1) 20px, rgba(var(--paper-rgb), 0.7) 84px, rgba(var(--paper-rgb), 0) 160px); }
 .scrim-top { left: 0; right: 0; top: 0; height: 140px;
   background: linear-gradient(180deg, rgba(var(--paper-rgb), 0.85) 0%, rgba(var(--paper-rgb), 0) 100%); }
 
@@ -326,16 +326,30 @@ a { color: inherit; }
 .scalebar .bar { height: 6px; border: 1.5px solid var(--ink); border-top: none; width: 100px; transition: width 0.2s; }
 .text-btn { border: 1px solid var(--hairline); background: var(--panel-bg); padding: 9px 14px; font-size: 13px; letter-spacing: 0.1em; cursor: pointer; }
 
-.bottom-bar { position: absolute; left: 96px; right: 48px; bottom: 36px; }
-.tabs { display: flex; gap: 4px; }
-.tab { border: none; background: none; padding: 10px 18px 12px 0; margin-right: 22px; cursor: pointer; text-align: left; color: var(--grey-2); font-size: 15px; }
-.tab .n { font-family: var(--font-mono); font-size: 13px; margin-right: 10px; }
-.tab[aria-current='step'] { color: var(--ink); font-weight: 600; }
+.bottom-bar { position: absolute; left: 96px; right: 48px; bottom: 22px; } /* rail top 86 px above the stage bottom, as Banqiao (#rail bottom 30 + height 56) */
+/* chapter rail: metrics from the Banqiao Station infographic (#rail / #chap): equal grid segments 3 px apart, 1 px
+   top rule each (--hairline = their --rule, 16 % ink), current = 3 px ink bar at top:-1px, 14 px top padding, mono
+   11.5 px number + 12 px label, muted --grey-2 (their --ink3) -> --ink when current / hovered; hover rule 2 px accent */
+.rail { display: flex; align-items: stretch; gap: 6px; height: 46px; }
+.tabs { flex: 1; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { position: relative; border: 0; background: transparent; cursor: pointer; text-align: left; padding: 14px 0 0; margin: 0;
+  display: flex; gap: 5px; align-items: baseline; white-space: nowrap; overflow: hidden; font-family: var(--font-sans); font-size: 12px; color: var(--grey-2);
+  transition: color 0.2s; }
+.tab::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--hairline); }
+.tab .bar { position: absolute; left: 0; top: -1px; height: 3px; width: 0; background: var(--ink); }
+.tab .n { font-family: var(--font-mono); font-size: 11.5px; }
+.tab .lbl { overflow: hidden; text-overflow: ellipsis; }
+.tab[aria-current='step'] { color: var(--ink); }
+.tab[aria-current='step'] .bar { width: 100%; }
+.tab.run[aria-current='step'] .bar { width: var(--pr, 0%); }
 .tab:hover { color: var(--ink); }
-.progress { position: relative; height: 2px; background: var(--hairline); margin-top: 4px; }
-#progress-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink); transition: width 0.6s ease; }
-#autoplay-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--c-route); width: 0; opacity: 0.8; }
-.credit { margin-top: 12px; font-size: 12px; color: var(--grey-2); letter-spacing: 0.04em; }
+.tab:hover::before { background: var(--c-route); height: 2px; }
+.tab:focus-visible { outline: 1px solid var(--ink); outline-offset: 2px; }
+.arr { width: 46px; border: 0; background: transparent; cursor: pointer; font-size: 20px; color: var(--grey-1); font-family: var(--font-mono); transition: color 0.2s; }
+.arr:hover { color: var(--c-route); }
+.arr:focus-visible { outline: 1px solid var(--ink); }
+.credit { margin-top: 2px; font-size: 12px; line-height: 16px; color: var(--grey-2); letter-spacing: 0.04em; }
 /* persistent map-data credit (outside #stage, not scaled; see placeCredit in main.ts) */
 .osm-credit { position: absolute; z-index: 30; right: 48px; bottom: 36px; font-family: var(--font-mono); font-size: 11px; line-height: 16px; letter-spacing: 0.03em;
   color: var(--grey-2); text-decoration: none; white-space: nowrap; padding: 0 4px; background: rgba(var(--paper-rgb), 0.72); border-radius: 2px; }
@@ -345,6 +359,6 @@ a { color: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   .grain { animation: none; }
-  .text-panel, .side-panel, .pin, #progress-fill, .panel-tab, .scrim { transition: none !important; }
+  .text-panel, .side-panel, .pin, .panel-tab, .scrim, .tab, .arr { transition: none !important; }
   #stage.tp-collapsed .text-panel * { transition: none; }
 }

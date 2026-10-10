@@ -140,3 +140,13 @@ Footprint per precinct = union of block footprints on a 1 m grid.
 - `meta.counts.heightInherited` now counts only inherited-estimate notes (unchanged at 3).
 - **Loader minimum:** the loader hides at max(app ready, `MIN_LOADER_MS` = 6000 ms since navigation start). Under `prefers-reduced-motion` the minimum is 3000 ms (`MIN_LOADER_MS_REDUCED`) and the bar moves in whole steps with no animation. Progress is paced across the minimum and never runs ahead of the real steps. The slow note appears at 12 s (`SLOW_MS`). `?skipLoader=1` bypasses the minimum (used by `scripts/screenshots.mjs`, `trains-check.mjs` and `v7-check.mjs`). `window.__mv.ready` = app ready; `window.__mv.revealed` = loader gone.
 - `scripts/v7-check.mjs`: loader timeline on an unthrottled load plus mid-load shots; mosque close-ups; Overview; ch08 shadows.
+
+## Chapter rail (bottom bar)
+
+The bottom bar follows the Banqiao Station infographic's `#rail`: equal-width segments 3 px apart, each with a 1 px
+top hairline. The current chapter gets a 3 px ink bar, which fills with the autoplay progress while autoplay runs (this
+replaced the separate progress line). Each tab is a mono 11.5 px number plus a 12 px label in muted grey, turning ink when
+current or hovered; on hover the hairline becomes a 2 px accent. ← / → buttons sit at the right. The rail is 46 px tall
+and its top sits 86 px above the stage bottom, as on Banqiao; the "Illustrative block massing" note and the corner OSM
+credit sit below it. The bottom fade matches Banqiao's: solid, then 70 % at 64 px, then clear (ours is 20 px taller to
+make room for the footer note). Check with `scripts/bar-check.mjs`.

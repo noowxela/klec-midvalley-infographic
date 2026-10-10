@@ -206,8 +206,13 @@
         </div>
 
         <footer class="bottom-bar">
-          <nav id="chapter-tabs" class="tabs" aria-label="Chapters"></nav>
-          <div class="progress"><div id="progress-fill"></div><div id="autoplay-fill"></div></div>
+          <!-- chapter rail (after the Banqiao Station infographic): equal segments, each with a 1 px top rule; the current
+               chapter's rule thickens to a 3 px ink bar, which fills with the autoplay progress while autoplay runs -->
+          <nav class="rail" aria-label="Chapters">
+            <div id="chapter-tabs" class="tabs"></div>
+            <button class="arr" id="btn-prev" type="button" aria-label="Previous chapter">←</button>
+            <button class="arr" id="btn-next" type="button" aria-label="Next chapter">→</button>
+          </nav>
           <div class="credit mono"><span id="credit-prefix">Illustrative block massing</span></div>
         </footer>
       </div>
