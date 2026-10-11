@@ -39,6 +39,9 @@ export const en = {
     showText: 'Show text panel',
     hideSide: 'Hide side panel',
     showSide: 'Show side panel',
+    more: 'More options',
+    sheetExpand: 'Show chapter details',
+    sheetCollapse: 'Hide chapter details',
   },
   units: { m: 'm', min: 'min', blocks: 'blocks', stations: 'stations', lines: 'lines', routes: 'routes', pct: '%', deg: '°', mm: 'mm', ha: 'ha', days: 'days' },
   // Place names. Official names stay as they are; local forms where they are in common use.

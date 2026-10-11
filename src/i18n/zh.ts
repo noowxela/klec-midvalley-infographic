@@ -40,6 +40,9 @@ export const zh: Dict = {
     showText: '显示文字面板',
     hideSide: '隐藏侧面板',
     showSide: '显示侧面板',
+    more: '更多选项',
+    sheetExpand: '展开章节详情',
+    sheetCollapse: '收起章节详情',
   },
   units: { m: '米', min: '分钟', blocks: '个体块', stations: '个车站', lines: '条', routes: '条路线', pct: '%', deg: '°', mm: '毫米', ha: '公顷', days: '天' },
   names: {

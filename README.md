@@ -33,6 +33,7 @@ Deep links: `?chapter=0` … `?chapter=8` or `#00` … `#08`; also `?lang=en|zh|
 - **Loader:** shows for at least 3 s (1.5 s with reduced motion) with real progress steps; `?skipLoader=1` skips the minimum.
 - **Also:** light/dark theme, autoplay (10 s per chapter), optional chime, fullscreen.
 - **Keyboard:** → / ↓ / PgDn / Space next · ← / ↑ / PgUp previous · Home overview · F fullscreen · M map only. Mouse: drag to rotate, scroll to zoom, right-drag to pan.
+- **Mobile layout** (≤ 768 px wide, or short landscape phones up to 1024 × 500): the map fills the screen at native size with portrait-aware camera framing. The chapter rail stays at the bottom as a scrollable row of 48 px tabs with ← / →, and the current tab is kept in view. Text and side-panel content share one bottom sheet that collapses to a peek (number + headline); tap or swipe up to expand it to ~60 % and scroll inside, and swipe left / right on the peek to change chapter. On landscape phones the sheet is a card at the bottom left. Less-used tools sit in a ⋯ menu. Safe-area insets and `dvh` units keep the browser bars off the rail.
 - **Reduced motion:** no orbit, trains stand still (one train at KJ17), and fades and flights are instant.
 
 ## Data and sources
@@ -79,6 +80,7 @@ node scripts/bar-check.mjs          # bottom bar: labels, current bar, arrows, a
 node scripts/compass-check.mjs      # compass + Reset view visibility and overlap
 node scripts/credit-check.mjs       # OSM credit placement; OSM line on 00 only
 node scripts/orbit-check.mjs        # 00 turntable
+node scripts/mobile-check.mjs       # mobile layout at 360×640, 390×844, 430×932, 844×390, 768×1024 (+ 667×375)
 node scripts/trains-check.mjs       # LRT trains: track, stop, spacing, toggle, reduced motion
 node scripts/v7-check.mjs           # loader minimum + mosque/car-park shots
 node scripts/firstload.mjs <outDir> [query] [rm|nowebgl]   # cold throttled first-load frames

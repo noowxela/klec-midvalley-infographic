@@ -39,6 +39,9 @@ export const ms: Dict = {
     showText: 'Tunjuk panel teks',
     hideSide: 'Sembunyi panel sisi',
     showSide: 'Tunjuk panel sisi',
+    more: 'Pilihan lain',
+    sheetExpand: 'Tunjuk butiran bab',
+    sheetCollapse: 'Sembunyi butiran bab',
   },
   units: { m: 'm', min: 'min', blocks: 'blok', stations: 'stesen', lines: 'laluan', routes: 'laluan', pct: '%', deg: '°', mm: 'mm', ha: 'ha', days: 'hari' },
   names: {

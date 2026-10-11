@@ -392,3 +392,100 @@ a { color: inherit; }
 .toggle .pills { display: inline-flex; gap: 4px; margin-left: -4px; }
 .pin .tag .v .line-pill { height: 15px; width: 28.75px; margin-right: 6px; vertical-align: -3px; }
 .pin .tag .v .line-pill .lp-bg { stroke: #fff; stroke-width: 1.4; } /* white ring: the pill sits on a tag of its own colour */
+
+/* ======================================================================================================
+   Mobile layout (html.mobile, set by main.ts for max-width 768 px, or max-height 500 px up to 1024 px wide).
+   The stage is the dynamic viewport in CSS px (no scaling); the map fills it. Header on top, chapter rail at the
+   bottom, one bottom sheet (text + side panel) above the rail; compass / reset and the credit strip above the sheet.
+   ====================================================================================================== */
+.sheet, .more-btn, .more-menu, .mi-label { display: none; }
+html.mobile { --m-rail: 48px; --m-safe-b: env(safe-area-inset-bottom, 0px); --m-safe-t: env(safe-area-inset-top, 0px); }
+html.mobile #viewport { inset: 0 0 auto 0; height: 100vh; height: 100dvh; }
+html.mobile #stage { width: 100%; height: 100%; transform: none !important; }
+html.mobile #gl, html.mobile #gl canvas { width: 100%; height: 100%; }
+html.mobile .scrim-left, html.mobile .scrim-bottom, html.mobile .panel-tab { display: none; }
+html.mobile .scrim-top { height: calc(var(--m-safe-t) + 88px); }
+
+/* header: compact mark + 40 px tools; trains / map only / autoplay / sound / fullscreen live in the overflow menu */
+html.mobile .top-bar { left: calc(12px + env(safe-area-inset-left, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); top: calc(var(--m-safe-t) + 8px); align-items: center; gap: 8px; z-index: 20; }
+html.mobile .brand { display: block; min-width: 0; flex: 1 1 auto; margin: 0; font-size: 10.5px; line-height: 1.35; letter-spacing: 0.1em; }
+html.mobile #brand-sub { display: none; }
+html.mobile .top-buttons { gap: 6px; position: relative; flex: none; }
+html.mobile .icon-btn { width: 40px; height: 40px; font-size: 16px; }
+html.mobile .more-btn { display: grid; font-size: 18px; letter-spacing: 0; }
+html.mobile .lang-switch { margin-right: 0; }
+html.mobile .lang-switch button { height: 40px; min-width: 40px; padding: 0 6px; font-size: 12px; }
+html.mobile .lang-switch button[lang='zh-Hans'] { font-size: 13px; }
+html.mobile .more-menu:not([hidden]) { display: flex; flex-direction: column; position: absolute; right: 0; top: 46px; min-width: 232px; max-width: calc(100vw - 24px);
+  background: var(--paper); border: 1px solid var(--hairline); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14); padding: 4px; z-index: 40; }
+html.mobile .more-menu .icon-btn { width: 100%; height: 44px; display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 0 12px; border: 0; background: transparent; font-size: 14px; text-align: left; }
+html.mobile .more-menu .icon-btn .ico, html.mobile .more-menu .icon-btn .ico-svg { flex: none; width: 20px; text-align: center; }
+html.mobile .more-menu .icon-btn[aria-pressed='true'] { background: var(--grey-4); color: var(--ink); }
+html.mobile .more-menu .mi-label { display: block; font-family: var(--font-sans); font-size: 14px; line-height: 1.25; white-space: normal; }
+
+/* chapter rail: always visible, horizontally scrollable 48 px tabs; Banqiao top rule + 3 px current bar kept */
+html.mobile .bottom-bar { left: 0; right: 0; bottom: 0; z-index: 15; background: var(--paper); padding: 0 env(safe-area-inset-right, 0px) var(--m-safe-b) env(safe-area-inset-left, 0px); }
+html.mobile .rail { height: var(--m-rail); gap: 0; }
+html.mobile .tabs { display: flex; gap: 3px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; touch-action: pan-x; padding: 0 4px; }
+html.mobile .tab { flex: none; min-width: 64px; height: var(--m-rail); padding: 15px 12px 0 2px; gap: 6px; font-size: 13.5px; scroll-snap-align: center; }
+html.mobile .tab .n { font-size: 12px; }
+html.mobile .tab .lbl { overflow: visible; }
+html.mobile .arr { width: 44px; height: var(--m-rail); flex: none; font-size: 20px; border-left: 1px solid var(--hairline); }
+html.mobile .tab:hover::before { background: var(--hairline); height: 1px; }
+
+/* bottom sheet (portrait: full width above the rail; landscape: card at the bottom left) */
+html.mobile .sheet { display: flex; flex-direction: column; position: absolute; left: 0; right: 0; bottom: calc(var(--m-rail) + var(--m-safe-b)); z-index: 12;
+  background: var(--paper); border-top: 1px solid var(--hairline); border-radius: 12px 12px 0 0; box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.08);
+  transition: height 0.32s cubic-bezier(.4,0,.2,1); overflow: hidden; touch-action: none; }
+html.mobile .sheet.open { touch-action: auto; }
+html.mobile .sheet.is-hidden { border-top: 0; box-shadow: none; }
+html.mobile .sheet-handle { flex: none; height: 40px; width: 100%; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center; padding: 0; touch-action: none; }
+html.mobile .sheet-handle .grip { width: 40px; height: 4px; border-radius: 2px; background: var(--grey-3); }
+html.mobile .sheet-handle:focus-visible { outline: 1px solid var(--ink); outline-offset: -3px; }
+html.mobile .sheet-body { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 0 16px 16px; }
+html.mobile .sheet-body.scroll { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+html.mobile .sheet .chapter-label, html.mobile .sheet .headline { touch-action: pan-y; }
+html.mobile .sheet .text-panel { position: static; width: auto; transition: opacity 0.3s ease; }
+html.mobile .sheet .text-panel.out { transform: none; }
+html.mobile .sheet .chapter-label { font-size: 12px; gap: 12px; }
+html.mobile .sheet .chapter-label .rule { flex-basis: 28px; }
+:root.mobile .sheet .text-panel .headline { font-size: 23px; line-height: 1.15; margin: 8px 0 14px; letter-spacing: -0.01em; }
+html.mobile .sheet .lead { font-size: 15px; line-height: 1.5; margin-bottom: 18px; max-width: none; }
+html.mobile .sheet .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+html.mobile .sheet .stat .fig { font-size: 30px; }
+html.mobile .sheet .stat .unit { font-size: 13px; margin-left: 3px; }
+html.mobile .sheet .stat .cap { font-size: 11.5px; }
+html.mobile .sheet .hint { display: none; }
+html.mobile .sheet .source { max-width: none; }
+html.mobile .sheet .tp-legend-row { grid-template-columns: 16px minmax(0, 96px) 1fr; }
+html.mobile .sheet .side-panel { position: static; width: auto; max-height: none; overflow: visible; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none;
+  border: 0; border-top: 1px solid var(--hairline); padding: 16px 0 4px; margin-top: 4px; font-size: 14px; translate: none; visibility: visible; pointer-events: auto; }
+html.mobile .sheet .credit { margin-top: 14px; font-size: 11px; color: var(--grey-2); }
+html.mobile .sheet .toggle { min-height: 40px; margin: 2px 0; }
+html.mobile .sheet .step-list li { min-height: 44px; }
+html.mobile .sheet .side-panel button, html.mobile .sheet .side-panel .text-btn { min-height: 44px; }
+html.mobile .sheet input[type='range'] { height: 40px; }
+@media (orientation: landscape) { html.mobile .sheet:not(.open) .headline span + span { display: none; } }
+@media (orientation: landscape) {
+  html.mobile .sheet { left: calc(12px + env(safe-area-inset-left, 0px)); right: auto; width: min(360px, 46vw); bottom: calc(var(--m-rail) + var(--m-safe-b) + 8px);
+    border: 1px solid var(--hairline); border-radius: 10px; }
+}
+
+/* compass + reset and the credit / scale strip: readable sizes, just above the sheet (or the rail) */
+html.mobile .map-furniture { right: calc(12px + env(safe-area-inset-right, 0px)); bottom: calc(var(--m-above, 104px) + 48px); gap: 10px; z-index: 11; transition: bottom 0.32s cubic-bezier(.4,0,.2,1); }
+html.mobile .compass svg { width: 44px; height: 44px; }
+/* reset stays half the compass height (22 px), with an invisible 44 px tall touch target */
+html.mobile #btn-reset { height: 22px; line-height: 20px; font-size: 10.5px; padding: 0 9px; margin-right: 0; }
+html.mobile #btn-reset::after { inset: -11px -4px; }
+html.mobile .map-strip { right: calc(12px + env(safe-area-inset-right, 0px)); left: auto; bottom: calc(var(--m-above, 104px) + 12px); font-size: 11px; line-height: 20px; padding: 0 8px; transition: bottom 0.32s cubic-bezier(.4,0,.2,1); max-width: calc(100vw - 24px); }
+html.mobile .osm-credit { display: inline-block; padding: 10px 0; margin: -10px 0; }
+
+/* pins: slightly smaller tags so they stay readable without crowding a phone screen */
+html.mobile .pin .tag { font-size: 12.5px; padding: 3px 7px; }
+html.mobile .pin .tag .v { font-size: 11px; }
+html.mobile .pin.minor .tag { font-size: 11.5px; padding: 2px 5px; }
+html.mobile .pin .tag .v .line-pill { height: 13px; width: 24.9px; margin-right: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  html.mobile .sheet, html.mobile .map-furniture, html.mobile .map-strip { transition: none; }
+}

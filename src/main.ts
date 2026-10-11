@@ -29,6 +29,13 @@ let chapters: Chapter[] = buildChapters();
 const world = new World($('#gl'));
 let stageScale = 1; // current stage scale (the bottom-right strip is unscaled, so the scale bar is sized in screen px)
 function fit() {
+  const m = mqMobile.matches; if (m !== mobile) setMobile(m);
+  if (mobile) { // native CSS-px layout: the stage is the viewport, nothing is scaled
+    stage.style.transform = ''; stageScale = 1;
+    world.setStageSize(stage.clientWidth, stage.clientHeight); world.setPixelRatio(1);
+    layoutMobile(true); return;
+  }
+  world.setStageSize(1920, 1080);
   const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
   stage.style.transform = `translate(${(window.innerWidth - 1920 * s) / 2}px, ${(window.innerHeight - 1080 * s) / 2}px) scale(${s})`;
   world.setPixelRatio(s);
@@ -70,7 +77,10 @@ function placeFurniture(s: number) {
   const cs = getComputedStyle(sp); const extra = cs.boxSizing === 'border-box' ? 0 : parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
   sp.style.maxHeight = `${Math.min(720, c - half - 8 / s - (parseFloat(cs.top) || 150) - extra)}px`;
 }
-window.addEventListener('resize', fit); fit();
+// narrow / touch viewports (phones, small tablets, short landscape phones) get the native mobile layout
+const mqMobile = window.matchMedia('(max-width: 768px), (max-height: 500px) and (max-width: 1024px)');
+let mobile = false;
+window.addEventListener('resize', fit); mqMobile.addEventListener?.('change', fit);
 
 const textPanel = $('#text-panel'); const sidePanel = $('#side-panel');
 
@@ -98,8 +108,11 @@ function setPins(defs: PinDef[]) {
 const rectOf = (el: HTMLElement) => ({ x0: el.offsetLeft, y0: el.offsetTop, x1: el.offsetLeft + el.offsetWidth, y1: el.offsetTop + el.offsetHeight });
 function updatePins() {
   const placed: { x0: number; x1: number; y0: number; y1: number }[] = [];
-  const tpOpen = !panelState.tp; const spOpen = !panelState.sp && sidePanel.childElementCount > 0;
-  const panels = [...(tpOpen ? [rectOf(textPanel)] : []), ...(spOpen ? [rectOf(sidePanel)] : [])];
+  const tpOpen = !mobile && !panelState.tp; const spOpen = !mobile && !panelState.sp && sidePanel.childElementCount > 0;
+  const panels = mobile
+    ? [rectOf(header), rectOf(bottomBar), ...(sheet.offsetHeight > 0 ? [rectOf(sheet)] : [])]
+    : [...(tpOpen ? [rectOf(textPanel)] : []), ...(spOpen ? [rectOf(sidePanel)] : [])];
+  const W = world.stageSize.w;
   const items = pinEls.map((p) => ({ p, s: world.project(p.pos) })).sort((a, b) => b.s.y - a.s.y);
   const side = spOpen ? rectOf(sidePanel) : null;
   for (const { p, s } of items) {
@@ -107,7 +120,9 @@ function updatePins() {
     p.el.style.opacity = '';
     // flip the tag to the left of its stem when it would run under the side panel
     const flip = !!side && s.x + p.w > side.x0 - 8 && s.x - p.w > 0;
-    const x0 = flip ? s.x - p.w : s.x; const x1 = flip ? s.x : s.x + p.w;
+    let x0 = flip ? s.x - p.w : s.x; let x1 = flip ? s.x : s.x + p.w;
+    // mobile: keep every tag on screen (slide it left of its stem near the right edge)
+    if (mobile) { x0 = clamp(s.x - 1, 6, Math.max(6, W - 6 - p.w)); x1 = x0 + p.w; }
     let stem = p.def.kind === 'minor' ? 18 : 34;
     for (let k = 0; k < 8; k++) {
       const box = { x0: x0 - 2, x1: x1 + 2, y0: s.y - stem - p.h - 2, y1: s.y - stem + 2 };
@@ -118,7 +133,7 @@ function updatePins() {
     p.el.classList.toggle('occluded', panels.some((r) => x0 < r.x1 && x1 > r.x0 && top < r.y1 && s.y > r.y0));
     p.el.style.transform = `translate(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px)`;
     p.stem.style.height = `${stem}px`; p.tag.style.bottom = `${stem}px`;
-    p.tag.style.left = flip ? `${-p.w + 1}px` : '-1px';
+    p.tag.style.left = mobile ? `${(x0 - s.x).toFixed(1)}px` : flip ? `${-p.w + 1}px` : '-1px';
   }
 }
 
@@ -129,6 +144,11 @@ const tpToggle = $('#tp-toggle'), spToggle = $('#sp-toggle'), btnMap = $('#btn-m
 const TEXT_RIGHT = 96 + 520, SIDE_LEFT = 1920 - 48 - 360;
 function applyPanels(instant = false) {
   const hasSide = sidePanel.childElementCount > 0;
+  if (mobile) { // the sheet replaces both panels; 'map only' hides the sheet
+    stage.classList.remove('tp-collapsed', 'sp-collapsed'); stage.classList.toggle('no-side', !hasSide);
+    btnMap.setAttribute('aria-pressed', String(sheetHidden)); btnMap.setAttribute('aria-expanded', String(!sheetHidden));
+    layoutMobile(instant); return;
+  }
   stage.classList.toggle('tp-collapsed', panelState.tp);
   stage.classList.toggle('sp-collapsed', panelState.sp);
   stage.classList.toggle('no-side', !hasSide);
@@ -142,10 +162,108 @@ function applyPanels(instant = false) {
   world.setViewShift((left + right) / 2 - 960, instant || prefersReducedMotion());
 }
 function setPanels(tp: boolean, sp: boolean) { panelState.tp = tp; panelState.sp = sp; localStorage.setItem('mv-panels', JSON.stringify(panelState)); applyPanels(); }
-function toggleMapOnly() { const hasSide = sidePanel.childElementCount > 0; const all = panelState.tp && (panelState.sp || !hasSide); setPanels(!all, !all); }
+function toggleMapOnly() { if (mobile) { sheetHidden = !sheetHidden; applyPanels(); return; } const hasSide = sidePanel.childElementCount > 0; const all = panelState.tp && (panelState.sp || !hasSide); setPanels(!all, !all); }
 tpToggle.addEventListener('click', () => setPanels(!panelState.tp, panelState.sp));
 spToggle.addEventListener('click', () => setPanels(panelState.tp, !panelState.sp));
 btnMap.addEventListener('click', toggleMapOnly);
+
+// ---------- mobile layout ----------
+// The stage becomes the (dynamic) viewport. The text panel and the side panel move into one bottom sheet above the
+// chapter rail (a card at the bottom left on short landscape screens): collapsed to a peek (chapter number + headline),
+// expandable to ~60 % of the height and scrollable inside. Less-used header tools move into an overflow menu.
+const root = document.documentElement;
+const sheet = $('#sheet'), sheetBody = $('#sheet-body'), sheetHandle = $('#sheet-handle');
+const topTools = $('#top-tools'), moreBtn = $('#btn-more'), moreMenu = $('#more-menu');
+const footNote = $('.bottom-bar .credit'), bottomBar = $('.bottom-bar'), header = $('#top-buttons');
+const MENU_IDS = ['btn-trains', 'btn-maponly', 'btn-autoplay', 'btn-sound', 'btn-fullscreen'];
+const DESK_ORDER = ['lang-switch', 'btn-maponly', 'btn-trains', 'btn-autoplay', 'btn-sound', 'btn-theme', 'btn-fullscreen', 'btn-more', 'more-menu'];
+let sheetOpen = false, sheetHidden = false;
+function menuLabels() {
+  for (const id of MENU_IDS) {
+    const b = document.getElementById(id)!; let l = b.querySelector<HTMLElement>('.mi-label');
+    if (!l) { l = document.createElement('span'); l.className = 'mi-label'; l.setAttribute('aria-hidden', 'true'); b.append(l); }
+    l.textContent = (b.getAttribute('aria-label') || b.title).replace(/\s*\([A-Z]\)$/, '');
+  }
+}
+function setMobile(m: boolean) {
+  mobile = m; root.classList.toggle('mobile', m);
+  const strip = $('#map-strip'); const furn = $('.map-furniture');
+  strip.removeAttribute('style'); strip.classList.remove('below-stage'); furn.style.transform = ''; furn.style.bottom = ''; sidePanel.style.maxHeight = '';
+  if (m) {
+    sheetBody.append(textPanel, sidePanel, footNote);
+    menuLabels(); for (const id of MENU_IDS) moreMenu.append(document.getElementById(id)!);
+  } else {
+    stage.insertBefore(textPanel, tpToggle); stage.insertBefore(sidePanel, tpToggle); bottomBar.append(footNote);
+    for (const id of DESK_ORDER) topTools.append(document.getElementById(id)!);
+    closeMenu(); world.setDistanceScale(1); stage.style.removeProperty('--m-above');
+  }
+  if (current >= 0) { renderText(chapters[current]); applyPanels(true); }
+}
+function peekHeight() {
+  const hl = textPanel.querySelector<HTMLElement>('.headline');
+  return Math.round(sheetHandle.offsetHeight + (hl ? hl.offsetTop + hl.offsetHeight : 48) + 14);
+}
+const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+function layoutMobile(instant = false) {
+  if (!mobile) return;
+  const W = stage.clientWidth, H = stage.clientHeight; const landscape = W > H;
+  const headerBottom = header.offsetTop + header.offsetHeight; const railTop = bottomBar.offsetTop;
+  const peek = peekHeight();
+  const room = railTop - headerBottom - (landscape ? 16 : 8);
+  const open = Math.min(room, Math.max(peek, Math.round(H * (landscape ? 1 : 0.6))));
+  const sh = sheetHidden ? 0 : sheetOpen ? open : Math.min(peek, room);
+  sheet.style.height = `${sh}px`; sheet.classList.toggle('is-hidden', sheetHidden);
+  sheetBody.classList.toggle('scroll', sheetOpen);
+  // compass / reset and the credit + scale strip sit just above whatever covers the bottom of the map
+  const above = (H - railTop) + (landscape ? 0 : sh);
+  root.style.setProperty('--m-above', `${above}px`);
+  // camera framing: pull every preset back so its subject fits the free area (between header and the collapsed sheet)
+  const peekCover = landscape ? 0 : sheetHidden ? 0 : Math.min(peek, room);
+  const freeH = Math.max(1, railTop - peekCover - headerBottom);
+  const k = clamp(Math.max(0.8 / (W / H), 0.73 / (freeH / H)), 0.9, 2.6);
+  world.setDistanceScale(k);
+  // centre the projection on the area the map can actually be seen in
+  const coverB = H - railTop + (landscape ? 0 : sh);
+  const coverL = landscape && sheetOpen && !sheetHidden ? sheet.offsetLeft + sheet.offsetWidth : 0;
+  world.setViewShift(coverL / 2, instant || prefersReducedMotion(), (headerBottom - coverB) / 2);
+}
+function setSheet(open: boolean) {
+  sheetOpen = open; sheet.classList.toggle('open', open);
+  sheetHandle.setAttribute('aria-expanded', String(open));
+  const T = t().ui; sheetHandle.setAttribute('aria-label', open ? T.sheetCollapse : T.sheetExpand);
+  if (!open) sheetBody.scrollTop = 0;
+  layoutMobile();
+}
+let suppressClick = false;
+sheetHandle.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } setSheet(!sheetOpen); });
+// gestures on the sheet: swipe left / right on the peek (handle, chapter label, headline) = next / previous chapter;
+// swipe up / down = expand / collapse; a tap on the collapsed sheet expands it.
+let g: { x: number; y: number; id: number; peek: boolean } | null = null;
+sheet.addEventListener('pointerdown', (e) => {
+  const tgt = e.target as HTMLElement;
+  const peek = !!tgt.closest('.sheet-handle, .chapter-label, .headline') || !sheetOpen;
+  if (tgt.closest('input, select, textarea, a, .side-panel button, [role="button"]') && sheetOpen) return;
+  g = { x: e.clientX, y: e.clientY, id: e.pointerId, peek };
+});
+sheet.addEventListener('pointercancel', () => { g = null; });
+sheet.addEventListener('pointerup', (e) => {
+  if (!g || e.pointerId !== g.id) return; const dx = e.clientX - g.x, dy = e.clientY - g.y; const wasPeek = g.peek; g = null;
+  if (!wasPeek) return;
+  if (Math.abs(dx) > 48 && Math.abs(dx) > 1.4 * Math.abs(dy)) { suppressClick = true; setTimeout(() => (suppressClick = false), 400); stopAutoplay(); goTo(current + (dx < 0 ? 1 : -1)); return; }
+  if (Math.abs(dy) > 36 && Math.abs(dy) > Math.abs(dx)) { suppressClick = true; setTimeout(() => (suppressClick = false), 400); setSheet(dy < 0); return; }
+  if (!sheetOpen && Math.hypot(dx, dy) < 10 && !(e.target as HTMLElement).closest('.sheet-handle')) setSheet(true);
+});
+// overflow menu
+function closeMenu() { moreMenu.hidden = true; moreBtn.setAttribute('aria-expanded', 'false'); }
+moreBtn.addEventListener('click', (e) => { e.stopPropagation(); const open = moreMenu.hidden; moreMenu.hidden = !open; moreBtn.setAttribute('aria-expanded', String(open)); if (open) (moreMenu.querySelector('button') as HTMLButtonElement | null)?.focus(); });
+moreMenu.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('button')) setTimeout(closeMenu, 120); });
+document.addEventListener('pointerdown', (e) => { if (!moreMenu.hidden && !(e.target as HTMLElement).closest('#more-menu, #btn-more')) closeMenu(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !moreMenu.hidden) { closeMenu(); moreBtn.focus(); } });
+// keep the current chapter tab in view in the scrollable mobile rail
+function centreTab(i: number) {
+  if (!mobile) return; const el = tabs.children[i] as HTMLElement | undefined; if (!el) return;
+  tabs.scrollTo({ left: el.offsetLeft - (tabs.clientWidth - el.offsetWidth) / 2, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+}
 
 // ---------- compass & scale bar ----------
 const needle = $('#north-needle'); const scaleBar = $('#scale-bar'); const scaleLabel = $('#scale-label');
@@ -218,6 +336,7 @@ function renderText(c: Chapter) {
 function fitHeadline() {
   const hl = textPanel.querySelector<HTMLElement>('.headline'); if (!hl) return;
   hl.style.fontSize = '';
+  if (mobile) { layoutMobile(); return; } // mobile headlines wrap at a fixed size; the sheet peek follows their height
   const spans = [...hl.children] as HTMLElement[];
   const widest = () => Math.max(...spans.map((s) => { s.style.whiteSpace = 'nowrap'; const w = s.scrollWidth; s.style.whiteSpace = ''; return w; }));
   let size = parseFloat(getComputedStyle(hl).fontSize);
@@ -228,8 +347,9 @@ function goTo(i: number, instant = false) {
   i = (i + chapters.length) % chapters.length; if (i === current) return;
   current = i; const c = chapters[i]; runCleanups(); userMoved = false; // the camera flies to the new preset
   [...tabs.children].forEach((t, k) => (k === i ? t.setAttribute('aria-current', 'step') : t.removeAttribute('aria-current')));
+  centreTab(i);
   const swap = () => {
-    renderText(c); mountPanel(c);
+    renderText(c); mountPanel(c); if (mobile && !sheetOpen) sheetBody.scrollTop = 0;
     textPanel.classList.remove('out'); sidePanel.classList.remove('out');
   };
   setPins(c.pins);
@@ -314,6 +434,8 @@ function applyStaticText() {
   $('#btn-reset').textContent = U.reset; $('#btn-reset').title = U.resetTitle;
   tabs.setAttribute('aria-label', U.chapters); stage.setAttribute('aria-label', U.stage);
   $('#credit-prefix').textContent = U.creditPrefix; $('#osm-credit').setAttribute('aria-label', U.osmCreditAria);
+  moreBtn.title = U.more; moreBtn.setAttribute('aria-label', U.more); moreMenu.setAttribute('aria-label', U.more);
+  sheetHandle.setAttribute('aria-label', sheetOpen ? U.sheetCollapse : U.sheetExpand); menuLabels();
   $('#btn-prev').setAttribute('aria-label', U.prevChapter); $('#btn-next').setAttribute('aria-label', U.nextChapter); $('.rail').setAttribute('aria-label', U.chaptersNav);
   applyPanels(true);
 }
@@ -325,6 +447,7 @@ onLangChange(() => {
 });
 
 // ---------- start ----------
+fit();
 const fromHash = parseInt((params.get('chapter') ?? location.hash.slice(1)) || '0', 10);
 const startIdx = Math.max(0, chapters.findIndex((c) => c.id === fromHash));
 goTo(startIdx, true);
