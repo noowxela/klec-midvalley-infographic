@@ -1,0 +1,518 @@
+// Chapter definitions. Numbering follows the full plan; only built chapters are listed.
+// Every figure is computed from the processed data in ./data (see source lines); all text comes from ./i18n.
+import { ZONES, landmarks, buildings, lines, areas, routes, walks, anchors, meta, stats, station, findPlace, fmt, type XY, type Route, type Building, type Share } from './data';
+import { linePill } from './linePill';
+import { CUT_KINDS, cutDepth, cutKind, underRoads, wayLength } from './cutaway';
+import type { SceneMode, View, World } from './scene';
+import { t, getLang } from './i18n';
+import { sunPosition, mytDate, solarNoon, compassIndex } from './sun';
+import { groundSamples, routeSampleSets } from './shade';
+import climate from './data/climate.json';
+
+export interface PinDef { id: string; title: string; value?: string; at: [number, number, number]; kind: 'station' | 'major' | 'minor'; color?: string; accent?: string; icon?: string /* trusted inline SVG, shown before the value */ }
+export interface StatDef { fig: string; unit?: string; cap: string; swatch?: string }
+export interface Chapter {
+  id: number; label: string; tab: string; title: string[]; lead: string; stats: StatDef[]; hint?: string; source: string;
+  legend?: { title: string; items: { swatch: string; label: string; desc: string }[] };
+  view: View; mode: Partial<SceneMode>; pins: PinDef[]; turntable?: boolean; panel?: (el: HTMLElement, world: World, ctx: PanelCtx) => void;
+}
+export interface PanelCtx { flyTo: (v: View) => void; chapterView: View; onCleanup: (f: () => void) => void }
+
+const D = (n: XY, y = 0): [number, number, number] => [n[0], y, -n[1]];
+// legend: line letters (KD / KB) + the local stop number of our station (Abdullah Hukum 16, Mid Valley 10)
+// official KVITS line colours (styles.css): KJ = Kelana Jaya, KB = Batu Caves–Pulau Sebang (KTM 1), KD = Tanjung Malim–Port Klang (KTM 2)
+// Public-facing station numbers. Mid Valley (official code KB01) is shown the way riders know it: stop 10 on
+// Line 1 counting from Batu Caves (KC05–KC01, KA04–KA01, then Mid Valley; Wikipedia, Batu Caves–Pulau Sebang Line,
+// "Stations"). KB01 appears only in the 03 Location source note and the README.
+// Abdullah Hukum KTM (official KD01) is stop 16 on Line 2 counting from Tanjung Malim (KA15–KA01, then Abdullah Hukum),
+// excluding the 2026 Segambut Utara infill (KA05A); owner's choice. KD01 appears only in the 03 Location source note and the README.
+const PUBLIC_CODE: Record<string, string> = { KB01: '10', KD01: '16' };
+const showCode = (ref: string | null) => (ref ? PUBLIC_CODE[ref] ?? ref : '—');
+const lineColor = { lrt: 'var(--c-lrt)', ktm1: 'var(--c-ktm1)', ktm2: 'var(--c-ktm2)', erl: 'var(--c-erl)', klia: 'var(--c-klia-transit)', skypark: 'var(--c-skypark)' } as const;
+const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- static derived figures (language independent) ----------
+const kj17 = station('KJ17'); const kb01 = station('KB01'); const kd01 = station('KD01');
+const tallestNamed = (() => {
+  const seen = new Set<string>(); const out: Building[] = [];
+  for (const b of [...buildings].filter((b) => b.name && b.heightSource !== 'estimate').sort((a, b) => b.height - a.height)) {
+    if (seen.has(b.name!)) continue; seen.add(b.name!); out.push(b);
+  }
+  return out.slice(0, 10);
+})();
+const routeBridgeEnclosed = routes[0]?.segments.find((s) => s.cls === 'bridge-enclosed');
+const legsTotal = routes.reduce((s, r) => s + r.length, 0);
+const legsSheltered = routes.reduce((s, r) => s + r.shelteredM, 0);
+const walkTotals = (() => {
+  const total = walks.reduce((s, r) => s + r.length, 0);
+  const bi = walks.reduce((s, r) => s + (r.byShare.bridge || 0) + (r.byShare.indoor || 0), 0);
+  return { total, bridgeIndoorPct: total ? Math.round((bi / total) * 100) : 0, min: Math.min(...walks.map((w) => w.length)), max: Math.max(...walks.map((w) => w.length)) };
+})();
+const ecoTower = anchors.ECO?.label.match(/\((.*)\)/)?.[1] ?? '';
+const SUN_YEAR = 2026;
+const PRESETS = { mar: [3, 20], jun: [6, 21], dec: [12, 21] } as const;
+type PresetKey = keyof typeof PRESETS;
+const noon = Object.fromEntries((Object.keys(PRESETS) as PresetKey[]).map((k) => [k, solarNoon(SUN_YEAR, PRESETS[k][0], PRESETS[k][1], meta.center.lat, meta.center.lon)])) as Record<PresetKey, ReturnType<typeof solarNoon>>;
+const noonDir = (k: PresetKey): 'N' | 'S' => (Math.cos((noon[k].pos.azimuth * Math.PI) / 180) > 0 ? 'N' : 'S');
+const shadowTower = buildings.filter((b) => b.heightSource === 'cited' && b.name && !/Tower of Light/.test(b.name)).sort((a, b) => b.height - a.height)[0];
+const wettestIdx = climate.precipitationMm.indexOf(Math.max(...climate.precipitationMm));
+
+// ---------- helpers ----------
+const longestNamed = <T extends { name: string | null; pts: XY[] }>(arr: T[], name: string) => {
+  const cand = arr.filter((a) => a.name === name); if (!cand.length) return null;
+  const L = (a: T) => a.pts.reduce((s, p, i) => (i ? s + Math.hypot(p[0] - a.pts[i - 1][0], p[1] - a.pts[i - 1][1]) : 0), 0);
+  const best = cand.sort((a, b) => L(b) - L(a))[0]; return best.pts[Math.floor(best.pts.length / 2)];
+};
+const centroid = (ring: XY[]): XY => { const s = ring.reduce((m, p) => [m[0] + p[0], m[1] + p[1]], [0, 0]); return [s[0] / ring.length, s[1] / ring.length]; };
+const precinct = (name: string) => areas.precincts.find((p) => p.name === name);
+const nn = <T,>(a: (T | null | undefined)[]) => a.filter((x): x is T => !!x);
+const h = (tag: string, attrs: Record<string, string> = {}, html = '') => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); e.innerHTML = html; return e; };
+function toggle(parent: HTMLElement, label: string, checked: boolean, onChange: (v: boolean) => void, swatch?: string) {
+  const l = h('label', { class: 'toggle' }); const i = h('input', { type: 'checkbox', role: 'switch' }) as HTMLInputElement; i.checked = checked;
+  i.addEventListener('change', () => onChange(i.checked)); l.append(i);
+  if (swatch) l.append(h('span', { class: 'swatch', style: `background:${swatch}` }));
+  l.append(document.createTextNode(label)); parent.append(l); return i;
+}
+const boundsView = (pts: XY[], minD = 420): View => {
+  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2; const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+  return { target: [cx, 0, -cy], azimuth: 0.2, polar: 0.78, distance: Math.max(minD, span * 3.4) };
+};
+const routePts = (r: Route) => r.segments.flatMap((s) => s.pts);
+const srcShort = (url: string) => (/skyscrapercenter/.test(url) ? 'CTBUH' : /wikipedia/.test(url) ? 'Wikipedia' : /starproperty/.test(url) ? 'StarProperty' : /igbproperty/.test(url) ? 'IGB' : /cbd\.my/.test(url) ? 'cbd.my' : /scraperbase/.test(url) ? 'Scraperbase' : 'source');
+const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
+
+export function heightLabel(b: Pick<Building, 'height' | 'heightSource' | 'levels' | 'heightRef'>) {
+  const T = t().heights; const r = b.heightRef;
+  if (b.heightSource === 'cited' && r) {
+    if (r.unit === 'floors' && r.storeyHeight) return T.citedFloors(b.height, r.value, r.storeyHeight, srcShort(r.url));
+    return r.ctbuhEstimated ? T.citedEst(b.height, srcShort(r.url)) : T.citedM(b.height, srcShort(r.url));
+  }
+  return b.heightSource === 'osm' ? T.osm(b.height) : b.heightSource === 'levels' ? T.levels(b.height, b.levels) : T.estimate(b.height);
+}
+export function routeName(r: Route) {
+  const A = t().anchor; const name = (k: string) => (k === 'ECO' ? A.ECO(ecoTower) : A[k as 'KJ17'] ?? k);
+  return `${name(r.from)} → ${name(r.to)}`;
+}
+const SHARE_ORDER: Share[] = ['bridge', 'indoor', 'covered', 'open'];
+function shareBar(r: { byShare: Partial<Record<Share, number>>; length: number }) {
+  const T = t();
+  const bar = h('div', { class: 'share-bar', role: 'img', 'aria-label': SHARE_ORDER.map((k) => `${T.shares[k]} ${fmt(r.byShare[k] || 0)} m`).join(', ') });
+  for (const k of SHARE_ORDER) { const v = r.byShare[k] || 0; if (v > 0) bar.append(h('span', { class: `share-${k}`, style: `width:${(v / r.length) * 100}%` })); }
+  const legend = h('div', { class: 'share-legend' });
+  for (const k of SHARE_ORDER) legend.append(h('div', { class: 'legend-row' }, `<span class="swatch box share-${k}"></span><span class="lg-name">${T.shares[k]}</span><span class="lg-val">${fmt(r.byShare[k] || 0)} m · ${pct(r.byShare[k] || 0, r.length)}%</span>`));
+  return [bar, legend];
+}
+
+// ---------- chapters (rebuilt on language change) ----------
+export function buildChapters(): Chapter[] {
+  const T = t(); const N = T.names; const U = T.units;
+  const stationPin = (ref: string, line: 'lrt' | 'ktm1' | 'ktm2', title: string, value?: string): PinDef | null => {
+    const s = station(ref); if (!s) return null;
+    const icon = line === 'ktm1' ? linePill(1, N.ktmLine1) : line === 'ktm2' ? linePill(2, N.ktmLine2) : line === 'lrt' ? linePill(5, N.lrtLine5) : undefined;
+    return { id: `st-${ref}`, title, value: value ?? `${ref} · ${T.common.osm}`, at: D(s.c, 13), kind: 'station', color: lineColor[line], icon };
+  };
+  const placePin = (name: string, title = name, value?: string, kind: PinDef['kind'] = 'major'): PinDef | null => {
+    const p = findPlace(name); if (!p) return null;
+    return { id: `pl-${name}`, title, value, at: D(p.c, p.height + 3), kind };
+  };
+  const textPin = (id: string, title: string, at: XY | null, y = 2, value?: string): PinDef | null => (at ? { id, title, value, at: D(at, y), kind: 'minor' } : null);
+  // 02: line labels for KLIA Transit (ERL tracks) and the suspended Skypark Line (Line 2 tracks), placed on the OSM track
+  const wayPt = (id: number, f: number): XY | null => { const w = lines.rails.find((r) => r.id === id); return w ? w.pts[Math.min(w.pts.length - 1, Math.floor(w.pts.length * f))] : null; };
+  const linePin = (id: string, title: string, value: string, at: XY | null, y: number, color: string, icon: string): PinDef | null => (at ? { id, title, value, at: D(at, y), kind: 'minor', accent: color, icon } : null);
+  const airPins = () => nn([
+    linePin('ln-klia', T.ch1.pinKlia, T.ch1.pinKliaV, wayPt(52347242, 0.2), 7, lineColor.klia, linePill(7, N.kliaTransit7)),
+    linePin('ln-skypark', T.ch1.pinSky, T.ch1.pinSkyV, wayPt(180560345, 0.62), 2, lineColor.skypark, linePill(10, N.skypark10, 'suspended')),
+  ]);
+  // 05 cutaway: label on an OSM below-ground road, anchored at its estimated depth
+  const cutPin = (id: string, wayId: number, title: string, value: (d: number) => string, accent: string): PinDef | null => {
+    const w = underRoads.find((r) => r.id === wayId); if (!w) return null; const d = cutDepth(w.layer);
+    return { id, title, value: value(d), at: D(w.pts[Math.floor(w.pts.length / 2)], -d), kind: 'minor', accent };
+  };
+  const corePins = () => nn([
+    stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
+    stationPin('KD01', 'ktm2', N.kj17, `KTM · ${showCode('KD01')}`),
+    placePin('Strata Office', N.ecoCity, undefined, 'major'),
+    placePin('The Gardens Mall', N.gardens),
+    placePin('Mid Valley Megamall', N.megamall),
+    stationPin('KB01', 'ktm1', N.kb01, `KTM · ${showCode('KB01')}`),
+  ]);
+  const tallestNames = stats.citedTallest.map((b) => b.name).join(' · ');
+  const tallestH = stats.citedTallest[0]?.height;
+
+  const describeLeg = (r: Route) => {
+    let s = Object.entries(r.byClass).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${fmt(v)} m ${T.ch6.cls[k] || k}`).join(', ') + '.';
+    if (r.withinEcoCityM > 0) s += ` ${T.ch6.inEco(r.withinEcoCityM)}`;
+    if (r.overWaterM > 0) s += ` ${T.ch6.overRiver(r.overWaterM)}`;
+    return s;
+  };
+
+  const jamekPodium = landmarks.find((l) => l.podium)?.podium ?? null;
+  const Z = T.ch0; const zs = meta.zones as unknown as Record<string, { blocks: number; footprintM2: number; centroid: XY; tallest: { height: number } | null }>;
+  const zoneTop = (z: string) => Math.max(40, ...buildings.filter((b) => b.zone === z).map((b) => b.height)) * 0.55;
+  return [
+    // ---------------- 00 overview: text panel only (no side panel, no station pins); the model fills the area right of the text ----------------
+    {
+      id: 0, label: Z.label, tab: Z.tab, title: Z.title, lead: Z.lead, hint: Z.hint,
+      stats: [],
+      source: T.common.osmSrc(stats.fetchedDate),
+      view: { target: [-111, 0, -30], azimuth: -1.65, polar: 1.1, distance: 1363 },
+      turntable: true, // slow 360° showcase orbit from this preset (World.setTurntable)
+      mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: false },
+      pins: [],
+    },
+    // ---------------- 01 landmarks: precinct colours, landmark mosques, car park (the former 00 side panel) ----------------
+    {
+      id: 1, label: T.lm.label, tab: T.lm.tab, title: T.lm.title, lead: T.lm.lead,
+      stats: ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ fig: fmt(zs[z].footprintM2 / 10000, 1), unit: U.ha, cap: Z.statZone(Z.zones[z], zs[z].blocks), swatch: `var(--z-${z})` })),
+      source: Z.source('', jamekPodium ? Z.podiumNote(jamekPodium.name, jamekPodium.levels ?? 0, jamekPodium.storeyM ?? 0, jamekPodium.roof) : '').trim(),
+      view: { target: [-10, 0, -30], azimuth: 0.2, polar: 0.7, distance: 2350 }, // turned so Masjid Jamek is not hidden behind the KL Eco City towers
+      mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'zone', precincts: false, landmarks: true },
+      pins: nn([
+        ...landmarks.map((l) => { const jamek = l.name === 'Masjid Jamek Abdullah Hukum'; return { id: `mosque-${l.id}`, title: jamek ? Z.mosqueJamek : Z.mosqueAnNur, value: jamek ? (l.podium?.levels ? Z.mosqueOnPodium(l.podium.levels) : Z.mosqueJamekSub) : Z.mosqueAnNurSub, at: D(l.c, l.height + 1), kind: 'minor' as const, accent: 'var(--landmark)' }; }),
+        ...ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ id: `zone-${z}`, title: Z.zones[z], value: Z.pinBlocks(zs[z].blocks), at: D(zs[z].centroid, zoneTop(z)), kind: 'major' as const, accent: `var(--z-${z})` })),
+      ]),
+      // legend lives in the side panel (precinct colours + landmark mosques)
+      panel: (el) => {
+        const s = h('section', { class: 'ov-legend' }); s.append(h('h3', {}, Z.legendTitle));
+        const rows = [...ZONES.map((z) => ({ swatch: `var(--z-${z})`, label: Z.zones[z], desc: Z.zoneDesc[z] })), ...(landmarks.length ? [{ swatch: 'var(--landmark)', label: Z.mosques, desc: Z.mosquesDesc }] : []), ...(jamekPodium ? [{ swatch: 'var(--podium)', label: Z.podiumLabel, desc: Z.podiumDesc(jamekPodium.name, jamekPodium.levels ?? 0, jamekPodium.storeyM ?? 0, jamekPodium.roof) }] : [])];
+        for (const r of rows) s.append(h('div', { class: 'ov-legend-row' }, `<span class="swatch box" style="background:${r.swatch}"></span><div><div class="lg-label">${r.label}</div><div class="lg-desc">${r.desc}</div></div>`));
+        const ds = h('section', { class: 'ov-data' }); ds.append(h('h3', {}, Z.dataTitle), h('div', { class: 'small' }, Z.dataNote()));
+        el.append(s, ds);
+      },
+    },
+    // ---------------- 02 cover ----------------
+    {
+      id: 2, label: T.ch1.label, tab: T.ch1.tab, title: T.ch1.title, lead: T.ch1.lead,
+      stats: [
+        { fig: fmt(stats.buildingCount), unit: U.blocks, cap: T.ch1.statBlocks },
+        ...(tallestH ? [{ fig: fmt(tallestH), unit: U.m, cap: T.ch1.statTallest(tallestNames) }] : []),
+        { fig: fmt(stats.routeTotalM), unit: U.m, cap: T.ch1.statWalk(fmt(stats.routeMinutes)) },
+      ],
+      source: `${T.ch1.source(stats.heightCited)} ${T.ch1.airSource}`,
+      view: { target: [0, 0, -40], azimuth: -0.72, polar: 0.95, distance: 1950 },
+      mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'highlight' }, airport: true, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: false },
+      pins: [...corePins(), ...airPins()],
+      panel: (el) => {
+        const s1 = h('section'); s1.append(h('h3', {}, T.ch1.studyArea));
+        s1.append(h('div', { class: 'small' }, T.ch1.studyText(meta.center.lat.toFixed(4), meta.center.lon.toFixed(4), fmt(meta.halfSizeM * 2), `S ${meta.bbox.south} · W ${meta.bbox.west} · N ${meta.bbox.north} · E ${meta.bbox.east}`)));
+        const s2 = h('section'); s2.append(h('h3', {}, T.ch1.onModel));
+        const L = T.ch1.legend;
+        const box = (sw: string) => `<span class="swatch box" style="background:${sw}"></span>`;
+        for (const [ic, txt] of [[box('var(--scene-building)'), L.building], [box('var(--c-water)'), L.water], [box('var(--c-green)'), L.green], [linePill(5, N.lrtLine5), L.lrt], [linePill(2, N.ktmLine2), L.ktm2(`KD · ${showCode('KD01')}`)], [linePill(1, N.ktmLine1), L.ktm1(`KB · ${showCode('KB01')}`)], [linePill(7, N.kliaTransit7), L.klia], [`${linePill(10, N.skypark10, 'suspended')}<span class="tag-suspended">${T.ch1.suspended}</span>`, L.skypark]] as const)
+          s2.append(h('div', { class: 'legend-row' }, `${ic}${txt}`));
+        const s3 = h('section'); s3.append(h('h3', {}, T.ch1.quality));
+        s3.append(h('div', { class: 'small' }, T.ch1.qualityText(stats.heightCited, stats.heightOsm, stats.heightLevels, stats.heightEstimate)));
+        el.append(s1, s2, s3);
+      },
+    },
+    // ---------------- 03 location ----------------
+    {
+      id: 3, label: T.ch2.label, tab: T.ch2.tab, title: T.ch2.title, lead: T.ch2.lead,
+      stats: [
+        { fig: fmt(stats.stationCount), unit: U.stations, cap: T.ch2.statStations(nn([kj17, kd01, kb01]).map((s) => (s === kb01 || s === kd01 ? `KTM · ${showCode(s.ref)}` : s.ref)).join(', ')) },
+        ...(stats.straightKJ17toKB01 ? [{ fig: fmt(stats.straightKJ17toKB01), unit: U.m, cap: T.ch2.statStraight }] : []),
+        { fig: fmt(stats.railCorridors), unit: U.lines, cap: T.ch2.statCorridors },
+      ],
+      source: T.ch2.source(),
+      view: { target: [30, 0, -20], azimuth: -0.06, polar: 0.5, distance: 2250 },
+      mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: true },
+      pins: nn([
+        stationPin('KJ17', 'lrt', N.kj17, T.ch2.pinLrtLine),
+        stationPin('KD01', 'ktm2', N.kj17, T.ch2.pinKtm(showCode('KD01'))),
+        stationPin('KB01', 'ktm1', N.kb01, T.ch2.pinKtm(showCode('KB01'))),
+        textPin('lbl-river', N.river, longestNamed(lines.waterLines, 'Klang River'), 1),
+        textPin('lbl-fed', N.fedHwy, longestNamed(lines.roads, 'Lebuhraya Persekutuan'), 1, N.fedHwy === N.fedHwyLocal ? undefined : N.fedHwyLocal),
+        textPin('lbl-bangsar', N.bangsar, longestNamed(lines.roads, 'Jalan Bangsar'), 1),
+        precinct('KL Eco City') ? textPin('lbl-eco', N.ecoCity, centroid(precinct('KL Eco City')!.ring), 70, T.ch2.precinctPin) : null,
+      ]),
+      panel: (el, world) => {
+        const s1 = h('section'); s1.append(h('h3', {}, T.common.layers));
+        toggle(s1, N.lrtLine, true, (v) => world.setMode({ rails: { ...world.mode.rails, lrt: v ? 'highlight' : 'hidden' } })).insertAdjacentHTML('afterend', `<span class="pills">${linePill(5, N.lrtLine5)}</span>`);
+        toggle(s1, N.ktm, true, (v) => world.setMode({ rails: { ...world.mode.rails, ktm: v ? 'highlight' : 'hidden' } })).insertAdjacentHTML('afterend', `<span class="pills">${linePill(2, N.ktmLine2)}${linePill(1, N.ktmLine1)}</span>`);
+        toggle(s1, N.erl, true, (v) => world.setMode({ rails: { ...world.mode.rails, erl: v ? 'context' : 'hidden' } }), 'var(--c-erl)');
+        toggle(s1, T.ch2.precinctToggle, true, (v) => world.setMode({ precincts: v }));
+        const s2 = h('section'); s2.append(h('h3', {}, T.ch2.stationsInOsm));
+        const ul = h('ul', { class: 'station-list' });
+        for (const [s, line] of [[kj17, 'lrt'], [kd01, 'ktm2'], [kb01, 'ktm1']] as const) if (s)
+          ul.append(h('li', {}, `<span class="st-ids"><span class="badge" style="background:${lineColor[line]}">${showCode(s.ref)}</span>${line === 'ktm1' ? linePill(1, N.ktmLine1) : line === 'ktm2' ? linePill(2, N.ktmLine2) : linePill(5, N.lrtLine5)}</span><div><div>${s.name}</div><div class="small">${s.operator ?? T.ch2.operatorMissing}</div></div>`));
+        s2.append(ul, h('div', { class: 'small' }, T.ch2.stationsNote));
+        el.append(s1, s2);
+      },
+    },
+    // ---------------- 04 massing ----------------
+    {
+      id: 4, label: T.ch4.label, tab: T.ch4.tab, title: T.ch4.title, lead: T.ch4.lead,
+      stats: [
+        ...(tallestH ? [{ fig: fmt(tallestH), unit: U.m, cap: T.ch4.statTallest(tallestNames) }] : []),
+        { fig: fmt(stats.heightCited), unit: U.blocks, cap: T.ch4.statCited(stats.citedNamed) },
+        { fig: fmt(stats.heightEstimate), unit: U.blocks, cap: T.ch4.statEstimate },
+      ],
+      source: T.ch4.source(meta.heightSourcesFetched),
+      view: { target: [-30, 80, -70], azimuth: -0.38, polar: 1.08, distance: 1750 },
+      mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: false },
+      pins: nn(tallestNamed.filter((b) => b.precinct).slice(0, 8).map((b) => placePin(b.name!, b.name!, heightLabel(b)))),
+      panel: (el, world) => {
+        const s1 = h('section'); s1.append(h('h3', {}, T.ch4.display));
+        const legend = h('div', { class: 'src-legend', style: 'display:none' });
+        for (const [k, txt] of [['cited', T.ch4.legendCited(stats.heightCited)], ['osm', T.ch4.legendOsm(stats.heightOsm)], ['levels', T.ch4.legendLevels(stats.heightLevels)], ['estimate', T.ch4.legendEstimate(stats.heightEstimate)]] as const)
+          legend.append(h('div', { class: 'legend-row' }, `<span class="swatch box" style="background:var(--src-${k})"></span>${txt}`));
+        const slider = h('div', { class: 'slider', style: 'margin-top:14px' });
+        slider.innerHTML = `<label for="thr">${T.ch4.thresholdLabel}</label><output id="thr-out">${T.ch4.off}</output><input id="thr" type="range" min="0" max="240" step="5" value="0" aria-label="${T.ch4.thresholdAria}"/>`;
+        const inp = slider.querySelector('input') as HTMLInputElement; const out = slider.querySelector('output')!;
+        const src = toggle(s1, T.ch4.colourBySource, false, (v) => { legend.style.display = v ? 'block' : 'none'; if (v) { inp.value = '0'; out.textContent = T.ch4.off; } world.setMode({ buildingStyle: v ? 'source' : 'default' }); });
+        src.id = 'src-toggle';
+        s1.append(legend, slider);
+        inp.addEventListener('input', () => {
+          const v = +inp.value; out.textContent = v ? T.ch4.thresholdOut(v, buildings.filter((b) => b.height >= v).length) : T.ch4.off;
+          if (v) { src.checked = false; legend.style.display = 'none'; }
+          world.setMode({ buildingStyle: v ? 'threshold' : 'default', threshold: v });
+        });
+        const s2 = h('section'); s2.append(h('h3', {}, T.ch4.tallest));
+        const max = tallestNamed[0]?.height || 1; const bars = h('div', { class: 'bars' });
+        for (const b of tallestNamed) bars.append(h('span', { class: 'name', title: b.name! }, b.name!), h('span', {}, `<div class="bar ${b.heightSource}" style="width:${(b.height / max) * 100}%"></div>`), h('span', { class: 'val' }, `${b.heightSource === 'osm' || (b.heightSource === 'cited' && b.heightRef?.unit === 'm' && !b.heightRef.ctbuhEstimated) ? '' : '≈'}${fmt(b.height)} m`));
+        s2.append(bars, h('div', { class: 'small', style: 'margin-top:10px' }, T.ch4.barsNote));
+        if (buildings.some((b) => b.name === 'MidValley Tower of Light' && b.heightSource === 'cited')) s2.append(h('div', { class: 'small warn', style: 'margin-top:8px' }, T.ch4.conflict));
+        el.append(s1, s2);
+      },
+    },
+    // ---------------- 05 connections ----------------
+    {
+      id: 5, label: T.ch6.label, tab: T.ch6.tab, title: T.ch6.title, lead: T.ch6.lead(fmt(stats.routeTotalM)),
+      stats: [
+        { fig: fmt(stats.routeTotalM), unit: U.m, cap: T.ch6.statLength },
+        { fig: `≈${fmt(stats.routeMinutes)}`, unit: U.min, cap: T.ch6.statTime },
+        { fig: fmt(stats.routeBridgeShare), unit: U.pct, cap: T.ch6.statBridge(stats.routeBridgeM) },
+      ],
+      source: `${T.ch6.source()} ${T.ch6.cutSource(underRoads.length, Math.round(underRoads.reduce((a, r) => a + wayLength(r.pts), 0)))}`,
+      view: { target: [8, 0, -70], azimuth: 0, polar: 0.62, distance: 1900 },
+      mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'faint', routeSet: 'legs', routeFocus: null, xray: true, buildingStyle: 'default', precincts: false, cutaway: true, carFlow: true },
+      pins: nn([
+        stationPin('KJ17', 'lrt', T.anchor.KJ17, T.ch6.pinStart),
+        placePin('The Gardens Mall', N.gardens, routes[0] ? T.ch6.pinFromLrt(routes[0].length) : undefined),
+        placePin('Mid Valley Megamall', N.megamall, routes[1] ? T.ch6.pinPlus(routes[1].length) : undefined),
+        stationPin('KB01', 'ktm1', T.anchor.KB01, routes[2] ? T.ch6.pinEnd(routes[2].length) : T.common.end),
+        cutPin('cut-klec', 671986608, T.ch6.pinKlec, T.ch6.pinKlecV, 'var(--c-cut-road)'),
+        cutPin('cut-mv', 1148157676, T.ch6.pinMv, T.ch6.pinMvV, 'var(--c-cut-midvalley)'),
+        routeBridgeEnclosed ? textPin('lbl-bridge', T.ch6.bridgePin, routeBridgeEnclosed.pts[Math.floor(routeBridgeEnclosed.pts.length / 2)], 12, T.ch6.bridgeValue(routeBridgeEnclosed.length)) : null,
+      ]),
+      panel: (el, world, ctx) => {
+        const s1 = h('section'); s1.append(h('h3', {}, T.ch6.steps));
+        const ol = h('ol', { class: 'step-list' });
+        routes.forEach((r, i) => {
+          const li = h('li', { tabindex: '0', role: 'button', 'aria-label': T.common.focusStep(i + 1) }, `<span class="step-n">${i + 1}</span><div><div class="step-title">${routeName(r)}</div><div class="step-meta">${fmt(r.length)} m · ≈${fmt(r.minutes, 1)} min</div><div class="step-desc">${describeLeg(r)}</div></div>`);
+          const act = () => { const on = !li.classList.contains('active'); ol.querySelectorAll('li').forEach((x) => x.classList.remove('active')); if (on) li.classList.add('active'); world.setMode({ routeFocus: on ? i : null }); ctx.flyTo(on ? boundsView(routePts(r)) : ctx.chapterView); };
+          li.addEventListener('click', act); li.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') act(); });
+          ol.append(li);
+        });
+        s1.append(ol);
+        const s2 = h('section'); s2.append(h('h3', {}, T.common.layers));
+        toggle(s2, T.ch6.allFootways, false, (v) => world.setMode({ footways: v ? 'show' : 'faint' }), 'var(--ink)');
+        toggle(s2, T.ch6.xray, true, (v) => world.setMode({ xray: v }));
+        s2.append(h('div', { class: 'small', style: 'margin-top:8px' }, T.ch6.layersNote(meta.counts.footbridges, meta.counts.indoorCorridors)));
+        const s3 = h('section', { class: 'cutaway' }); s3.append(h('h3', {}, T.ch6.cutTitle));
+        toggle(s3, T.ch6.cutToggle, true, (v) => world.setMode({ cutaway: v }), 'var(--c-cut-road)');
+        toggle(s3, T.ch6.carToggle, true, (v) => world.setMode({ carFlow: v }), 'var(--c-cut-car)');
+        const cv: Record<string, string> = { klec: '--c-cut-road', midvalley: '--c-cut-midvalley', moto: '--c-cut-moto', other: '--c-cut-other' };
+        for (const k of CUT_KINDS) {
+          const ws = underRoads.filter((r) => cutKind(r) === k); if (!ws.length) continue;
+          s3.append(h('div', { class: 'legend-row' }, `<span class="swatch box" style="background:var(${cv[k]})"></span><span class="lg-name">${T.ch6.cutLegend[k]}</span><span class="lg-val">${T.ch6.cutWays(ws.length, Math.round(ws.reduce((a, r) => a + wayLength(r.pts), 0)))}</span>`));
+        }
+        s3.append(h('div', { class: 'legend-row' }, `<span class="swatch box" style="background:var(--c-cut-earth);border:1px solid var(--c-cut-edge)"></span><span class="lg-name">${T.ch6.cutEdge}</span>`));
+        s3.append(h('div', { class: 'small', style: 'margin-top:8px' }, T.ch6.cutNote));
+        el.append(s1, s2, s3);
+      },
+    },
+    // ---------------- 06 walking routes ----------------
+    {
+      id: 6, label: T.ch7.label, tab: T.ch7.tab, title: T.ch7.title, lead: T.ch7.lead,
+      stats: [
+        { fig: fmt(walks.length), unit: U.routes, cap: T.ch7.statCount },
+        { fig: `${fmt(walkTotals.min)}–${fmt(walkTotals.max)}`, unit: U.m, cap: T.ch7.statRange },
+        { fig: fmt(walkTotals.bridgeIndoorPct), unit: U.pct, cap: T.ch7.statShare },
+      ],
+      source: T.ch7.source(ecoTower),
+      view: { target: [-20, 0, -40], azimuth: 0.15, polar: 0.72, distance: 1500 },
+      mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'faint', routeSet: 'walks', walkFocus: walks[0]?.id ?? null, xray: true, buildingStyle: 'default', precincts: false },
+      pins: nn([
+        stationPin('KJ17', 'lrt', T.anchor.KJ17, 'KJ17'),
+        stationPin('KB01', 'ktm1', T.anchor.KB01, `KTM · ${showCode('KB01')}`),
+        placePin('The Gardens Mall', N.gardens),
+        placePin('Mid Valley Megamall', N.megamall),
+        anchors.ECO ? placePin(ecoTower, T.anchor.ECO(ecoTower)) : null,
+      ]),
+      panel: (el, world, ctx) => {
+        const s1 = h('section'); s1.append(h('h3', {}, T.ch7.pick));
+        const list = h('div', { class: 'route-pick', role: 'radiogroup', 'aria-label': T.ch7.pickAria });
+        const detail = h('div', { class: 'route-detail' });
+        const show = (r: Route, fly: boolean) => {
+          list.querySelectorAll('button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.id === r.id)));
+          world.setMode({ walkFocus: r.id }); world.replayWalk();
+          if (fly) ctx.flyTo(boundsView(routePts(r), 900));
+          detail.innerHTML = '';
+          const kv = h('dl', { class: 'kv' });
+          for (const [k, v] of [[T.ch7.length, `${fmt(r.length)} m`], [T.ch7.time, `≈${fmt(r.minutes, 1)} min`], [T.ch7.straight, `${fmt(r.straightLine)} m`], [T.ch7.detour, `× ${fmt(r.length / r.straightLine, 2)}`]] as const) kv.append(h('dt', {}, k), h('dd', {}, v));
+          const play = h('button', { class: 'text-btn mono play-btn', type: 'button' }, `↻ ${T.ch7.replay}`);
+          play.addEventListener('click', () => world.replayWalk());
+          detail.append(kv, h('h3', { style: 'margin-top:16px' }, T.ch7.shareHead), ...shareBar(r), play);
+        };
+        for (const r of walks) {
+          const b = h('button', { type: 'button', role: 'radio', 'aria-checked': 'false', class: 'route-btn', 'data-id': r.id }, `<span class="rb-name">${routeName(r)}</span><span class="rb-val">${fmt(r.length)} m</span>`);
+          b.addEventListener('click', () => show(r, true)); list.append(b);
+        }
+        s1.append(list);
+        const s2 = h('section'); s2.append(detail);
+        const s3 = h('section'); s3.append(h('div', { class: 'small' }, T.ch7.notModelled));
+        el.append(s1, s2, s3);
+        if (walks[0]) show(walks[0], false);
+      },
+    },
+    // ---------------- 07 sun & shade ----------------
+    {
+      id: 7, label: T.ch8.label, tab: T.ch8.tab, title: T.ch8.title,
+      lead: T.ch8.lead(meta.center.lat.toFixed(1), fmt(noon.jun.pos.altitude, 1), fmt(noon.dec.pos.altitude, 1)),
+      stats: (['mar', 'jun', 'dec'] as PresetKey[]).map((k) => ({ fig: fmt(noon[k].pos.altitude, 1), unit: U.deg, cap: T.ch8.statNoon(T.ch8.presetDates[k], T.ch8.dir[noonDir(k)]) })),
+      source: T.ch8.source(meta.center.lat.toFixed(4), meta.center.lon.toFixed(4), groundSamples.length),
+      view: { target: [-20, 0, -40], azimuth: -0.35, polar: 0.78, distance: 1900 },
+      mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: false, shadeDots: true, muteWater: true, sun: null },
+      pins: shadowTower ? nn([placePin(shadowTower.name!, shadowTower.name!, heightLabel(shadowTower))]) : [],
+      panel: (el, world, ctx) => {
+        const S = T.ch8;
+        let preset: PresetKey = 'jun'; let minutes = 9 * 60; let playing = false; let raf = 0; let lastShade = 0; let pending = 0;
+        world.setShadeSamples(groundSamples);
+        // date presets
+        const s1 = h('section'); s1.append(h('h3', {}, S.date));
+        const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': S.date });
+        for (const k of Object.keys(PRESETS) as PresetKey[]) {
+          const b = h('button', { type: 'button', role: 'radio', 'aria-checked': String(k === preset), 'data-k': k }, `${S.presets[k]}<small>${S.presetDates[k]}</small>`);
+          b.addEventListener('click', () => { preset = k; seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x.dataset.k === k))); update(true); });
+          seg.append(b);
+        }
+        s1.append(seg);
+        const slider = h('div', { class: 'slider', style: 'margin-top:14px' });
+        slider.innerHTML = `<label for="sun-time">${S.time}</label><output id="sun-time-out"></output><input id="sun-time" type="range" min="${7 * 60}" max="${19 * 60}" step="5" value="${minutes}" aria-label="${S.timeAria}"/>`;
+        const inp = slider.querySelector('input') as HTMLInputElement; const out = slider.querySelector('output')!;
+        const playBtn = h('button', { type: 'button', class: 'text-btn mono play-btn', 'aria-pressed': 'false' }, `▶ ${S.play}`);
+        s1.append(slider, playBtn);
+        // readouts
+        const s2 = h('section');
+        const kv = h('dl', { class: 'kv' }); s2.append(kv);
+        // sidewalk shade
+        const s3 = h('section'); s3.append(h('h3', {}, S.sidewalkShade));
+        const big = h('div', { class: 'big-num' }); const bigBar = h('div', { class: 'meter' }, '<span></span>');
+        const head = h('div', { class: 'shade-head' }); head.append(big, h('div', {}, `<div class="legend-row"><span class="swatch box" style="background:var(--c-amber)"></span>${S.dotsLegend.lit}</div><div class="legend-row"><span class="swatch box" style="background:var(--c-shade)"></span>${S.dotsLegend.shade}</div>`));
+        s3.append(head, bigBar, h('div', { class: 'small' }, S.sidewalkNote(groundSamples.length)));
+        const s4 = h('section'); s4.append(h('h3', {}, S.routeShade));
+        const rlist = h('div', { class: 'mini-bars' }); s4.append(rlist, h('div', { class: 'small', style: 'margin-top:6px' }, S.routeShadeNote));
+        el.append(s1, s2, s3, s4);
+
+        const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+        function shade(alt: number, az: number) {
+          const g = world.shadeTest(groundSamples, alt, az); world.setShadeResult(g);
+          const p = pct(g.filter(Boolean).length, g.length);
+          big.innerHTML = alt > 0 ? `${fmt(p)}<span class="unit">%</span>` : `<span class="small">${S.belowHorizon}</span>`;
+          (bigBar.firstElementChild as HTMLElement).style.width = `${alt > 0 ? p : 0}%`;
+          rlist.innerHTML = '';
+          for (const set of routeSampleSets) {
+            const name = set.route ? routeName(set.route) : T.ch9.legsName;
+            if (!set.pts.length) { rlist.append(h('div', { class: 'mb-row' }, `<span class="mb-name" title="${name}">${name}</span><span class="mb-val muted">${S.fullyCovered}</span>`)); continue; }
+            const r = world.shadeTest(set.pts, alt, az); const rp = pct(r.filter(Boolean).length, r.length);
+            rlist.append(h('div', { class: 'mb-row' }, `<span class="mb-name" title="${name} · ${S.exposedM(set.exposedM)}">${name}<small>${S.exposedM(set.exposedM)}</small></span><span class="meter sm"><span style="width:${alt > 0 ? rp : 0}%"></span></span><span class="mb-val">${alt > 0 ? `${rp}%` : '—'}</span>`));
+          }
+          lastShade = performance.now();
+        }
+        function update(forceShade = false) {
+          const [mo, d] = PRESETS[preset];
+          const pos = sunPosition(mytDate(SUN_YEAR, mo, d, minutes), meta.center.lat, meta.center.lon);
+          world.setMode({ sun: { altitude: pos.altitude, azimuth: pos.azimuth } });
+          out.textContent = `${hhmm(minutes)} · ${S.presetDates[preset]}`; inp.value = String(minutes);
+          const up = pos.altitude > 0;
+          kv.innerHTML = '';
+          const shadowLen = shadowTower && up ? shadowTower.height / Math.tan((pos.altitude * Math.PI) / 180) : null;
+          for (const [k, v] of [
+            [S.altitude, `${fmt(pos.altitude, 1)}°${up ? '' : ` (${S.belowHorizon})`}`],
+            [S.azimuth, `${fmt(pos.azimuth, 0)}° ${T.compass16[compassIndex(pos.azimuth)]}`],
+            ...(shadowTower ? [[S.shadow(shadowTower.height, shadowTower.name!), shadowLen != null ? `${fmt(shadowLen)} m` : '—']] : []),
+          ] as [string, string][]) kv.append(h('dt', {}, k), h('dd', {}, v));
+          // shade raycasting is the expensive part: throttle while playing / dragging
+          clearTimeout(pending);
+          if (forceShade || performance.now() - lastShade > 180) shade(pos.altitude, pos.azimuth);
+          else pending = window.setTimeout(() => shade(pos.altitude, pos.azimuth), 200);
+        }
+        inp.addEventListener('input', () => { minutes = +inp.value; update(); });
+        inp.addEventListener('change', () => { minutes = +inp.value; update(true); });
+        const stop = () => { playing = false; cancelAnimationFrame(raf); clearTimeout(raf); playBtn.setAttribute('aria-pressed', 'false'); playBtn.textContent = `▶ ${S.play}`; };
+        playBtn.addEventListener('click', () => {
+          if (playing) { stop(); update(true); return; }
+          playing = true; playBtn.setAttribute('aria-pressed', 'true'); playBtn.textContent = `❚❚ ${S.pause}`;
+          if (minutes >= 19 * 60) minutes = 7 * 60;
+          if (reduced()) { // discrete half-hour steps, no continuous motion
+            const step = () => { if (!playing) return; minutes = Math.min(19 * 60, minutes + 30); update(true); if (minutes >= 19 * 60) stop(); else raf = window.setTimeout(step, 1200); };
+            raf = window.setTimeout(step, 600);
+          } else {
+            let last = performance.now();
+            const tick = (now: number) => { if (!playing) return; minutes = Math.min(19 * 60, minutes + ((now - last) / 1000) * 30); last = now; minutes = Math.round(minutes); update(); if (minutes >= 19 * 60) { stop(); update(true); } else raf = requestAnimationFrame(tick); };
+            raf = requestAnimationFrame(tick);
+          }
+        });
+        ctx.onCleanup(() => { stop(); clearTimeout(pending); });
+        (window as unknown as { __sun: unknown }).__sun = { set: (k: PresetKey, m: number) => { preset = k; minutes = m; seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x.dataset.k === k))); update(true); } };
+        update(true);
+      },
+    },
+    // ---------------- 08 rain & monsoon ----------------
+    {
+      id: 8, label: T.ch9.label, tab: T.ch9.tab, title: T.ch9.title,
+      lead: T.ch9.lead(fmt(climate.yearPrecipitationMm), fmt(climate.yearPrecipitationDays, 1), T.monthsLong[wettestIdx]),
+      stats: [
+        { fig: fmt(stats.shelteredFootPct), unit: U.pct, cap: T.ch9.statFoot(stats.shelteredFootM, stats.footwayM) },
+        { fig: fmt(pct(legsSheltered, legsTotal)), unit: U.pct, cap: T.ch9.statLegs },
+        { fig: fmt(climate.yearPrecipitationMm), unit: U.mm, cap: T.ch9.statRain(T.ch9.station) },
+      ],
+      source: T.ch9.source(T.ch9.station, climate.period, climate.fetched),
+      view: { target: [-10, 0, -60], azimuth: 0.12, polar: 0.66, distance: 1650 },
+      mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'rain', routeSet: 'walks', walkFocus: null, routeStyle: 'rain', muteWater: true, xray: true, buildingStyle: 'default', precincts: false },
+      pins: nn([
+        stationPin('KJ17', 'lrt', T.anchor.KJ17, 'KJ17'),
+        stationPin('KB01', 'ktm1', T.anchor.KB01, `KTM · ${showCode('KB01')}`),
+        placePin('The Gardens Mall', N.gardens),
+        placePin('Mid Valley Megamall', N.megamall),
+      ]),
+      panel: (el, world, ctx) => {
+        const R = T.ch9;
+        const s1 = h('section'); s1.append(h('h3', {}, R.routes));
+        s1.append(h('div', { class: 'legend-row' }, `<span class="swatch box" style="background:var(--c-covered)"></span>${R.legendCovered}<span class="swatch box" style="background:var(--c-open);margin-left:14px"></span>${R.legendOpen}`));
+        const list = h('div', { class: 'route-pick rain', role: 'radiogroup', 'aria-label': R.pickAria });
+        const items: { id: string; name: string; cov: number; all: number; apply: () => void }[] = [
+          { id: 'legs', name: R.legsName, cov: legsSheltered, all: legsTotal, apply: () => { world.setMode({ routeSet: 'legs', walkFocus: null }); ctx.flyTo(boundsView(routes.flatMap(routePts), 520)); } },
+          ...walks.map((w) => ({ id: w.id, name: routeName(w), cov: w.shelteredM, all: w.length, apply: () => { world.setMode({ routeSet: 'walks', walkFocus: w.id }); ctx.flyTo(boundsView(routePts(w), 520)); } })),
+        ];
+        for (const it of items) {
+          const p = pct(it.cov, it.all);
+          const b = h('button', { type: 'button', role: 'radio', 'aria-checked': 'false', class: 'route-btn', 'data-id': it.id },
+            `<span class="rb-name">${it.name}</span><span class="rb-val">${p}%</span><span class="cov-bar"><span style="width:${p}%"></span></span><span class="rb-sub">${R.coveredOf(it.cov, it.all)}</span>`);
+          b.addEventListener('click', () => {
+            const on = b.getAttribute('aria-checked') !== 'true';
+            list.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', 'false'));
+            if (on) { b.setAttribute('aria-checked', 'true'); it.apply(); } else { world.setMode({ routeSet: 'walks', walkFocus: null }); ctx.flyTo(ctx.chapterView); }
+          });
+          list.append(b);
+        }
+        s1.append(list);
+        const s2 = h('section'); s2.append(h('h3', {}, R.climate));
+        const max = Math.max(...climate.precipitationMm); const chart = h('div', { class: 'rain-chart', role: 'img', 'aria-label': climate.precipitationMm.map((v, i) => `${T.months[i]} ${fmt(v, 1)} mm`).join(', ') });
+        climate.precipitationMm.forEach((v, i) => {
+          const mon = climate.monsoonMonths.includes(i + 1);
+          chart.append(h('div', { class: `rc-col${mon ? ' monsoon' : ''}`, title: `${T.months[i]}: ${fmt(v, 1)} mm · ${fmt(climate.precipitationDays[i], 1)} ${U.days}` }, `<span class="rc-val">${fmt(v)}</span><span class="rc-bar" style="height:${(v / max) * 100}%"></span><span class="rc-m">${T.months[i]}</span>`));
+        });
+        s2.append(chart, h('div', { class: 'small', style: 'margin-top:8px' }, R.climateNote(R.station, climate.period, fmt(climate.yearPrecipitationDays, 1))));
+        const s3 = h('section'); s3.append(h('h3', {}, T.common.layers));
+        toggle(s3, R.allWays, true, (v) => world.setMode({ footways: v ? 'rain' : 'hidden' }), 'var(--c-covered)');
+        toggle(s3, R.xray, true, (v) => world.setMode({ xray: v }));
+        el.append(s1, s2, s3);
+      },
+    },
+  ];
+}
+
+export const currentLang = getLang;

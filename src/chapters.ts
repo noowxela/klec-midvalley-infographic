@@ -2,7 +2,6 @@
 // Every figure is computed from the processed data in ./data (see source lines); all text comes from ./i18n.
 import { ZONES, landmarks, buildings, lines, areas, routes, walks, anchors, meta, stats, station, findPlace, fmt, type XY, type Route, type Building, type Share } from './data';
 import { linePill } from './linePill';
-import { CUT_KINDS, cutDepth, cutKind, underRoads, wayLength } from './cutaway';
 import type { SceneMode, View, World } from './scene';
 import { t, getLang } from './i18n';
 import { sunPosition, mytDate, solarNoon, compassIndex } from './sun';
@@ -124,11 +123,6 @@ export function buildChapters(): Chapter[] {
     linePin('ln-klia', T.ch1.pinKlia, T.ch1.pinKliaV, wayPt(52347242, 0.2), 7, lineColor.klia, linePill(7, N.kliaTransit7)),
     linePin('ln-skypark', T.ch1.pinSky, T.ch1.pinSkyV, wayPt(180560345, 0.62), 2, lineColor.skypark, linePill(10, N.skypark10, 'suspended')),
   ]);
-  // 05 cutaway: label on an OSM below-ground road, anchored at its estimated depth
-  const cutPin = (id: string, wayId: number, title: string, value: (d: number) => string, accent: string): PinDef | null => {
-    const w = underRoads.find((r) => r.id === wayId); if (!w) return null; const d = cutDepth(w.layer);
-    return { id, title, value: value(d), at: D(w.pts[Math.floor(w.pts.length / 2)], -d), kind: 'minor', accent };
-  };
   const corePins = () => nn([
     stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
     stationPin('KD01', 'ktm2', N.kj17, `KTM · ${showCode('KD01')}`),
@@ -284,16 +278,14 @@ export function buildChapters(): Chapter[] {
         { fig: `≈${fmt(stats.routeMinutes)}`, unit: U.min, cap: T.ch6.statTime },
         { fig: fmt(stats.routeBridgeShare), unit: U.pct, cap: T.ch6.statBridge(stats.routeBridgeM) },
       ],
-      source: `${T.ch6.source()} ${T.ch6.cutSource(underRoads.length, Math.round(underRoads.reduce((a, r) => a + wayLength(r.pts), 0)))}`,
+      source: T.ch6.source(),
       view: { target: [8, 0, -70], azimuth: 0, polar: 0.62, distance: 1900 },
-      mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'faint', routeSet: 'legs', routeFocus: null, xray: true, buildingStyle: 'default', precincts: false, cutaway: true, carFlow: true },
+      mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'faint', routeSet: 'legs', routeFocus: null, xray: true, buildingStyle: 'default', precincts: false },
       pins: nn([
         stationPin('KJ17', 'lrt', T.anchor.KJ17, T.ch6.pinStart),
         placePin('The Gardens Mall', N.gardens, routes[0] ? T.ch6.pinFromLrt(routes[0].length) : undefined),
         placePin('Mid Valley Megamall', N.megamall, routes[1] ? T.ch6.pinPlus(routes[1].length) : undefined),
         stationPin('KB01', 'ktm1', T.anchor.KB01, routes[2] ? T.ch6.pinEnd(routes[2].length) : T.common.end),
-        cutPin('cut-klec', 671986608, T.ch6.pinKlec, T.ch6.pinKlecV, 'var(--c-cut-road)'),
-        cutPin('cut-mv', 1148157676, T.ch6.pinMv, T.ch6.pinMvV, 'var(--c-cut-midvalley)'),
         routeBridgeEnclosed ? textPin('lbl-bridge', T.ch6.bridgePin, routeBridgeEnclosed.pts[Math.floor(routeBridgeEnclosed.pts.length / 2)], 12, T.ch6.bridgeValue(routeBridgeEnclosed.length)) : null,
       ]),
       panel: (el, world, ctx) => {
@@ -310,17 +302,7 @@ export function buildChapters(): Chapter[] {
         toggle(s2, T.ch6.allFootways, false, (v) => world.setMode({ footways: v ? 'show' : 'faint' }), 'var(--ink)');
         toggle(s2, T.ch6.xray, true, (v) => world.setMode({ xray: v }));
         s2.append(h('div', { class: 'small', style: 'margin-top:8px' }, T.ch6.layersNote(meta.counts.footbridges, meta.counts.indoorCorridors)));
-        const s3 = h('section', { class: 'cutaway' }); s3.append(h('h3', {}, T.ch6.cutTitle));
-        toggle(s3, T.ch6.cutToggle, true, (v) => world.setMode({ cutaway: v }), 'var(--c-cut-road)');
-        toggle(s3, T.ch6.carToggle, true, (v) => world.setMode({ carFlow: v }), 'var(--c-cut-car)');
-        const cv: Record<string, string> = { klec: '--c-cut-road', midvalley: '--c-cut-midvalley', moto: '--c-cut-moto', other: '--c-cut-other' };
-        for (const k of CUT_KINDS) {
-          const ws = underRoads.filter((r) => cutKind(r) === k); if (!ws.length) continue;
-          s3.append(h('div', { class: 'legend-row' }, `<span class="swatch box" style="background:var(${cv[k]})"></span><span class="lg-name">${T.ch6.cutLegend[k]}</span><span class="lg-val">${T.ch6.cutWays(ws.length, Math.round(ws.reduce((a, r) => a + wayLength(r.pts), 0)))}</span>`));
-        }
-        s3.append(h('div', { class: 'legend-row' }, `<span class="swatch box" style="background:var(--c-cut-earth);border:1px solid var(--c-cut-edge)"></span><span class="lg-name">${T.ch6.cutEdge}</span>`));
-        s3.append(h('div', { class: 'small', style: 'margin-top:8px' }, T.ch6.cutNote));
-        el.append(s1, s2, s3);
+        el.append(s1, s2);
       },
     },
     // ---------------- 06 walking routes ----------------

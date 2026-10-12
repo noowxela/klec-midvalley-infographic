@@ -1,0 +1,452 @@
+From 22fa64a185b7a1de7733f215d812565ba8cd1f5a Mon Sep 17 00:00:00 2001
+From: Alex Woon Jun ROng <noowxela@gmail.com>
+Date: Mon, 12 Oct 2026 16:03:31 +0800
+Subject: [PATCH] 05 Connections: underground road cutaway (OSM tunnels under a
+ translucent ground, cut section, car flow) + cutaway-check
+
+---
+ README.md                 |   5 +-
+ scripts/cutaway-check.mjs | 102 ++++++++++++++++++++++++++++++++++++++
+ src/chapters.ts           |  24 +++++++--
+ src/cutaway.ts            |  22 ++++++++
+ src/i18n/en.ts            |  10 ++++
+ src/i18n/ms.ts            |  10 ++++
+ src/i18n/zh.ts            |  10 ++++
+ src/scene.ts              |  45 ++++++++++++++++-
+ src/styles.css            |   3 ++
+ 9 files changed, 225 insertions(+), 6 deletions(-)
+ create mode 100644 scripts/cutaway-check.mjs
+ create mode 100644 src/cutaway.ts
+
+diff --git a/README.md b/README.md
+index b3dab0c..1b0d43d 100644
+--- a/README.md
++++ b/README.md
+@@ -13,7 +13,7 @@ A 3D scrollytelling infographic of the rail-and-mall cluster on both banks of th
+ | 02 | Transit hub | The 1 km × 1 km study area and its three stations (cover) |
+ | 03 | Location | River, roads, LRT viaduct and both KTM lines around the cluster |
+ | 04 | Massing | Heights by source (cited, OSM, flagged estimate) and the tallest named towers |
+-| 05 | Connections | Shortest OSM pedestrian path from Abdullah Hukum LRT to Mid Valley KTM |
++| 05 | Connections | Shortest OSM pedestrian path from Abdullah Hukum LRT to Mid Valley KTM, plus an underground road cutaway |
+ | 06 | Walking routes | Route set between stations, malls and towers, with bridge, indoor, covered and open-air shares |
+ | 07 | Sun & shade | Sun position by date and time, shadows cast from the model, sidewalk shade |
+ | 08 | Rain & monsoon | Monthly rainfall normals and covered vs open-air pedestrian ways |
+@@ -26,6 +26,7 @@ Deep links: `?chapter=0` … `?chapter=8` or `#00` … `#08`; also `?lang=en|zh|
+ - **00 orbit:** the camera turns 360° every 75 s on 00. It pauses on drag or zoom and while the tab is hidden, resumes 3 s after you stop, and ends when you leave 00.
+ - **Collapsible panels:** chevron tabs on the text and side panels; **M** or the top-bar button hides both (map only).
+ - **Animated trains:** LRT on both Kelana Jaya Line tracks (stopping at Abdullah Hukum, KJ17), and KTM Komuter 5- and 6-car sets on both tracks of both KTM lines, sized after the KTM Class 92 (cars ≈23 m × 2.75 m; Wikipedia), with the line colour as the livery stripe: Line 1 stops at Mid Valley (KTM · 10), Line 2 at Abdullah Hukum (KTM · 16). One on/off toggle in the top bar (overflow menu on mobile).
++- **Underground road cutaway (05 Connections):** the OSM below-ground roads (`tunnel=yes` or `layer<0`) drawn beneath a translucent ground with a cut-section box at the study-area edge, grouped as KL Eco City lower tier, Mid Valley City basement access (by OSM landuse precinct), Federal Highway motorcycle-lane underpasses (OSM name) and other. Depths are estimates (4.5 m per OSM layer step; no public depth figures found). Illustrative car flow, static under reduced motion. Toggles for the cutaway and the cars. Sources: OSM; S P Setia "KL Eco City" project page (two-tier internal road system, ramps to Federal Highway, NPE, Jalan Maarof and Jalan Bangsar; fetched 2026-10-12); Malaysia Property News, Apr 2012 (two dedicated Federal Highway ramps).
+ - **Airport lines (02 Transit hub):** the ERL tracks in the KLIA Transit colour (Line 7; it passes through without stopping, no ERL station in the study area per OSM; KLIA Ekspres shares the tracks but is not drawn separately) and the KL Sentral–Terminal Skypark Line (Line 10) as a thin dashed line beside the Line 2 track it uses, with no trains, because the service is suspended (since 15 February 2023).
+ - **Line pills and public stop numbers:** pills for KTM Line 1 (blue), KTM Line 2 (red) and LRT Line 5. Stations are shown as KTM · 10 (Mid Valley) and KTM · 16 (Abdullah Hukum); the official codes (KB01, KD01) appear only in source notes. KJ17 is shown as is.
+ - **Bottom bar** in the style of the Banqiao rail: equal segments, 3 px current bar that fills during autoplay, ← / → buttons.
+@@ -77,6 +78,7 @@ Start a production preview first, then run any check. Screenshots go to git-igno
+ npm run build && npx vite preview --port 4173 --strictPort &
+ npm run shots                       # screenshots.mjs: every chapter × language, console errors, text fit, keyboard
+ node scripts/rail-check.mjs         # line colours, pills, public stop numbers, label overlap
++node scripts/cutaway-check.mjs      # 05 cutaway: toggles, legend, labels, translucent ground, reduced motion, other chapters unchanged
+ node scripts/bar-check.mjs          # bottom bar: labels, current bar, arrows, autoplay, mobile
+ node scripts/compass-check.mjs      # compass + Reset view visibility and overlap
+ node scripts/credit-check.mjs       # OSM credit placement; OSM line on 00 only
+@@ -115,7 +117,6 @@ Since v16 the chapters are numbered 00–08 in a row. Links made earlier open th
+ - **Masjid Jamek car park:** modelled as 5 levels (OSM). 2016 press reports (FMT, Bernama) say a seven-level podium.
+ - **Mall heights** (5 × 5 m) are applied uniformly to untagged mall parts; named parts stay estimates.
+ - **Not built yet:**
+-  - KL Eco City underground roads (in the data, not drawn) need a cutaway;
+   - KJ17 has no public stop number.
+ 
+ More detail (per-version design notes, precinct rule, trains, loader, rail codes, bottom bar, compass) is in [`docs/design-notes.md`](docs/design-notes.md).
+diff --git a/scripts/cutaway-check.mjs b/scripts/cutaway-check.mjs
+new file mode 100644
+index 0000000..200995f
+--- /dev/null
++++ b/scripts/cutaway-check.mjs
+@@ -0,0 +1,102 @@
++// 05 Connections underground road cutaway check: cutaway + car flow on by default in 05 only, translucent ground,
++// cut-section box, tunnel ribbons per kind, legend rows and toggles in EN/zh/ms, both cutaway labels visible without overlap,
++// depth labelled as an estimate, sources in the source note, cars move (and stay put under reduced motion), toggles work,
++// other chapters keep the cutaway off; desktop, dark and 390x844 mobile. No console errors. Screenshots to shots-cutaway/.
++// Usage: npm run build && npx vite preview --port 4173 &  then  node scripts/cutaway-check.mjs [baseUrl]
++import puppeteer from 'puppeteer-core';
++import { mkdirSync } from 'node:fs';
++const base = process.argv[2] || 'http://127.0.0.1:4173/';
++const chrome = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
++const OUT = 'shots-cutaway'; mkdirSync(OUT, { recursive: true });
++const browser = await puppeteer.launch({ executablePath: chrome, headless: true, args: ['--ignore-gpu-blocklist', '--enable-webgl', '--use-angle=metal', '--hide-scrollbars'] });
++const errors = []; const bad = []; let n = 0;
++const ok = (c, msg) => { n++; if (!c) bad.push(msg); };
++const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
++async function open(name, q, { w = 1920, h = 1080, dark = false, mobile = false, reduced = false } = {}) {
++  const page = await browser.newPage();
++  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' }, { name: 'prefers-reduced-motion', value: reduced ? 'reduce' : 'no-preference' }]);
++  page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`[${name}] console.${m.type()}: ${m.text()}`); });
++  page.on('pageerror', (e) => errors.push(`[${name}] pageerror: ${e.message}`));
++  await page.setViewport({ width: w, height: h, deviceScaleFactor: mobile ? 2 : 1, isMobile: mobile, hasTouch: mobile });
++  await page.goto(`${base}?skipLoader=1&${q}`, { waitUntil: 'networkidle0' });
++  await page.evaluate(() => localStorage.removeItem('mv-panels'));
++  await page.waitForFunction(() => window.__mv?.revealed === true, { timeout: 20000 });
++  await sleep(3000);
++  return page;
++}
++const probe = () => {
++  const w = window.__mv.world; const g = w.cutGroup; const cars = w.cars;
++  const R = (e) => { const r = e.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; };
++  const hit = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
++  const vis = [...document.querySelectorAll('.pin')].filter((p) => !p.classList.contains('hidden') && !p.classList.contains('occluded') && p.style.opacity !== '0');
++  const tags = vis.map((p) => ({ id: p.dataset.id || '', t: p.querySelector('.tag')?.textContent || '', r: R(p.querySelector('.tag')) }));
++  const overlaps = []; for (let i = 0; i < tags.length; i++) for (let j = i + 1; j < tags.length; j++) if (hit(tags[i].r, tags[j].r)) overlaps.push(`${tags[i].t} x ${tags[j].t}`);
++  const sec = document.querySelector('section.cutaway');
++  const m0 = new Float32Array(16); if (cars) { const a = cars.mesh.instanceMatrix.array; for (let i = 0; i < 16; i++) m0[i] = a[i]; }
++  return {
++    mode: { cutaway: w.mode.cutaway, carFlow: w.mode.carFlow }, groupVisible: g.visible, meshes: g.children.length,
++    ground: { transparent: w.mats.ground.transparent, opacity: w.mats.ground.opacity }, roadOpacity: w.mats.road.opacity,
++    carsVisible: !!cars && cars.mesh.visible, carCount: cars ? cars.mesh.count : 0, car0: [...m0.slice(12, 15)],
++    tags: tags.map((t) => t.t), overlaps,
++    legend: sec ? [...sec.querySelectorAll('.legend-row')].map((r) => r.textContent) : [], toggles: sec ? sec.querySelectorAll('input[type=checkbox]').length : 0,
++    note: sec?.querySelector('.small')?.textContent || '', source: document.querySelector('.source')?.textContent || document.body.textContent,
++    scrollX: document.documentElement.scrollWidth > window.innerWidth + 1,
++  };
++};
++const EST = { en: /estimate|est\.\)/, zh: /估算/, ms: /anggaran/ };
++const TITLE = { en: ['KL Eco City lower tier', 'Mid Valley basement access'], zh: ['吉隆坡生态城下层道路', '谷中城地下停车场通道'], ms: ['Tingkat bawah KL Eco City', 'Akses ruang bawah tanah Mid Valley'] };
++for (const [name, lang, opt] of [['05-en', 'en', {}], ['05-zh', 'zh', {}], ['05-ms', 'ms', {}], ['05-en-1440x900', 'en', { w: 1440, h: 900 }], ['05-en-dark', 'en', { dark: true }], ['05-en-390x844', 'en', { w: 390, h: 844, mobile: true }]]) {
++  const p = await open(name, `chapter=5&lang=${lang}`, opt);
++  const s = await p.evaluate(probe);
++  ok(s.mode.cutaway && s.mode.carFlow && s.groupVisible, `${name} cutaway not on`);
++  ok(s.meshes >= 4, `${name} cutaway meshes ${s.meshes}`);
++  ok(s.ground.transparent && s.ground.opacity < 1 && s.roadOpacity < 1, `${name} ground not translucent`);
++  ok(s.carsVisible && s.carCount > 20, `${name} cars ${s.carCount}`);
++  ok(s.legend.length >= 4, `${name} legend rows ${s.legend.length}`);
++  ok(s.toggles === 2, `${name} cutaway toggles ${s.toggles}`);
++  ok(EST[lang].test(s.note), `${name} depth not labelled estimate`);
++  ok(/spsetia\.com/.test(s.source) && /Malaysia Property News/.test(s.source) && /tunnel=yes/.test(s.source), `${name} sources missing`);
++  ok(!opt.mobile || !s.scrollX, `${name} horizontal scroll`);
++  if (!opt.mobile) {
++    for (const t of TITLE[lang]) ok(s.tags.some((x) => x.includes(t)), `${name} no visible label ${t}`);
++    for (const t of s.tags.filter((x) => TITLE[lang].some((y) => x.includes(y)))) ok(EST[lang].test(t), `${name} label without estimate: ${t}`);
++    ok(!s.overlaps.length, `${name} label overlap: ${s.overlaps.join('; ')}`);
++  }
++  await p.screenshot({ path: `${OUT}/${name}.png` });
++  if (name === '05-en') {
++    await sleep(1200); const s2 = await p.evaluate(probe);
++    ok(s2.car0.some((v, i) => Math.abs(v - s.car0[i]) > 0.5), `${name} cars not moving`);
++    // toggles: cars off, cutaway off restores the opaque ground
++    const boxes = await p.$$('section.cutaway input[type=checkbox]');
++    await boxes[1].click(); await sleep(200); let s3 = await p.evaluate(probe); ok(!s3.carsVisible && s3.groupVisible, `${name} car toggle`);
++    await boxes[0].click(); await sleep(200); s3 = await p.evaluate(probe); ok(!s3.groupVisible && !s3.ground.transparent && s3.ground.opacity === 1, `${name} cutaway toggle`);
++    await p.screenshot({ path: `${OUT}/${name}-off.png` });
++  }
++  await p.close();
++}
++// reduced motion: cars shown but standing still
++{
++  const p = await open('05-en-reduced', 'chapter=5&lang=en', { reduced: true });
++  const a = await p.evaluate(probe); await sleep(1500); const b = await p.evaluate(probe);
++  ok(a.carsVisible && a.car0.every((v, i) => Math.abs(v - b.car0[i]) < 1e-3), '05-en-reduced cars move under reduced motion');
++  await p.close();
++}
++// other chapters: cutaway off, opaque ground
++for (const c of [0, 1, 2, 3, 4, 6, 7, 8]) {
++  const p = await open(`ch${c}`, `chapter=${c}&lang=en`);
++  const s = await p.evaluate(probe);
++  ok(!s.mode.cutaway && !s.groupVisible && !s.carsVisible && !s.ground.transparent && s.ground.opacity === 1 && !s.legend.length, `chapter ${c} shows the cutaway`);
++  await p.close();
++}
++// leaving 05 for 06 turns it off again
++{
++  const p = await open('05-to-06', 'chapter=5&lang=en');
++  await p.evaluate(() => window.__mv.goTo(6)); await sleep(1500);
++  const s = await p.evaluate(probe); ok(!s.groupVisible && !s.ground.transparent, '05 -> 06 cutaway still on');
++  await p.close();
++}
++await browser.close();
++if (errors.length) { console.log(errors.join('\n')); }
++console.log(bad.length ? `BAD ${bad.join(' | ')}` : `${n}/${n} checks passed`);
++console.log(errors.length ? `${errors.length} console errors/warnings` : 'No console errors or warnings (cutaway check).');
++process.exit(bad.length || errors.length ? 1 : 0);
+diff --git a/src/chapters.ts b/src/chapters.ts
+index f07c268..207dea6 100644
+--- a/src/chapters.ts
++++ b/src/chapters.ts
+@@ -2,6 +2,7 @@
+ // Every figure is computed from the processed data in ./data (see source lines); all text comes from ./i18n.
+ import { ZONES, landmarks, buildings, lines, areas, routes, walks, anchors, meta, stats, station, findPlace, fmt, type XY, type Route, type Building, type Share } from './data';
+ import { linePill } from './linePill';
++import { CUT_KINDS, cutDepth, cutKind, underRoads, wayLength } from './cutaway';
+ import type { SceneMode, View, World } from './scene';
+ import { t, getLang } from './i18n';
+ import { sunPosition, mytDate, solarNoon, compassIndex } from './sun';
+@@ -123,6 +124,11 @@ export function buildChapters(): Chapter[] {
+     linePin('ln-klia', T.ch1.pinKlia, T.ch1.pinKliaV, wayPt(52347242, 0.2), 7, lineColor.klia, linePill(7, N.kliaTransit7)),
+     linePin('ln-skypark', T.ch1.pinSky, T.ch1.pinSkyV, wayPt(180560345, 0.62), 2, lineColor.skypark, linePill(10, N.skypark10, 'suspended')),
+   ]);
++  // 05 cutaway: label on an OSM below-ground road, anchored at its estimated depth
++  const cutPin = (id: string, wayId: number, title: string, value: (d: number) => string, accent: string): PinDef | null => {
++    const w = underRoads.find((r) => r.id === wayId); if (!w) return null; const d = cutDepth(w.layer);
++    return { id, title, value: value(d), at: D(w.pts[Math.floor(w.pts.length / 2)], -d), kind: 'minor', accent };
++  };
+   const corePins = () => nn([
+     stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
+     stationPin('KD01', 'ktm2', N.kj17, `KTM · ${showCode('KD01')}`),
+@@ -278,14 +284,16 @@ export function buildChapters(): Chapter[] {
+         { fig: `≈${fmt(stats.routeMinutes)}`, unit: U.min, cap: T.ch6.statTime },
+         { fig: fmt(stats.routeBridgeShare), unit: U.pct, cap: T.ch6.statBridge(stats.routeBridgeM) },
+       ],
+-      source: T.ch6.source(),
++      source: `${T.ch6.source()} ${T.ch6.cutSource(underRoads.length, Math.round(underRoads.reduce((a, r) => a + wayLength(r.pts), 0)))}`,
+       view: { target: [8, 0, -70], azimuth: 0, polar: 0.62, distance: 1900 },
+-      mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'faint', routeSet: 'legs', routeFocus: null, xray: true, buildingStyle: 'default', precincts: false },
++      mode: { rails: { lrt: 'context', ktm: 'context', erl: 'hidden' }, footways: 'faint', routeSet: 'legs', routeFocus: null, xray: true, buildingStyle: 'default', precincts: false, cutaway: true, carFlow: true },
+       pins: nn([
+         stationPin('KJ17', 'lrt', T.anchor.KJ17, T.ch6.pinStart),
+         placePin('The Gardens Mall', N.gardens, routes[0] ? T.ch6.pinFromLrt(routes[0].length) : undefined),
+         placePin('Mid Valley Megamall', N.megamall, routes[1] ? T.ch6.pinPlus(routes[1].length) : undefined),
+         stationPin('KB01', 'ktm1', T.anchor.KB01, routes[2] ? T.ch6.pinEnd(routes[2].length) : T.common.end),
++        cutPin('cut-klec', 671986608, T.ch6.pinKlec, T.ch6.pinKlecV, 'var(--c-cut-road)'),
++        cutPin('cut-mv', 1148157676, T.ch6.pinMv, T.ch6.pinMvV, 'var(--c-cut-midvalley)'),
+         routeBridgeEnclosed ? textPin('lbl-bridge', T.ch6.bridgePin, routeBridgeEnclosed.pts[Math.floor(routeBridgeEnclosed.pts.length / 2)], 12, T.ch6.bridgeValue(routeBridgeEnclosed.length)) : null,
+       ]),
+       panel: (el, world, ctx) => {
+@@ -302,7 +310,17 @@ export function buildChapters(): Chapter[] {
+         toggle(s2, T.ch6.allFootways, false, (v) => world.setMode({ footways: v ? 'show' : 'faint' }), 'var(--ink)');
+         toggle(s2, T.ch6.xray, true, (v) => world.setMode({ xray: v }));
+         s2.append(h('div', { class: 'small', style: 'margin-top:8px' }, T.ch6.layersNote(meta.counts.footbridges, meta.counts.indoorCorridors)));
+-        el.append(s1, s2);
++        const s3 = h('section', { class: 'cutaway' }); s3.append(h('h3', {}, T.ch6.cutTitle));
++        toggle(s3, T.ch6.cutToggle, true, (v) => world.setMode({ cutaway: v }), 'var(--c-cut-road)');
++        toggle(s3, T.ch6.carToggle, true, (v) => world.setMode({ carFlow: v }), 'var(--c-cut-car)');
++        const cv: Record<string, string> = { klec: '--c-cut-road', midvalley: '--c-cut-midvalley', moto: '--c-cut-moto', other: '--c-cut-other' };
++        for (const k of CUT_KINDS) {
++          const ws = underRoads.filter((r) => cutKind(r) === k); if (!ws.length) continue;
++          s3.append(h('div', { class: 'legend-row' }, `<span class="swatch box" style="background:var(${cv[k]})"></span><span class="lg-name">${T.ch6.cutLegend[k]}</span><span class="lg-val">${T.ch6.cutWays(ws.length, Math.round(ws.reduce((a, r) => a + wayLength(r.pts), 0)))}</span>`));
++        }
++        s3.append(h('div', { class: 'legend-row' }, `<span class="swatch box" style="background:var(--c-cut-earth);border:1px solid var(--c-cut-edge)"></span><span class="lg-name">${T.ch6.cutEdge}</span>`));
++        s3.append(h('div', { class: 'small', style: 'margin-top:8px' }, T.ch6.cutNote));
++        el.append(s1, s2, s3);
+       },
+     },
+     // ---------------- 06 walking routes ----------------
+diff --git a/src/cutaway.ts b/src/cutaway.ts
+new file mode 100644
+index 0000000..a8c5268
+--- /dev/null
++++ b/src/cutaway.ts
+@@ -0,0 +1,22 @@
++// 05 Connections cutaway: OSM below-ground roads (highway ways tagged tunnel=yes or layer<0), their kind and estimated depth.
++import { lines, areas, type XY } from './data';
++
++export const CUT_KINDS = ['klec', 'midvalley', 'moto', 'other'] as const;
++export type CutKind = (typeof CUT_KINDS)[number];
++
++/** Estimated depth below ground: 4.5 m per OSM layer step (layer 0 tunnels count as -1). OSM gives the level order, not the depth. */
++export const cutDepth = (layer: number) => 4.5 * Math.max(1, Math.abs(Math.min(0, layer)));
++
++const inRing = (m: XY, ring: XY[]) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, yi] = ring[i], [xj, yj] = ring[j]; if ((yi > m[1]) !== (yj > m[1]) && m[0] < ((xj - xi) * (m[1] - yi)) / (yj - yi) + xi) c = !c; } return c; };
++
++/** OSM name 'Lorong Motosikal …' (Federal Highway motorcycle lane), else the OSM landuse precinct its midpoint lies in (KL Eco City / Mid Valley City), else other. */
++export function cutKind(r: { name: string | null; pts: XY[] }): CutKind {
++  if (/^Lorong Motosikal/.test(r.name || '')) return 'moto';
++  const m = r.pts[Math.floor(r.pts.length / 2)];
++  const pr = (name: string) => areas.precincts.find((p) => p.name === name);
++  const k = pr('KL Eco City'), v = pr('Mid Valley City');
++  return k && inRing(m, k.ring) ? 'klec' : v && inRing(m, v.ring) ? 'midvalley' : 'other';
++}
++
++export const underRoads = lines.roads.filter((r) => r.tunnel || r.layer < 0);
++export const wayLength = (pts: XY[]) => pts.slice(1).reduce((s, p, i) => s + Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]), 0);
+diff --git a/src/i18n/en.ts b/src/i18n/en.ts
+index f972ac9..f77765e 100644
+--- a/src/i18n/en.ts
++++ b/src/i18n/en.ts
+@@ -209,6 +209,16 @@ export const en = {
+     allFootways: 'All OSM footways & bridges',
+     xray: 'X-ray buildings',
+     layersNote: (b: number, c: number) => `${n(b)} footbridge ways and ${n(c)} indoor corridor ways are mapped in the study area; indoor links are only as complete as OSM.`,
++    cutTitle: 'Underground roads (cutaway)',
++    cutToggle: 'Underground road cutaway',
++    carToggle: 'Car flow (illustrative)',
++    cutLegend: { klec: 'KL Eco City lower tier', midvalley: 'Mid Valley City basement access', moto: 'Federal Highway motorcycle-lane underpasses', other: 'Other tunnels / below-ground roads' } as Record<'klec' | 'midvalley' | 'moto' | 'other', string>,
++    cutWays: (w: number, m: number) => `${n(w)} OSM ways · ${n(m)} m`,
++    cutEdge: 'Cut section: study-area edge, to below the deepest mapped level',
++    cutNote: 'Depths are estimates: 4.5 m per OSM layer step below ground (OSM gives the level order, not the depth). Ground, roads and buildings are faded so the tunnels show through.',
++    pinKlec: 'KL Eco City lower tier', pinKlecV: (d: number) => `OSM tunnel · ≈${n(d)} m deep (est.)`,
++    pinMv: 'Mid Valley basement access', pinMvV: (d: number) => `OSM “Parking Zone B” · ≈${n(d)} m (est.)`,
++    cutSource: (w: number, m: number) => `Underground roads: OSM highway ways tagged tunnel=yes or layer<0 (${n(w)} ways, ${n(m)} m), grouped by the OSM landuse precinct they lie in (KL Eco City, Mid Valley City) and by OSM name (Lorong Motosikal Lebuhraya Persekutuan). KL Eco City has a two-tier (upper / lower) internal road system with dedicated ramps and link bridges to Federal Highway, NPE, Jalan Maarof and Jalan Bangsar (S P Setia, “KL Eco City” project page, spsetia.com, fetched 2026-10-12); the two dedicated Federal Highway ramps were reported in April 2012 (Malaysia Property News, “SP Setia plans rail hub in KL Eco City”). No public depth figures were found: depths are estimated at 4.5 m per OSM layer step. Cars are illustrative.`,
+   },
+   shares: { bridge: 'bridge', indoor: 'indoor', covered: 'covered', open: 'open air (ground)' } as Record<'bridge' | 'indoor' | 'covered' | 'open', string>,
+   ch7: {
+diff --git a/src/i18n/ms.ts b/src/i18n/ms.ts
+index 44f0b92..a6f3783 100644
+--- a/src/i18n/ms.ts
++++ b/src/i18n/ms.ts
+@@ -206,6 +206,16 @@ export const ms: Dict = {
+     allFootways: 'Semua laluan pejalan kaki & jejantas OSM',
+     xray: 'Bangunan X-ray',
+     layersNote: (b: number, c: number) => `${n(b)} jejantas dan ${n(c)} koridor dalaman dipetakan di kawasan kajian; pautan dalaman hanya selengkap OSM.`,
++    cutTitle: 'Jalan bawah tanah (keratan)',
++    cutToggle: 'Keratan jalan bawah tanah',
++    carToggle: 'Aliran kereta (ilustrasi)',
++    cutLegend: { klec: 'Tingkat bawah KL Eco City', midvalley: 'Akses ruang bawah tanah Mid Valley City', moto: 'Laluan bawah lorong motosikal Lebuhraya Persekutuan', other: 'Terowong / jalan bawah tanah lain' } as Record<'klec' | 'midvalley' | 'moto' | 'other', string>,
++    cutWays: (w: number, m: number) => `${n(w)} jalan OSM · ${n(m)} m`,
++    cutEdge: 'Keratan: tepi kawasan kajian, hingga di bawah aras terdalam yang dipetakan',
++    cutNote: 'Kedalaman ialah anggaran: 4.5 m bagi setiap aras lapisan OSM di bawah tanah (OSM memberi susunan aras, bukan kedalaman). Tanah, jalan dan bangunan dipudarkan supaya terowong kelihatan.',
++    pinKlec: 'Tingkat bawah KL Eco City', pinKlecV: (d: number) => `Terowong OSM · ≈${n(d)} m dalam (anggaran)`,
++    pinMv: 'Akses ruang bawah tanah Mid Valley', pinMvV: (d: number) => `OSM “Parking Zone B” · ≈${n(d)} m (anggaran)`,
++    cutSource: (w: number, m: number) => `Jalan bawah tanah: jalan OSM bertag tunnel=yes atau layer<0 (${n(w)} jalan, ${n(m)} m), dikumpulkan mengikut kawasan guna tanah OSM (KL Eco City, Mid Valley City) dan nama OSM (Lorong Motosikal Lebuhraya Persekutuan). KL Eco City mempunyai sistem jalan dalaman dua tingkat (atas / bawah) dengan tanjakan dan jambatan penghubung khas ke Lebuhraya Persekutuan, NPE, Jalan Maarof dan Jalan Bangsar (S P Setia, halaman projek “KL Eco City”, spsetia.com, diambil 2026-10-12); dua tanjakan khas Lebuhraya Persekutuan dilaporkan pada April 2012 (Malaysia Property News, “SP Setia plans rail hub in KL Eco City”). Tiada angka kedalaman awam ditemui: kedalaman dianggarkan 4.5 m bagi setiap aras lapisan OSM. Kereta hanya ilustrasi.`,
+   },
+   shares: { bridge: 'jambatan', indoor: 'dalaman', covered: 'berbumbung', open: 'terbuka (aras tanah)' },
+   ch7: {
+diff --git a/src/i18n/zh.ts b/src/i18n/zh.ts
+index 5fbc269..afb8d75 100644
+--- a/src/i18n/zh.ts
++++ b/src/i18n/zh.ts
+@@ -207,6 +207,16 @@ export const zh: Dict = {
+     allFootways: '所有 OSM 步道与天桥',
+     xray: '透视建筑',
+     layersNote: (b: number, c: number) => `研究范围内绘制了 ${n(b)} 条人行天桥和 ${n(c)} 条室内通道；室内连接的完整程度取决于 OSM。`,
++    cutTitle: '地下道路（剖面）',
++    cutToggle: '地下道路剖面',
++    carToggle: '车流（示意）',
++    cutLegend: { klec: '吉隆坡生态城下层道路', midvalley: '谷中城地下停车场通道', moto: '联邦大道摩托车道地下通道', other: '其他隧道 / 地下道路' } as Record<'klec' | 'midvalley' | 'moto' | 'other', string>,
++    cutWays: (w: number, m: number) => `${n(w)} 条 OSM 道路 · ${n(m)} 米`,
++    cutEdge: '剖切面：研究范围边缘，深至最深已绘层级以下',
++    cutNote: '深度为估算值：地面以下每个 OSM 层级按 4.5 米计（OSM 只给出层级顺序，不给深度）。地面、道路和建筑已淡化，以便看到下方隧道。',
++    pinKlec: '吉隆坡生态城下层道路', pinKlecV: (d: number) => `OSM 隧道 · 深约 ${n(d)} 米（估算）`,
++    pinMv: '谷中城地下停车场通道', pinMvV: (d: number) => `OSM“Parking Zone B” · 约 ${n(d)} 米（估算）`,
++    cutSource: (w: number, m: number) => `地下道路：OSM 中标注 tunnel=yes 或 layer<0 的道路（${n(w)} 条，${n(m)} 米），按其所在的 OSM 土地用途片区（吉隆坡生态城、谷中城）及 OSM 名称（Lorong Motosikal Lebuhraya Persekutuan）分组。吉隆坡生态城内部道路为上下两层，并有专用匝道与连接桥通往联邦大道、NPE、Jalan Maarof 和 Jalan Bangsar（S P Setia“KL Eco City”项目页，spsetia.com，2026-10-12 获取）；两条联邦大道专用匝道见 2012 年 4 月报道（Malaysia Property News，“SP Setia plans rail hub in KL Eco City”）。未找到公开的深度数据：深度按每个 OSM 层级 4.5 米估算。车辆仅为示意。`,
+   },
+   shares: { bridge: '天桥', indoor: '室内', covered: '有盖', open: '露天（地面）' },
+   ch7: {
+diff --git a/src/scene.ts b/src/scene.ts
+index b1dc676..fbafe31 100644
+--- a/src/scene.ts
++++ b/src/scene.ts
+@@ -5,6 +5,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
+ import { buildings, lines, areas, routes, walks, meta, landmarks, station, type XY, type Building, type HeightSource, type Route, type Zone, type Rail } from './data';
+ import { chainWays, chainWaysAnyDir, orientLeftHand, buildTrack, Trains, KTM_TRAIN, type Track } from './trains';
+ import { sunVector } from './sun';
++import { CUT_KINDS, cutDepth, cutKind, underRoads } from './cutaway';
+ 
+ export interface View { target: [number, number, number]; azimuth: number; polar: number; distance: number }
+ export type RailState = 'highlight' | 'context' | 'hidden';
+@@ -23,12 +24,14 @@ export interface SceneMode {
+   threshold: number;
+   precincts: boolean;
+   landmarks: boolean; // highlight the landmark mosques (chapter 01 Landmarks)
++  cutaway: boolean; // 05: below-ground roads (OSM tunnel=yes / layer<0) under a translucent ground, with a cut-section edge
++  carFlow: boolean; // 05: animated cars in the cutaway tunnels (static under prefers-reduced-motion)
+   airport: boolean; // 02: ERL tracks in the KLIA Transit colour + the suspended Skypark Line as a dashed overlay on the Line 2 tracks
+ }
+ export const DEFAULT_MODE: SceneMode = {
+   rails: { lrt: 'context', ktm: 'context', erl: 'context' },
+   footways: 'hidden', routeSet: 'none', routeFocus: null, walkFocus: null, routeStyle: 'plain', sun: null, shadeDots: false, muteWater: false, xray: false,
+-  buildingStyle: 'default', threshold: 60, precincts: false, landmarks: false, airport: false,
++  buildingStyle: 'default', threshold: 60, precincts: false, landmarks: false, airport: false, cutaway: false, carFlow: false,
+ };
+ 
+ const DESK_W = 1920, DESK_H = 1080; // desktop stage; mobile uses the real viewport size (setStageSize)
+@@ -129,6 +132,10 @@ export class World {
+   private skypark: THREE.Mesh | null = null;
+   private erlColors = { base: new THREE.Color(), klia: new THREE.Color() };
+   private trainsOn = true;
++  /** 05 cutaway: tunnel ribbons by kind, the cut-section box, and the car flow. */
++  private cutGroup = new THREE.Group();
++  private cutMats = { klec: new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }), midvalley: new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }), other: new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }), moto: new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }), earth: new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true, opacity: 0.32, depthWrite: false }), edge: new THREE.LineBasicMaterial(), car: new THREE.MeshBasicMaterial() };
++  private cars: { mesh: THREE.InstancedMesh; paths: { pts: THREE.Vector3[]; cum: number[] }[]; slots: { p: number; d: number }[]; t: number } | null = null;
+   private lastFrame = 0;
+   // turntable (00 Overview): slow continuous orbit about the target at the preset pitch / distance. Paused while the
+   // user drags / zooms (resumes TURN_RESUME_MS after they stop), during flights, while the tab is hidden, and never
+@@ -194,6 +201,23 @@ export class World {
+     const roadG = (sel: boolean, y: number) => merge(lines.roads.filter((r) => major.has(r.cls) === sel && !r.tunnel).map((r) => ribbon(r.pts.map(([x, n]) => v3(x, n, y)), r.w)));
+     this.scene.add(new THREE.Mesh(roadG(false, 0.06), this.mats.road));
+     this.scene.add(new THREE.Mesh(roadG(true, 0.08), this.mats.roadMajor));
++    // 05 cutaway: OSM below-ground roads (tunnel=yes or layer<0) at an estimated depth, a section box down to the deepest one, cars
++    {
++      const under = underRoads;
++      const at = (r: (typeof under)[number]) => r.pts.map(([x, n]) => v3(x, n, -cutDepth(r.layer)));
++      for (const k of CUT_KINDS) { const g = under.filter((r) => cutKind(r) === k).map((r) => ribbon(at(r), Math.max(6, r.w * 1.3))); if (g.some(Boolean)) this.cutGroup.add(new THREE.Mesh(merge(g), this.cutMats[k])); }
++      const D = Math.max(...under.map((r) => cutDepth(r.layer))) + 3;
++      const wall = (a: THREE.Vector3, b: THREE.Vector3) => { const g = new THREE.BufferGeometry().setFromPoints([a, b, a.clone().setY(-D), b, b.clone().setY(-D), a.clone().setY(-D)]); g.computeVertexNormals(); return g; };
++      const c = [v3(-H, -H, 0), v3(H, -H, 0), v3(H, H, 0), v3(-H, H, 0)];
++      this.cutGroup.add(new THREE.Mesh(merge(c.map((p, i) => wall(p, c[(i + 1) % 4]))), this.cutMats.earth));
++      const e: THREE.Vector3[] = []; c.forEach((p, i) => { const q = c[(i + 1) % 4]; e.push(p.clone().setY(-D), q.clone().setY(-D), p, p.clone().setY(-D)); });
++      this.cutGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(e), this.cutMats.edge));
++      const paths = under.map((r) => { const pts = at(r).map((p) => p.setY(p.y + 0.9)); const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + pts[i].distanceTo(pts[i - 1])); return { pts, cum }; }).filter((pa) => pa.cum[pa.cum.length - 1] > 30);
++      const slots: { p: number; d: number }[] = []; paths.forEach((pa, p) => { const L = pa.cum[pa.cum.length - 1]; for (let d = 8; d < L; d += 45) slots.push({ p, d }); });
++      const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(4.4, 1.6, 1.9), this.cutMats.car, slots.length);
++      this.cars = { mesh, paths, slots, t: 0 }; this.cutGroup.add(mesh); this.placeCars();
++      this.cutGroup.visible = false; this.scene.add(this.cutGroup);
++    }
+ 
+     // KTM: per Komuter line, the OSM main-track ways chained into one continuous track per direction (left-hand
+     // running), at the drawn deck height with 4 % approach ramps to the bridges (schematic); tunnel stretches carry trains but are not drawn.
+@@ -416,6 +440,7 @@ export class World {
+     m.ground.color = cssColor('--scene-ground');
+     m.road.color = cssColor('--scene-road'); m.roadMajor.color = cssColor('--scene-road-major');
+     m.water.color = cssColor('--c-water'); m.green.color = cssColor('--c-green');
++    const cm = this.cutMats; cm.klec.color = cssColor('--c-cut-road'); cm.midvalley.color = cssColor('--c-cut-midvalley'); cm.other.color = cssColor('--c-cut-other'); cm.moto.color = cssColor('--c-cut-moto'); cm.earth.color = cssColor('--c-cut-earth'); cm.edge.color = cssColor('--c-cut-edge'); cm.car.color = cssColor('--c-cut-car');
+     m.build.color = cssColor('--scene-building'); m.context.color = cssColor('--scene-building-context');
+     m.fade.color = cssColor('--scene-building-context'); m.xray.color = cssColor('--scene-building');
+     m.pier.color = cssColor('--scene-building-context');
+@@ -487,6 +512,13 @@ export class World {
+       this.sun.intensity = this.sunBase; this.hemi.intensity = this.hemiBase; this.sun.castShadow = true;
+     }
+     m.water.color = cssColor(md.muteWater ? '--scene-water-muted' : '--c-water');
++    // cutaway: ground, roads, water and parks turn translucent so the tunnels show beneath
++    for (const mt of [m.ground, m.road, m.roadMajor, m.water, m.green] as THREE.Material[]) {
++      if (mt.transparent !== md.cutaway) { mt.transparent = md.cutaway; mt.depthWrite = !md.cutaway; mt.needsUpdate = true; }
++      mt.opacity = md.cutaway ? (mt === m.ground ? 0.42 : 0.55) : 1;
++    }
++    this.cutGroup.visible = md.cutaway;
++    if (this.cars) this.cars.mesh.visible = md.cutaway && md.carFlow && this.trainsOn;
+     this.precinctGroup.visible = md.precincts;
+     this.landmarkGroup.visible = md.landmarks;
+     this.trains.group.visible = this.trainsOn && md.rails.lrt !== 'hidden';
+@@ -566,6 +598,16 @@ export class World {
+   }
+   setPixelRatio(stageScale: number) { this.renderer.setPixelRatio(Math.min(2, Math.max(1, window.devicePixelRatio * stageScale))); this.renderer.setSize(this.stageW, this.stageH, false); }
+ 
++  private placeCars() {
++    const c = this.cars; if (!c) return; const o = new THREE.Object3D();
++    c.slots.forEach((s, i) => {
++      const pa = c.paths[s.p]; const L = pa.cum[pa.cum.length - 1]; const d = (s.d + c.t * 8) % L; // 8 m/s ≈ 29 km/h (illustrative)
++      let j = 1; while (j < pa.cum.length - 1 && pa.cum[j] < d) j++;
++      const a = pa.pts[j - 1], b = pa.pts[j]; const f = (d - pa.cum[j - 1]) / Math.max(1e-6, pa.cum[j] - pa.cum[j - 1]);
++      o.position.lerpVectors(a, b, f); o.rotation.set(0, Math.atan2(-(b.z - a.z), b.x - a.x), 0); o.updateMatrix(); c.mesh.setMatrixAt(i, o.matrix);
++    });
++    c.mesh.instanceMatrix.needsUpdate = true;
++  }
+   private frame(now: number) {
+     // trains: run on a clamped clock that only advances while the page is visible;
+     // with prefers-reduced-motion they are shown static (one train standing at KJ17, one at each KTM station)
+@@ -581,6 +623,7 @@ export class World {
+       else { this.viewShift += (this.viewShiftTarget - this.viewShift) * 0.12; this.viewShiftY += (this.viewShiftYTarget - this.viewShiftY) * 0.12; }
+       this.applyViewOffset();
+     }
++    if (this.cars && this.cars.mesh.visible && !prefersReducedMotion() && !document.hidden && dt > 0) { this.cars.t += Math.min(dt, 0.1); this.placeCars(); }
+     this.stepTween(now);
+     this.stepTurntable(now, dt);
+     if (!this.tween) this.controls.update();
+diff --git a/src/styles.css b/src/styles.css
+index 449029f..ca588bb 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -29,6 +29,8 @@
+   --c-erl: #8d8d8a;
+   --c-klia-transit: #33a8b5; /* 7 KLIA Transit (Wikipedia, Module:Adjacent stations/KLRT) */
+   --c-skypark: #8b4513; /* 10 KL Sentral–Terminal Skypark Line (suspended) */
++  /* 05 cutaway (below-ground roads) */
++  --c-cut-road: #c99a1a; --c-cut-midvalley: #6f63b5; --c-cut-other: #8f8a80; --c-cut-moto: #2f8f6a; --c-cut-earth: #b39b78; --c-cut-edge: #6b5a42; --c-cut-car: #2b2b29;
+   --c-route: #e2552f;
+   --c-amber: #e0a020;
+   --src-osm: #3a3a38;
+@@ -83,6 +85,7 @@
+   --c-erl: #77776f;
+   --c-klia-transit: #33a8b5;
+   --c-skypark: #8b4513;
++  --c-cut-road: #e8c04a; --c-cut-midvalley: #9d92e0; --c-cut-other: #a8a398; --c-cut-moto: #4fc496; --c-cut-earth: #6b5a44; --c-cut-edge: #c4ae8a; --c-cut-car: #f0f0ec;
+   --c-route: #ff7a4d;
+   --src-osm: #f0f0ec;
+   --src-levels: #8a8a85;
+-- 
+2.54.0 (Apple Git-157)
+
