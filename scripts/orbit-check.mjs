@@ -48,11 +48,11 @@ const adv = (a, b) => DIR * dAz(a, b); // signed advance in the expected directi
   if (Math.abs(dAz(a.north, b.north)) < 0.1) bad.push('compass did not rotate with the orbit');
   if (!(b.trainClock - a.trainClock > dt * 0.7)) bad.push(`trains not running during the orbit (${a.trainClock} -> ${b.trainClock})`);
   if (!(b.ktmClock - a.ktmClock > dt * 0.7) || !b.ktmVisible) bad.push(`KTM trains not running / shown during the orbit (${a.ktmClock} -> ${b.ktmClock})`);
-  // pause while the mouse is held down (no movement), resume ~3 s after release
+  // pause while the mouse is held down (no movement), resume 1.5 s after release
   const x = 1300, y = 540; await p.mouse.move(x, y); await p.mouse.down(); await sleep(300);
   const h1 = await st(p); await sleep(1200); const h2 = await st(p); await p.mouse.up();
-  await sleep(1500); const r1 = await st(p); await sleep(3000); const r2 = await st(p); await sleep(1000); const r3 = await st(p);
-  console.log('00 hold/resume', JSON.stringify({ heldDeg: +(dAz(h1.az, h2.az) * 180 / Math.PI).toFixed(2), activeHeld: h2.active, activeAfter1_5s: r1.active, activeAfter4_5s: r2.active, resumedDeg: +(dAz(r2.az, r3.az) * 180 / Math.PI).toFixed(2), reset: [h2.reset, r3.reset] }));
+  await sleep(700); const r1 = await st(p); await sleep(1200); const r2 = await st(p); await sleep(1000); const r3 = await st(p);
+  console.log('00 hold/resume', JSON.stringify({ heldDeg: +(dAz(h1.az, h2.az) * 180 / Math.PI).toFixed(2), activeHeld: h2.active, activeAfter0_7s: r1.active, activeAfter1_9s: r2.active, resumedDeg: +(dAz(r2.az, r3.az) * 180 / Math.PI).toFixed(2), reset: [h2.reset, r3.reset] }));
   if (Math.abs(dAz(h1.az, h2.az)) > 0.01 || h2.active) bad.push('orbit did not pause while held');
   if (r1.active) bad.push('orbit resumed too early');
   if (!r2.active || adv(r2.az, r3.az) < RATE * 0.5) bad.push('orbit did not resume');
