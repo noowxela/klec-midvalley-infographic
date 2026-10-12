@@ -1,4 +1,5 @@
-// 00 turntable check: the bearing advances on 00 (about 360° / 75 s), Reset view never appears by itself, the orbit
+// 00 turntable check: the bearing advances on 00 (about 360° / 75 s, anti-clockwise from above: World.turnSign = -1,
+// so the azimuth decreases), Reset view never appears by itself, the orbit
 // pauses while the mouse is held and resumes a few seconds after release, stops on 01 (camera stays put after the
 // flight), pauses while the tab is hidden, and does not run under prefers-reduced-motion. Compass follows the bearing;
 // trains keep moving. Two 00 screenshots a few seconds apart -> shots-orbit/.
@@ -30,14 +31,17 @@ const st = (p) => p.evaluate(() => {
 });
 const dAz = (a, b) => Math.atan2(Math.sin(b - a), Math.cos(b - a));
 const RATE = (2 * Math.PI) / 75;
+const DIR = -1; // expected World.turnSign: anti-clockwise 00 orbit (azimuth decreasing), intentional since 1cf5b57
+const adv = (a, b) => DIR * dAz(a, b); // signed advance in the expected direction
 // 1. 00: advances at ~RATE, pitch / distance unchanged, Reset hidden, compass follows, screenshots
 {
   const p = await open('orbit-00', 'chapter=0&lang=en');
   const a = await st(p); await p.screenshot({ path: 'shots-orbit/v15-00-orbit-a.png' });
   const t0 = Date.now(); await sleep(4000);
   const b = await st(p); const dt = (Date.now() - t0) / 1000; await p.screenshot({ path: 'shots-orbit/v15-00-orbit-b.png' });
-  const rate = dAz(a.az, b.az) / Math.max(dt, b.trainClock - a.trainClock); // train clock = real frame time between the two reads
-  console.log('00 advance', JSON.stringify({ dAzDeg: +(dAz(a.az, b.az) * 180 / Math.PI).toFixed(1), secs: +dt.toFixed(1), periodS: +(2 * Math.PI / rate).toFixed(1), dPolar: +(b.polar - a.polar).toFixed(4), dDist: +(b.dist - a.dist).toFixed(1), reset: [a.reset, b.reset], north: [+a.north.toFixed(3), +b.north.toFixed(3)], active: b.active, trainsAdvancedS: +(b.trainClock - a.trainClock).toFixed(1), ktmAdvancedS: +(b.ktmClock - a.ktmClock).toFixed(1), ktmVisible: b.ktmVisible }));
+  const sign = await p.evaluate(() => window.__mv.world.turnSign); if (sign !== DIR) bad.push(`turnSign ${sign}, expected ${DIR}`);
+  const rate = adv(a.az, b.az) / Math.max(dt, b.trainClock - a.trainClock); // train clock = real frame time between the two reads
+  console.log('00 advance', JSON.stringify({ dAzDeg: +(dAz(a.az, b.az) * 180 / Math.PI).toFixed(1), secs: +dt.toFixed(1), periodS: +(2 * Math.PI / rate).toFixed(1), dPolar: +(b.polar - a.polar).toFixed(4), dDist: +(b.dist - a.dist).toFixed(1), reset: [a.reset, b.reset], north: [+a.north.toFixed(3), +b.north.toFixed(3)], active: b.active, turnSign: sign, trainsAdvancedS: +(b.trainClock - a.trainClock).toFixed(1), ktmAdvancedS: +(b.ktmClock - a.ktmClock).toFixed(1), ktmVisible: b.ktmVisible }));
   if (!(rate > RATE * 0.6 && rate < RATE * 1.6)) bad.push(`00 rate ${rate}`);
   if (Math.abs(b.polar - a.polar) > 0.002 || Math.abs(b.dist - a.dist) > 2) bad.push('00 pitch/distance drift');
   if (a.reset || b.reset) bad.push('00 reset shown by the orbit');
@@ -51,7 +55,7 @@ const RATE = (2 * Math.PI) / 75;
   console.log('00 hold/resume', JSON.stringify({ heldDeg: +(dAz(h1.az, h2.az) * 180 / Math.PI).toFixed(2), activeHeld: h2.active, activeAfter1_5s: r1.active, activeAfter4_5s: r2.active, resumedDeg: +(dAz(r2.az, r3.az) * 180 / Math.PI).toFixed(2), reset: [h2.reset, r3.reset] }));
   if (Math.abs(dAz(h1.az, h2.az)) > 0.01 || h2.active) bad.push('orbit did not pause while held');
   if (r1.active) bad.push('orbit resumed too early');
-  if (!r2.active || dAz(r2.az, r3.az) < RATE * 0.5) bad.push('orbit did not resume');
+  if (!r2.active || adv(r2.az, r3.az) < RATE * 0.5) bad.push('orbit did not resume');
   if (h2.reset || r3.reset) bad.push('reset shown without a pitch/zoom/target change');
   // wheel zoom pauses too, and does count as a change (Reset shows)
   await p.mouse.move(x, y); await p.mouse.wheel({ deltaY: -400 }); await sleep(800); const z = await st(p);
@@ -72,7 +76,7 @@ const RATE = (2 * Math.PI) / 75;
   // back to 00: orbit restarts after the flight, from the preset bearing
   await p.click('#chapter-tabs .tab:nth-child(1)'); await sleep(2600); const g1 = await st(p); await sleep(2000); const g2 = await st(p);
   console.log('back to 00', JSON.stringify({ startDeg: +(g1.az * 180 / Math.PI).toFixed(1), advDeg: +(dAz(g1.az, g2.az) * 180 / Math.PI).toFixed(2) }));
-  if (dAz(g1.az, g2.az) < RATE * 0.5) bad.push('orbit did not restart on 00');
+  if (adv(g1.az, g2.az) < RATE * 0.5) bad.push('orbit did not restart on 00');
   await p.close();
 }
 // 2. reduced motion: no orbit on 00
