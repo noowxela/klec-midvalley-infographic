@@ -1,27 +1,29 @@
-# map-infographic
+# klec-midvalley-infographic
+
+**Live:** [noowxela.github.io/klec-midvalley-infographic](https://noowxela.github.io/klec-midvalley-infographic/) · **Repo:** [noowxela/klec-midvalley-infographic](https://github.com/noowxela/klec-midvalley-infographic)
 
 A 3D scrollytelling infographic of the rail-and-mall cluster on both banks of the Klang River in Kuala Lumpur: KL Eco City, The Gardens Mall and Mid Valley Megamall, around Abdullah Hukum station (LRT Kelana Jaya Line and KTM) and Mid Valley KTM. Nine chapters walk through the site on a fixed 1920×1080 stage, with short, sourced text in English, 简体中文 and Bahasa Malaysia. The layout and chapter rail are inspired by the [Banqiao Station infographic](https://a767thycode.github.io/banqiao-station-infographic/). The massing is illustrative, not a survey.
 
-**The map lives in its own repo.** The data, the OpenStreetMap pipeline and the Three.js model come from [map-assets](https://github.com/spacingouty09/map-assets), included here as a git submodule at `map-assets/`. This repo is the website: chapters, panels, i18n, camera, theme and checks. Both were split from [noowxela/klec-midvalley-infographic](https://github.com/noowxela/klec-midvalley-infographic) at `f26ec5c`, with history; Alex's original repo and site stay as they are.
+**The map lives in its own repo.** The data, the OpenStreetMap pipeline and the Three.js model come from [map-assets](https://github.com/spacingouty09/map-assets), included here as a git submodule at `map-assets/`. This repo is the website: chapters, panels, i18n, camera, theme and checks. The map is shared with other websites built on it, so map changes go to map-assets and reach this site when it moves to a new map release.
 
 - **AI tools** (Cursor, Grok, Claude Code…): read [AGENTS.md](AGENTS.md).
 - **Changing the map** (data, heights, routes, the 3D model): [map-assets/CONTRIBUTING.md](https://github.com/spacingouty09/map-assets/blob/main/CONTRIBUTING.md).
 
 ## Set up
 
-You need Node 22+, git, and access to this private repo (ask for an invite, then accept it on GitHub). The map, [map-assets](https://github.com/spacingouty09/map-assets), is public, so the submodule needs no extra access.
+You need Node 22+ and git. This repo and the map, [map-assets](https://github.com/spacingouty09/map-assets), are both public, so anyone can clone them. Pushing needs write access to each repo; without it, open pull requests from a fork.
 
 ### Quick start with an AI agent
 
-Copy this into your AI coding agent (Cursor, Grok, Claude Code, Codex…). It checks your access, clones the site with the map inside it, sets everything up, starts the site and explains how to contribute:
+Copy this into your AI coding agent (Cursor, Grok, Claude Code, Codex…). It clones the site with the map inside it, sets everything up, starts the site and explains how to contribute:
 
 ```text
-Set me up to contribute to the KL Eco City – Mid Valley map project (private GitHub repo spacingouty09/map-infographic, with the public spacingouty09/map-assets as a submodule). 1) Check that I have git and Node 22+, and that git can reach the website repo: `git ls-remote https://github.com/spacingouty09/map-infographic.git`. If that fails, stop and tell me exactly what to do (usually: accept the map-infographic invite on GitHub, then run `gh auth login` and `gh auth setup-git`). 2) Ask me which folder to use, then run `git clone --recurse-submodules https://github.com/spacingouty09/map-infographic.git` there. 3) Open the map-infographic folder and follow the "First-time setup" section of its AGENTS.md. If you can't run commands yourself, give them to me one at a time and wait for the output. Don't commit, push or open pull requests without asking me.
+Set me up to contribute to the KL Eco City – Mid Valley infographic (public GitHub repo noowxela/klec-midvalley-infographic, with the public spacingouty09/map-assets as a submodule). 1) Check that I have git and Node 22+; if not, stop and tell me exactly what to install. 2) Ask me which folder to use, then run `git clone --recurse-submodules https://github.com/noowxela/klec-midvalley-infographic.git` there. 3) Open the klec-midvalley-infographic folder and follow the "First-time setup" section of its AGENTS.md. If you can't run commands yourself, give them to me one at a time and wait for the output. If I don't have write access to a repo, my pull requests go through a fork; help me set that up when I'm ready. Don't commit, push or open pull requests without asking me.
 ```
 
 ### By hand
 
-**1. Let git sign in to GitHub once.** Cloning this private repo needs it:
+**1. Let git sign in to GitHub once.** Only pushing needs it; cloning works without:
 
 ```bash
 gh auth login        # GitHub CLI; choose HTTPS
@@ -33,8 +35,8 @@ No GitHub CLI? Use a personal access token as the password when git asks.
 **2. Clone with the submodule:**
 
 ```bash
-git clone --recurse-submodules https://github.com/spacingouty09/map-infographic.git
-cd map-infographic
+git clone --recurse-submodules https://github.com/noowxela/klec-midvalley-infographic.git
+cd klec-midvalley-infographic
 git config submodule.recurse true   # pull / checkout keep map-assets/ in step from now on
 npm ci
 npm run doctor                      # checks the setup and prints the fix for anything wrong
@@ -63,8 +65,10 @@ git switch -c feat/short-name
 # edit, then:
 npm run build                        # plus the checks that cover your change (see Checks)
 git add -A && git commit -m "…"
-git push -u origin feat/short-name   # open the pull request on map-infographic; CI must pass
+git push -u origin feat/short-name   # open the pull request on this repo; CI must pass
 ```
+
+No write access to this repo? Push to a fork instead: `gh repo fork --remote --remote-name fork`, then `git push -u fork feat/short-name` and `gh pr create --repo noowxela/klec-midvalley-infographic`.
 
 ### Updating the map
 
@@ -114,7 +118,7 @@ Once the PR is merged and released as a tag, move the pointer as in **Updating t
 | `git status` shows `modified: map-assets (new commits)` | The submodule moved. To keep the recorded version: `git submodule update`. To adopt the new one on purpose: `git add map-assets` and commit. |
 | Type errors about two different `three` types, or a "Multiple instances of Three.js" warning | Someone ran `npm install` inside `map-assets/`: `rm -rf map-assets/node_modules` |
 | Edits in `map-assets/` vanished after `git pull` | It was on a detached HEAD. Always `git switch -c …` inside `map-assets/` before editing (see above) |
-| `git clone` asks for a password or says "not found" | No access to map-infographic or not signed in: ask for an invite, then `gh auth login && gh auth setup-git` |
+| `git push` in this repo is refused (403, "Permission denied") | You have no write access here: ask for it, or push to a fork (see **Contributing to the website**) |
 | `git push` inside `map-assets/` is refused (403, "Permission denied") | You have no write access to map-assets: push to a fork instead (see **Changing the map from here**) |
 
 ## Chapters
@@ -192,7 +196,7 @@ Each check takes an optional base URL argument (default `http://127.0.0.1:4173/`
 ## CI and deployment
 
 - **CI** (`.github/workflows/ci.yml`) builds every push and pull request, including the map-assets submodule. map-assets is public, so CI fetches it with no extra secret.
-- **Deploy** (`.github/workflows/deploy.yml`) publishes `dist/` to GitHub Pages and is started by hand from the Actions tab. Pages for a private repo needs a paid GitHub plan (or a public repo). The relative Vite base (`./`) makes all assets resolve under any subpath.
+- **Deploy** (`.github/workflows/deploy.yml`) publishes `dist/` to GitHub Pages at [noowxela.github.io/klec-midvalley-infographic](https://noowxela.github.io/klec-midvalley-infographic/) on every push to `main`, including the map-assets submodule; it can also be started by hand from the Actions tab. The relative Vite base (`./`) makes all assets resolve under that subpath.
 
 ## Chapter numbers: old to new
 

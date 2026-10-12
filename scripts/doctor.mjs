@@ -9,7 +9,7 @@ const ok = (msg) => console.log(`  ✓ ${msg}`);
 const warn = (msg, fix) => { warnings++; console.log(`  ! ${msg}${fix ? `\n      fix: ${fix}` : ''}`); };
 const fail = (msg, fix) => { errors++; console.log(`  ✗ ${msg}${fix ? `\n      fix: ${fix}` : ''}`); };
 
-console.log('map-infographic doctor\n');
+console.log('klec-midvalley-infographic doctor\n');
 
 // Node
 const major = +process.versions.node.split('.')[0];

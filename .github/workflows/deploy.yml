@@ -1,8 +1,8 @@
 name: Deploy to GitHub Pages
 
-# Started by hand (Actions tab -> Deploy to GitHub Pages -> Run workflow). Pages for a private repo needs a paid
-# GitHub plan; add `push: branches: [main]` back once Pages is available.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
