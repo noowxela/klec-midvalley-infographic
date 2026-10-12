@@ -1,8 +1,125 @@
 # klec-midvalley-infographic
 
-**Live:** https://noowxela.github.io/klec-midvalley-infographic/ · **Repo:** https://github.com/noowxela/klec-midvalley-infographic
+**Live:** [noowxela.github.io/klec-midvalley-infographic](https://noowxela.github.io/klec-midvalley-infographic/) · **Repo:** [noowxela/klec-midvalley-infographic](https://github.com/noowxela/klec-midvalley-infographic)
 
-A 3D scrollytelling infographic of the rail-and-mall cluster on both banks of the Klang River in Kuala Lumpur: KL Eco City, The Gardens Mall and Mid Valley Megamall, around Abdullah Hukum station (LRT Kelana Jaya Line and KTM) and Mid Valley KTM. Nine chapters walk through the site with a fixed 1920×1080 stage, a Three.js block model built from OpenStreetMap and short, sourced text in English, 简体中文 and Bahasa Malaysia. The layout and chapter rail are inspired by the [Banqiao Station infographic](https://a767thycode.github.io/banqiao-station-infographic/). The massing is illustrative, not a survey.
+A 3D scrollytelling infographic of the rail-and-mall cluster on both banks of the Klang River in Kuala Lumpur: KL Eco City, The Gardens Mall and Mid Valley Megamall, around Abdullah Hukum station (LRT Kelana Jaya Line and KTM) and Mid Valley KTM. Nine chapters walk through the site on a fixed 1920×1080 stage, with short, sourced text in English, 简体中文 and Bahasa Malaysia. The layout and chapter rail are inspired by the [Banqiao Station infographic](https://a767thycode.github.io/banqiao-station-infographic/). The massing is illustrative, not a survey.
+
+**The map lives in its own repo.** The data, the OpenStreetMap pipeline and the Three.js model come from [map-assets](https://github.com/spacingouty09/map-assets), included here as a git submodule at `map-assets/`. This repo is the website: chapters, panels, i18n, camera, theme and checks. The map is shared with other websites built on it, so map changes go to map-assets and reach this site when it moves to a new map release.
+
+- **AI tools** (Cursor, Grok, Claude Code…): read [AGENTS.md](AGENTS.md).
+- **Changing the map** (data, heights, routes, the 3D model): [map-assets/CONTRIBUTING.md](https://github.com/spacingouty09/map-assets/blob/main/CONTRIBUTING.md).
+
+## Set up
+
+You need Node 22+ and git. This repo and the map, [map-assets](https://github.com/spacingouty09/map-assets), are both public, so anyone can clone them. Pushing needs write access to each repo; without it, open pull requests from a fork.
+
+### Quick start with an AI agent
+
+Copy this into your AI coding agent (Cursor, Grok, Claude Code, Codex…). It clones the site with the map inside it, sets everything up, starts the site and explains how to contribute:
+
+```text
+Set me up to contribute to the KL Eco City – Mid Valley infographic (public GitHub repo noowxela/klec-midvalley-infographic, with the public spacingouty09/map-assets as a submodule). 1) Check that I have git and Node 22+; if not, stop and tell me exactly what to install. 2) Ask me which folder to use, then run `git clone --recurse-submodules https://github.com/noowxela/klec-midvalley-infographic.git` there. 3) Open the klec-midvalley-infographic folder and follow the "First-time setup" section of its AGENTS.md. If you can't run commands yourself, give them to me one at a time and wait for the output. If I don't have write access to a repo, my pull requests go through a fork; help me set that up when I'm ready. Don't commit, push or open pull requests without asking me.
+```
+
+### By hand
+
+**1. Let git sign in to GitHub once.** Only pushing needs it; cloning works without:
+
+```bash
+gh auth login        # GitHub CLI; choose HTTPS
+gh auth setup-git    # lets git use that login
+```
+
+No GitHub CLI? Use a personal access token as the password when git asks.
+
+**2. Clone with the submodule:**
+
+```bash
+git clone --recurse-submodules https://github.com/noowxela/klec-midvalley-infographic.git
+cd klec-midvalley-infographic
+git config submodule.recurse true   # pull / checkout keep map-assets/ in step from now on
+npm ci
+npm run doctor                      # checks the setup and prints the fix for anything wrong
+npm run dev                         # http://127.0.0.1:5173/
+```
+
+Already cloned without `--recurse-submodules` (an empty `map-assets/` folder)? Run `git submodule update --init`.
+
+**3. Day to day:**
+
+| You want to… | Do this |
+|---|---|
+| Work on the website | see **Contributing to the website** below |
+| Get the latest website changes | `git pull` (with `submodule.recurse` set, `map-assets/` follows the pointer) |
+| Move to a newer map release | see **Updating the map** below |
+| Change the map itself | see **Changing the map from here** below |
+| Check your setup | `npm run doctor` |
+
+### Contributing to the website
+
+Edit `src/`, `index.html` or `scripts/` on a branch; `npm run build` type-checks the map code too. UI text goes in `src/i18n/` (en, zh and ms together).
+
+```bash
+git switch main && git pull
+git switch -c feat/short-name
+# edit, then:
+npm run build                        # plus the checks that cover your change (see Checks)
+git add -A && git commit -m "…"
+git push -u origin feat/short-name   # open the pull request on this repo; CI must pass
+```
+
+No write access to this repo? Push to a fork instead: `gh repo fork --remote --remote-name fork`, then `git push -u fork feat/short-name` and `gh pr create --repo noowxela/klec-midvalley-infographic`.
+
+### Updating the map
+
+The website pins a map-assets **release tag**, so map changes never land here by surprise. To move to a newer one, pick it from [map-assets/CHANGELOG.md](https://github.com/spacingouty09/map-assets/blob/main/CHANGELOG.md) and use it in place of `vX.Y.Z`:
+
+```bash
+git -C map-assets fetch --tags
+git -C map-assets checkout vX.Y.Z        # the release you want
+npm run doctor && npm run build          # then the checks below
+git add map-assets
+git commit -m "map-assets vX.Y.Z"
+git push
+```
+
+### Changing the map from here
+
+`map-assets/` is a full clone of the [map repo](https://github.com/spacingouty09/map-assets). You can work in it, but treat it as **that** repo. It is public, so you can always fetch it; pushing to it needs write access there, which is separate from your access to this repo.
+
+```bash
+cd map-assets
+git switch main && git pull              # it normally sits on a detached tag; get on a branch first
+git switch -c data/my-change
+# edit sources/ or pipeline/ (never data/ by hand), then:
+npm run data:process && npm run data:check
+git add -A && git commit -m "…"
+git push -u origin data/my-change        # with write access to map-assets; then open the PR there
+cd ..
+```
+
+No write access to map-assets? Push to your own fork instead (the GitHub CLI creates it and adds it as the `fork` remote) and open the pull request from it:
+
+```bash
+cd map-assets
+gh repo fork --remote --remote-name fork
+git push -u fork data/my-change
+gh pr create --repo spacingouty09/map-assets   # or open the link that git push prints
+cd ..
+```
+
+Once the PR is merged and released as a tag, move the pointer as in **Updating the map**. Until then, don't commit the website pointing at your branch: other people can't build a website that points at a commit they can't fetch (`npm run doctor` warns about it).
+
+### Common mistakes
+
+| Symptom | Cause and fix |
+|---|---|
+| Build fails with `Cannot find module '@map-assets'`, or `map-assets/` is empty | The submodule isn't checked out: `git submodule update --init` |
+| `git status` shows `modified: map-assets (new commits)` | The submodule moved. To keep the recorded version: `git submodule update`. To adopt the new one on purpose: `git add map-assets` and commit. |
+| Type errors about two different `three` types, or a "Multiple instances of Three.js" warning | Someone ran `npm install` inside `map-assets/`: `rm -rf map-assets/node_modules` |
+| Edits in `map-assets/` vanished after `git pull` | It was on a detached HEAD. Always `git switch -c …` inside `map-assets/` before editing (see above) |
+| `git push` in this repo is refused (403, "Permission denied") | You have no write access here: ask for it, or push to a fork (see **Contributing to the website**) |
+| `git push` inside `map-assets/` is refused (403, "Permission denied") | You have no write access to map-assets: push to a fork instead (see **Changing the map from here**) |
 
 ## Chapters
 
@@ -39,35 +156,22 @@ Deep links: `?chapter=0` … `?chapter=8` or `#00` … `#08`; also `?lang=en|zh|
 
 ## Data and sources
 
-- **OpenStreetMap** via the Overpass API, pulled 2026-10-10 (`src/data/meta.json`, `fetchedAt`). © OpenStreetMap contributors, ODbL.
-- **Attribution rules:** the full line ("Map data © OpenStreetMap contributors (ODbL), Overpass API pull …") appears on 00 only. The corner credit linking to openstreetmap.org/copyright is on every chapter. Other chapters' source lines list only their own methods and non-OSM sources.
-- **Heights:** cited values from `scripts/height-sources.json` (table and limitations in [`docs/height-sources.md`](docs/height-sources.md)). Otherwise the OSM `height` tag, or `building:levels` × 3.5 m. Anything else is a placeholder flagged as an estimate (≈ in the UI).
-- **Rail:** line colours and station codes from Wikipedia ("Klang Valley Integrated Transit System" and the station and line articles, fetched 2026-10-10; KLIA Transit #33A8B5 and Skypark #8B4513 from Module:Adjacent stations/KLRT, fetched 2026-10-12). Skypark route from OSM relations 9985660 / 8391024. KTM line per track comes from OSM route relations (`raw/ktm-routes.json`).
-- **Climate:** the cited WMO 1991–2020 normals in `src/data/climate.json`. Sun position uses the NOAA formulas.
-- **Estimates are flagged.** No figure is typed in by hand: every number comes from data or a cited source.
+All map data, cited heights, rail colours and climate normals come from map-assets; its [README](https://github.com/spacingouty09/map-assets#data-and-sources) lists the sources and open data questions. What this site adds:
+
+- **Attribution:** the full line ("Map data © OpenStreetMap contributors (ODbL), Overpass API pull …") appears on 00 only. The corner credit linking to openstreetmap.org/copyright is on every chapter. Other chapters' source lines list only their own methods and non-OSM sources.
+- **Estimates are flagged** (≈ in the UI). No figure is typed in by hand: every number comes from map-assets data or a cited source.
 
 ## Tech stack
 
-Vite 8, TypeScript 7 (vanilla, no framework), Three.js 0.186 (OrbitControls, BufferGeometryUtils). IBM Plex Sans/Mono and Noto Sans SC (zh only, loaded on demand) are bundled via @fontsource, so the page makes no external font requests. Checks use puppeteer-core with the local Google Chrome.
-
-## Getting started
+Vite 8, TypeScript 7 (vanilla, no framework), Three.js 0.186 (OrbitControls). The 3D model is `MapModel` from map-assets; `src/scene.ts` wraps it with the renderer, camera flights, the 00 turntable and the theme (CSS variables → model palette). IBM Plex Sans/Mono and Noto Sans SC (zh only, loaded on demand) are bundled via @fontsource, so the page makes no external font requests. Checks use puppeteer-core with the local Google Chrome.
 
 ```bash
-npm install
 npm run dev          # http://127.0.0.1:5173/
-npm run typecheck    # tsc --noEmit
+npm run typecheck    # tsc --noEmit (includes the map-assets code)
 npm run build        # typecheck + production build into dist/
 npm run preview      # serve dist/ on http://127.0.0.1:4173/
+npm run doctor       # setup check
 ```
-
-Data (only needed to re-pull OSM):
-
-```bash
-npm run data:fetch     # scripts/fetch-osm.mjs   -> raw/overpass.json
-npm run data:process   # scripts/process-osm.mjs -> src/data/*.json
-```
-
-The study area (centre and 1 km bbox) is set in `scripts/config.mjs`.
 
 ## Checks
 
@@ -89,9 +193,10 @@ node scripts/firstload.mjs <outDir> [query] [rm|nowebgl]   # cold throttled firs
 
 Each check takes an optional base URL argument (default `http://127.0.0.1:4173/`); firstload reads it from `BASE`.
 
-## Deployment
+## CI and deployment
 
-Every push to `main` runs `.github/workflows/deploy.yml` (npm ci, npm run build, then actions/upload-pages-artifact + actions/deploy-pages) and publishes `dist/` to GitHub Pages at https://noowxela.github.io/klec-midvalley-infographic/. The relative Vite base (`./`) makes all assets resolve under that subpath. It can also be run by hand from the Actions tab (workflow_dispatch).
+- **CI** (`.github/workflows/ci.yml`) builds every push and pull request, including the map-assets submodule. map-assets is public, so CI fetches it with no extra secret.
+- **Deploy** (`.github/workflows/deploy.yml`) publishes `dist/` to GitHub Pages at [noowxela.github.io/klec-midvalley-infographic](https://noowxela.github.io/klec-midvalley-infographic/) on every push to `main`, including the map-assets submodule; it can also be started by hand from the Actions tab. The relative Vite base (`./`) makes all assets resolve under that subpath.
 
 ## Chapter numbers: old to new
 
@@ -111,11 +216,11 @@ Since v16 the chapters are numbered 00–08 in a row. Links made earlier open th
 
 ## Known open items
 
-- **Tower of Light / Residensi Vogue 1 heights:** both use the CTBUH value of 243 m. For Tower of Light this conflicts with OSM `building:levels=31` (≈108.5 m), and IGB's 59-storey Southpoint may be the same tower. Vogue 1 has no OSM height. Verify on site; the heights are left unchanged for now.
-- **Masjid Jamek car park:** modelled as 5 levels (OSM). 2016 press reports (FMT, Bernama) say a seven-level podium.
-- **Mall heights** (5 × 5 m) are applied uniformly to untagged mall parts; named parts stay estimates.
-- **Not built yet:**
-  - KL Eco City underground roads (in the data, not drawn) need a cutaway; a WIP version is archived in [`archive/underground-cutaway/`](archive/underground-cutaway/README.md) (not released);
-  - KJ17 has no public stop number.
+- **Underground roads cutaway (05):** a WIP version is archived in [`archive/underground-cutaway/`](archive/underground-cutaway/README.md) (not released). It predates the split, so reviving it means moving its drawing code into map-assets `MapModel` and its panel into `src/chapters.ts`.
+- Data questions (disputed heights, the Masjid Jamek car-park levels, mall heights) are listed in the map-assets README.
 
 More detail (per-version design notes, precinct rule, trains, loader, rail codes, bottom bar, compass) is in [`docs/design-notes.md`](docs/design-notes.md).
+
+## Licence
+
+No licence yet: all rights reserved by the authors. Map data © OpenStreetMap contributors (ODbL), via map-assets.

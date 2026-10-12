@@ -1,5 +1,5 @@
 // Bahasa Malaysia. Struktur sama seperti en.ts; semua nombor dikira daripada data.
-import { fmt } from '../data';
+import { fmt } from '../format';
 import type { Dict } from './en';
 
 const n = fmt;

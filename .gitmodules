@@ -1,0 +1,3 @@
+[submodule "map-assets"]
+	path = map-assets
+	url = https://github.com/spacingouty09/map-assets.git

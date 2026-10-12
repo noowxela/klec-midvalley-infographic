@@ -18,8 +18,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout (with the public map-assets submodule)
         uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

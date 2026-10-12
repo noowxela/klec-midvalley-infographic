@@ -1,6 +1,6 @@
 // English strings. This file defines the shape (type Dict) every locale must follow.
 // Numbers are never written here: they are passed in from the data and formatted with fmt().
-import { fmt } from '../data';
+import { fmt } from '../format';
 
 const n = fmt;
 

@@ -1,12 +1,10 @@
 // Chapter definitions. Numbering follows the full plan; only built chapters are listed.
-// Every figure is computed from the processed data in ./data (see source lines); all text comes from ./i18n.
-import { ZONES, landmarks, buildings, lines, areas, routes, walks, anchors, meta, stats, station, findPlace, fmt, type XY, type Route, type Building, type Share } from './data';
+// Every figure is computed from the processed data in map-assets (see source lines); all text comes from ./i18n.
+import { ZONES, landmarks, buildings, lines, areas, routes, walks, anchors, meta, stats, station, findPlace, climate, publicCode, sunPosition, mytDate, solarNoon, compassIndex, groundSamples, routeSampleSets, type XY, type Route, type Building, type Share } from '@map-assets';
+import { fmt } from './format';
 import { linePill } from './linePill';
 import type { SceneMode, View, World } from './scene';
 import { t, getLang } from './i18n';
-import { sunPosition, mytDate, solarNoon, compassIndex } from './sun';
-import { groundSamples, routeSampleSets } from './shade';
-import climate from './data/climate.json';
 
 export interface PinDef { id: string; title: string; value?: string; at: [number, number, number]; kind: 'station' | 'major' | 'minor'; color?: string; accent?: string; icon?: string /* trusted inline SVG, shown before the value */ }
 export interface StatDef { fig: string; unit?: string; cap: string; swatch?: string }
@@ -20,13 +18,9 @@ export interface PanelCtx { flyTo: (v: View) => void; chapterView: View; onClean
 const D = (n: XY, y = 0): [number, number, number] => [n[0], y, -n[1]];
 // legend: line letters (KD / KB) + the local stop number of our station (Abdullah Hukum 16, Mid Valley 10)
 // official KVITS line colours (styles.css): KJ = Kelana Jaya, KB = Batu Caves–Pulau Sebang (KTM 1), KD = Tanjung Malim–Port Klang (KTM 2)
-// Public-facing station numbers. Mid Valley (official code KB01) is shown the way riders know it: stop 10 on
-// Line 1 counting from Batu Caves (KC05–KC01, KA04–KA01, then Mid Valley; Wikipedia, Batu Caves–Pulau Sebang Line,
-// "Stations"). KB01 appears only in the 03 Location source note and the README.
-// Abdullah Hukum KTM (official KD01) is stop 16 on Line 2 counting from Tanjung Malim (KA15–KA01, then Abdullah Hukum),
-// excluding the 2026 Segambut Utara infill (KA05A); owner's choice. KD01 appears only in the 03 Location source note and the README.
-const PUBLIC_CODE: Record<string, string> = { KB01: '10', KD01: '16' };
-const showCode = (ref: string | null) => (ref ? PUBLIC_CODE[ref] ?? ref : '—');
+// Public-facing station numbers (Mid Valley KB01 -> 10, Abdullah Hukum KTM KD01 -> 16; sources in map-assets src/transit.ts).
+// The official codes KB01 / KD01 appear only in the 03 Location source note and the README.
+const showCode = publicCode;
 const lineColor = { lrt: 'var(--c-lrt)', ktm1: 'var(--c-ktm1)', ktm2: 'var(--c-ktm2)', erl: 'var(--c-erl)', klia: 'var(--c-klia-transit)', skypark: 'var(--c-skypark)' } as const;
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
