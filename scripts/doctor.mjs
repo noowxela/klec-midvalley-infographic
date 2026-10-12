@@ -30,9 +30,10 @@ if (sha && flag !== '-' && !existsSync('map-assets/src/index.ts')) fail('map-ass
 
 if (existsSync('map-assets/.git')) {
   if (sh('git -C map-assets status --porcelain')) warn('map-assets has uncommitted changes', 'commit them in map-assets and open a PR there (see map-assets/CONTRIBUTING.md), or discard them');
+  // only origin (spacingouty09/map-assets) counts: a commit that is only on a fork can't be fetched through the submodule
   const head = sh('git -C map-assets rev-parse HEAD');
-  const remoteHas = sh('git -C map-assets branch -r --contains HEAD');
-  if (head && !remoteHas) warn('the checked-out map-assets commit is not on GitHub yet', 'push it (git -C map-assets push) before committing the pointer here; other people cannot fetch an unpushed commit');
+  const onOrigin = sh('git -C map-assets branch -r --contains HEAD --list "origin/*"');
+  if (head && !onOrigin) warn('the checked-out map-assets commit is not on spacingouty09/map-assets yet', 'get it there first (push, or merge your pull request from a fork) before committing the pointer here; other people cannot fetch it');
 }
 
 // one copy of three.js

@@ -68,20 +68,20 @@ git push -u origin feat/short-name   # open the pull request on map-infographic;
 
 ### Updating the map
 
-The website pins a map-assets **release tag**, so map changes never land here by surprise. To move to a newer one (releases are in [map-assets/CHANGELOG.md](https://github.com/spacingouty09/map-assets/blob/main/CHANGELOG.md)):
+The website pins a map-assets **release tag**, so map changes never land here by surprise. To move to a newer one, pick it from [map-assets/CHANGELOG.md](https://github.com/spacingouty09/map-assets/blob/main/CHANGELOG.md) and use it in place of `vX.Y.Z`:
 
 ```bash
 git -C map-assets fetch --tags
-git -C map-assets checkout v0.1.1        # the release you want
+git -C map-assets checkout vX.Y.Z        # the release you want
 npm run doctor && npm run build          # then the checks below
 git add map-assets
-git commit -m "map-assets v0.1.1"
+git commit -m "map-assets vX.Y.Z"
 git push
 ```
 
 ### Changing the map from here
 
-`map-assets/` is a full clone of the map repo. You can work in it, but treat it as **that** repo:
+`map-assets/` is a full clone of the [map repo](https://github.com/spacingouty09/map-assets). You can work in it, but treat it as **that** repo. It is public, so you can always fetch it; pushing to it needs write access there, which is separate from your access to this repo.
 
 ```bash
 cd map-assets
@@ -90,11 +90,21 @@ git switch -c data/my-change
 # edit sources/ or pipeline/ (never data/ by hand), then:
 npm run data:process && npm run data:check
 git add -A && git commit -m "…"
-git push -u origin data/my-change        # open the PR on map-assets
+git push -u origin data/my-change        # with write access to map-assets; then open the PR there
 cd ..
 ```
 
-Once the PR is merged and released as a tag, move the pointer as in **Updating the map**. Until then, don't commit the website pointing at your branch: other people can't build a website that points at a commit they can't fetch.
+No write access to map-assets? Push to your own fork instead (the GitHub CLI creates it and adds it as the `fork` remote) and open the pull request from it:
+
+```bash
+cd map-assets
+gh repo fork --remote --remote-name fork
+git push -u fork data/my-change
+gh pr create --repo spacingouty09/map-assets   # or open the link that git push prints
+cd ..
+```
+
+Once the PR is merged and released as a tag, move the pointer as in **Updating the map**. Until then, don't commit the website pointing at your branch: other people can't build a website that points at a commit they can't fetch (`npm run doctor` warns about it).
 
 ### Common mistakes
 
@@ -105,6 +115,7 @@ Once the PR is merged and released as a tag, move the pointer as in **Updating t
 | Type errors about two different `three` types, or a "Multiple instances of Three.js" warning | Someone ran `npm install` inside `map-assets/`: `rm -rf map-assets/node_modules` |
 | Edits in `map-assets/` vanished after `git pull` | It was on a detached HEAD. Always `git switch -c …` inside `map-assets/` before editing (see above) |
 | `git clone` asks for a password or says "not found" | No access to map-infographic or not signed in: ask for an invite, then `gh auth login && gh auth setup-git` |
+| `git push` inside `map-assets/` is refused (403, "Permission denied") | You have no write access to map-assets: push to a fork instead (see **Changing the map from here**) |
 
 ## Chapters
 

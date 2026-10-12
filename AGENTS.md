@@ -6,6 +6,8 @@ Instructions for AI coding tools (Cursor, Grok, Claude Code, Codex and others) a
 
 A 3D scrollytelling website about the Mid Valley – Abdullah Hukum transit hub. The map itself (data, pipeline and the Three.js model) is **not** in this repo: it is the `map-assets/` git submodule, imported as `@map-assets`. This repo owns the page: chapters, panels, i18n, camera, theme and the checks in `scripts/`.
 
+Access: this repo (spacingouty09/map-infographic) is private and needs an invite. map-assets (spacingouty09/map-assets) is public: anyone can fetch it, but pushing to it needs write access there, which is separate from access here.
+
 ## First-time setup
 
 When someone asks you to set them up (usually with the prompt in README, "Quick start with an AI agent"), do this in the repo root. If you can't run commands yourself, give them to the person one at a time and wait for the output.
@@ -19,7 +21,7 @@ When someone asks you to set them up (usually with the prompt in README, "Quick 
 7. Tell them, in a few lines:
    - **map-infographic** is this website; **map-assets** (the `map-assets/` folder) is the shared map that other websites use too.
    - **Website change:** a branch here, edit, `npm run build` plus the checks that cover it, then a pull request on map-infographic.
-   - **Map change:** inside `map-assets/`, `git switch main && git pull`, then a branch; edit `sources/` or `pipeline/` (never `data/`); `npm run data:process && npm run data:check`; a pull request on map-assets. After it is released as a tag, the website moves its pointer (README, "Updating the map").
+   - **Map change:** inside `map-assets/`, `git switch main && git pull`, then a branch; edit `sources/` or `pipeline/` (never `data/`); `npm run data:process && npm run data:check`; a pull request on map-assets, from a fork if they have no write access there (README, "Changing the map from here"). After it is released as a tag, the website moves its pointer (README, "Updating the map").
    - Then ask what they want to work on.
 
 Don't commit, push, open pull requests or change global git settings without asking.
@@ -27,7 +29,7 @@ Don't commit, push, open pull requests or change global git settings without ask
 ## Rules
 
 - **Map changes go to map-assets, not here.** Don't edit files under `map-assets/` as part of a website change. Make the change in the map-assets repo (its CONTRIBUTING.md), release a tag, then move the submodule pointer here.
-- **Never commit the `map-assets` pointer to a commit that isn't pushed** to map-assets. `npm run doctor` warns about it.
+- **Never commit the `map-assets` pointer to a commit that isn't on spacingouty09/map-assets.** A commit that is only local or only on a fork can't be fetched by anyone else. `npm run doctor` warns about it.
 - **Don't run `npm install` inside `map-assets/`**: it creates a second copy of three.js.
 - **All UI text goes through `src/i18n/`** (en, zh, ms). `en.ts` defines the keys; `zh.ts` and `ms.ts` must have the same keys (the type check enforces it).
 - **Numbers shown in the UI** come from `@map-assets` data or a cited source; format them with `fmt` from `src/format.ts`.
