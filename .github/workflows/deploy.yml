@@ -18,11 +18,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (with the private map-assets submodule)
+      - name: Checkout (with the public map-assets submodule)
         uses: actions/checkout@v4
         with:
           submodules: true
-          token: ${{ secrets.MAP_REPO_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

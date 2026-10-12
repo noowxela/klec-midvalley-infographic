@@ -9,23 +9,23 @@ A 3D scrollytelling infographic of the rail-and-mall cluster on both banks of th
 
 ## Set up
 
-You need Node 22+, git, and access to **both** private repos, `map-infographic` and `map-assets` (ask for an invite to each, then accept both on GitHub).
+You need Node 22+, git, and access to this private repo (ask for an invite, then accept it on GitHub). The map, [map-assets](https://github.com/spacingouty09/map-assets), is public, so the submodule needs no extra access.
 
 ### Quick start with an AI agent
 
-Copy this into your AI coding agent (Cursor, Grok, Claude Code, Codex…). It checks your access, clones both repos, sets everything up, starts the site and explains how to contribute:
+Copy this into your AI coding agent (Cursor, Grok, Claude Code, Codex…). It checks your access, clones the site with the map inside it, sets everything up, starts the site and explains how to contribute:
 
 ```text
-Set me up to contribute to the KL Eco City – Mid Valley map project (private GitHub repos spacingouty09/map-infographic and its submodule spacingouty09/map-assets). 1) Check that I have git and Node 22+, and that git can reach both repos: `git ls-remote https://github.com/spacingouty09/map-infographic.git` and `git ls-remote https://github.com/spacingouty09/map-assets.git`. If anything fails, stop and tell me exactly what to do (usually: accept both repo invites on GitHub, then run `gh auth login` and `gh auth setup-git`). 2) Ask me which folder to use, then run `git clone --recurse-submodules https://github.com/spacingouty09/map-infographic.git` there. 3) Open the map-infographic folder and follow the "First-time setup" section of its AGENTS.md. If you can't run commands yourself, give them to me one at a time and wait for the output. Don't commit, push or open pull requests without asking me.
+Set me up to contribute to the KL Eco City – Mid Valley map project (private GitHub repo spacingouty09/map-infographic, with the public spacingouty09/map-assets as a submodule). 1) Check that I have git and Node 22+, and that git can reach the website repo: `git ls-remote https://github.com/spacingouty09/map-infographic.git`. If that fails, stop and tell me exactly what to do (usually: accept the map-infographic invite on GitHub, then run `gh auth login` and `gh auth setup-git`). 2) Ask me which folder to use, then run `git clone --recurse-submodules https://github.com/spacingouty09/map-infographic.git` there. 3) Open the map-infographic folder and follow the "First-time setup" section of its AGENTS.md. If you can't run commands yourself, give them to me one at a time and wait for the output. Don't commit, push or open pull requests without asking me.
 ```
 
 ### By hand
 
-**1. Let git sign in to GitHub once.** Fetching the private submodule needs it:
+**1. Let git sign in to GitHub once.** Cloning this private repo needs it:
 
 ```bash
 gh auth login        # GitHub CLI; choose HTTPS
-gh auth setup-git    # lets git (and the submodule) use that login
+gh auth setup-git    # lets git use that login
 ```
 
 No GitHub CLI? Use a personal access token as the password when git asks.
@@ -104,7 +104,7 @@ Once the PR is merged and released as a tag, move the pointer as in **Updating t
 | `git status` shows `modified: map-assets (new commits)` | The submodule moved. To keep the recorded version: `git submodule update`. To adopt the new one on purpose: `git add map-assets` and commit. |
 | Type errors about two different `three` types, or a "Multiple instances of Three.js" warning | Someone ran `npm install` inside `map-assets/`: `rm -rf map-assets/node_modules` |
 | Edits in `map-assets/` vanished after `git pull` | It was on a detached HEAD. Always `git switch -c …` inside `map-assets/` before editing (see above) |
-| `git clone` / submodule asks for a password or says "not found" | No access or not signed in: ask for an invite to both repos, then `gh auth login && gh auth setup-git` |
+| `git clone` asks for a password or says "not found" | No access to map-infographic or not signed in: ask for an invite, then `gh auth login && gh auth setup-git` |
 
 ## Chapters
 
@@ -180,7 +180,7 @@ Each check takes an optional base URL argument (default `http://127.0.0.1:4173/`
 
 ## CI and deployment
 
-- **CI** (`.github/workflows/ci.yml`) builds every push and pull request, including the map-assets submodule. Because map-assets is private, CI needs a repository secret `MAP_REPO_TOKEN`: a fine-grained personal access token with read-only **Contents** access to `map-assets` only. The repo owner adds it once (Settings → Secrets and variables → Actions, or `gh secret set MAP_REPO_TOKEN`).
+- **CI** (`.github/workflows/ci.yml`) builds every push and pull request, including the map-assets submodule. map-assets is public, so CI fetches it with no extra secret.
 - **Deploy** (`.github/workflows/deploy.yml`) publishes `dist/` to GitHub Pages and is started by hand from the Actions tab. Pages for a private repo needs a paid GitHub plan (or a public repo). The relative Vite base (`./`) makes all assets resolve under any subpath.
 
 ## Chapter numbers: old to new

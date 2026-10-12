@@ -12,13 +12,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # map-assets is a private submodule: MAP_REPO_TOKEN is a fine-grained token with read-only Contents access to
-      # spacingouty09/map-assets (README, "CI and deployment").
-      - name: Checkout (with the private map-assets submodule)
+      - name: Checkout (with the public map-assets submodule)
         uses: actions/checkout@v4
         with:
           submodules: true
-          token: ${{ secrets.MAP_REPO_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
