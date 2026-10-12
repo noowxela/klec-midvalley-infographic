@@ -10,12 +10,12 @@ const browser = await puppeteer.launch({ executablePath: chrome, headless: true,
 const errors = []; const bad = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // official colours (Wikipedia, Klang Valley Integrated Transit System, "System network" table)
-const OFFICIAL = { '--c-lrt': 'rgb(224, 17, 95)', '--c-ktm1': 'rgb(60, 90, 159)', '--c-ktm2': 'rgb(220, 36, 32)' };
+const OFFICIAL = { '--c-lrt': 'rgb(224, 17, 95)', '--c-ktm1': 'rgb(60, 90, 159)', '--c-ktm2': 'rgb(220, 36, 32)', '--c-klia-transit': 'rgb(51, 168, 181)', '--c-skypark': 'rgb(139, 69, 19)' }; // 7 KLIA Transit, 10 Skypark (Wikipedia Module:Adjacent stations/KLRT)
 // Mid Valley (official KB01) is shown publicly as 'KTM · 10' (stop 10 from Batu Caves) and Abdullah Hukum KTM (KD01) as
 // 'KTM · 16' (stop 16 from Tanjung Malim); KB01 / KD01 may appear only in a .source note
 const PIN = { KJ17: OFFICIAL['--c-lrt'], 'KTM · 16': OFFICIAL['--c-ktm2'], 'KTM · 10': OFFICIAL['--c-ktm1'] };
 const BADGE = { KJ17: OFFICIAL['--c-lrt'], 16: OFFICIAL['--c-ktm2'], 10: OFFICIAL['--c-ktm1'] };
-const PILL = { 1: OFFICIAL['--c-ktm1'], 2: OFFICIAL['--c-ktm2'], 5: OFFICIAL['--c-lrt'] };
+const PILL = { 1: OFFICIAL['--c-ktm1'], 2: OFFICIAL['--c-ktm2'], 5: OFFICIAL['--c-lrt'], 7: OFFICIAL['--c-klia-transit'], 10: OFFICIAL['--c-skypark'] };
 async function open(name, q, { w = 1920, h = 1080, dark = false, dpr = 1 } = {}) {
   const page = await browser.newPage();
   await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' }]);
@@ -30,7 +30,7 @@ async function open(name, q, { w = 1920, h = 1080, dark = false, dpr = 1 } = {})
 }
 const probe = () => {
   const rgb = (c) => { const d = document.createElement('div'); d.style.color = c; document.body.append(d); const v = getComputedStyle(d).color; d.remove(); return v; };
-  const vars = Object.fromEntries(['--c-lrt', '--c-ktm1', '--c-ktm2', '--train-accent'].map((k) => [k, rgb(`var(${k})`)]));
+  const vars = Object.fromEntries(['--c-lrt', '--c-ktm1', '--c-ktm2', '--c-klia-transit', '--c-skypark', '--train-accent'].map((k) => [k, rgb(`var(${k})`)]));
   const pins = [...document.querySelectorAll('.pin.station')].map((p) => ({ t: p.querySelector('.t').textContent, v: p.querySelector('.v')?.textContent ?? '', bg: getComputedStyle(p.querySelector('.tag')).backgroundColor, r: getComputedStyle(p.querySelector('.tag')).borderRadius, fw: getComputedStyle(p.querySelector('.t')).fontWeight }));
   const badges = [...document.querySelectorAll('.station-list .badge')].map((b) => ({ code: b.textContent, bg: getComputedStyle(b).backgroundColor, fw: getComputedStyle(b).fontWeight, r: getComputedStyle(b).borderRadius, c: getComputedStyle(b).color }));
   const legend = [...document.querySelectorAll('.legend-row')].map((r) => { const sw = r.querySelector('.swatch'), lp = r.querySelector('.line-pill .lp-bg'); return [r.textContent, sw ? getComputedStyle(sw).backgroundColor : lp ? `pill ${getComputedStyle(lp).fill}` : null]; });
@@ -43,7 +43,7 @@ const probe = () => {
   const overlaps = [];
   for (let i = 0; i < tags.length; i++) for (let j = i + 1; j < tags.length; j++) if (hit(tags[i].r, tags[j].r)) overlaps.push(`${tags[i].t} x ${tags[j].t}`);
   for (const sel of ['.text-panel', '.side-panel', '.bottom-bar', '.top-bar', 'header']) for (const e of document.querySelectorAll(sel)) { const r = R(e); if (r[2] - r[0] < 1 || getComputedStyle(e).visibility === 'hidden') continue; for (const t of tags) if (hit(t.r, r)) overlaps.push(`${t.t} x ${sel}`); }
-  const pills = [...document.querySelectorAll('svg.line-pill')].map((s) => ({ n: s.querySelector('text').textContent, aria: s.getAttribute('aria-label'), role: s.getAttribute('role'), fill: getComputedStyle(s.querySelector('.lp-bg')).fill, where: s.closest('.pin') ? 'pin' : s.closest('.legend-row') ? 'legend' : s.closest('.station-list') ? 'stations' : s.closest('.toggle') ? 'toggle' : 'other' }));
+  const pills = [...document.querySelectorAll('svg.line-pill')].map((s) => ({ n: s.querySelector('text').textContent, aria: s.getAttribute('aria-label'), suspended: s.classList.contains('suspended'), role: s.getAttribute('role'), fill: getComputedStyle(s.querySelector('.lp-bg')).fill, where: s.closest('.pin') ? 'pin' : s.closest('.legend-row') ? 'legend' : s.closest('.station-list') ? 'stations' : s.closest('.toggle') ? 'toggle' : 'other' }));
   // user-facing KB01 outside source notes (aria labels and titles included)
   const kb = [];
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -74,6 +74,15 @@ const check = (name, s) => {
   if (/^01-/.test(name)) { const mm = s.tags.filter((t) => /^(Mid Valley Megamall|谷中城购物广场)/.test(t)); if (mm.length !== 1) bad.push(`${name} Mid Valley Megamall labels: ${mm.length} (want exactly 1)`); }
   // no 'Mid Valley City' wording anywhere on screen outside source notes (v16)
   if (s.mvc.length) bad.push(`${name} Mid Valley City on screen: ${s.mvc.join(' | ')}`);
+  // 02: KLIA Transit (7) and the suspended Skypark Line (10): legend rows with pills, on-map labels, suspended mark
+  if (/^02-/.test(name)) {
+    for (const n of ['7', '10']) if (!s.legend.some(([, c]) => c === `pill ${PILL[n]}`) || !s.pills.some((pl) => pl.n === n)) bad.push(`${name} no line ${n} pill`);
+    if (s.pills.some((pl) => pl.n === '10' && !pl.suspended)) bad.push(`${name} line 10 pill not marked suspended`);
+    if (!s.legend.some(([t]) => /KLIA Transit|吉隆坡机场支线/.test(t))) bad.push(`${name} legend missing KLIA Transit`);
+    if (!s.legend.some(([t]) => /Skypark|天空花园线/.test(t) && /suspended|暂停|digantung/.test(t))) bad.push(`${name} legend missing suspended Skypark`);
+    if (!s.tags.some((t) => /KLIA Transit|吉隆坡机场支线/.test(t))) bad.push(`${name} no visible KLIA Transit label`);
+    if (!s.tags.some((t) => /Skypark|天空花园线/.test(t))) bad.push(`${name} no visible Skypark label`);
+  }
   if (/^02-/.test(name)) for (const c of ['KJ17', 'KTM · 16', 'KTM · 10']) if (!s.tags.some((t) => t.includes(c))) bad.push(`${name} no visible ${c} label`);
   for (const b of s.badges) { if (BADGE[b.code] && b.bg !== BADGE[b.code]) bad.push(`${name} badge ${b.code} ${b.bg}`); if (b.code === '—') bad.push(`${name} badge without code`); }
 };

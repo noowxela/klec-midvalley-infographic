@@ -3,7 +3,7 @@
 // any scale and in both themes. Colour = the official KVITS line colour (styles.css --c-ktm1 / --c-ktm2), the same
 // colour as the tracks, legend and code badges. The pill identifies the line; the KB01/KD01 badge identifies the station.
 export type KtmLine = 1 | 2;
-export type RailLine = KtmLine | 5; // 5 = LRT Kelana Jaya Line
+export type RailLine = KtmLine | 5 | 7 | 10; // 5 = LRT Kelana Jaya Line, 7 = KLIA Transit, 10 = KL Sentral–Terminal Skypark Line
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 /** Shared train glyph (front view of a streamlined Komuter EMU, after the reference icons), drawn in the pill's
  *  46 × 24 viewBox; `bg` (the line colour) cuts the windscreen, headlights and the body/skirt seam. */
@@ -17,10 +17,10 @@ const train = (bg: string) =>
 // Line 5 (LRT Kelana Jaya) follows the Rapid KL icon: same pill, plus two thin lighter rings, one round the number
 // and one round the train, overlapping in the middle.
 export function linePill(line: RailLine, label: string, cls = ''): string {
-  const bg = line === 5 ? 'var(--c-lrt)' : `var(--c-ktm${line})`;
+  const bg = line === 5 ? 'var(--c-lrt)' : line === 7 ? 'var(--c-klia-transit)' : line === 10 ? 'var(--c-skypark)' : `var(--c-ktm${line})`;
   const rings = line === 5 ? `<g fill="none" stroke="#fff" stroke-opacity="0.38" stroke-width="0.45"><circle cx="12.5" cy="12" r="10.6"/><circle cx="33.5" cy="12" r="10.6"/></g>` : '';
   return `<svg class="line-pill${cls ? ` ${cls}` : ''}" viewBox="0 0 46 24" role="img" aria-label="${esc(label)}" focusable="false">` +
     `<title>${esc(label)}</title><rect x="0.5" y="0.5" width="45" height="23" rx="11.5" style="fill:${bg}" class="lp-bg"/>` +
-    `${rings}<text x="${line === 5 ? 12.8 : 14}" y="17.3" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="15" fill="#fff">${line}</text>` +
+    `${rings}<text x="${line === 5 ? 12.8 : line === 10 ? 13 : 14}" y="${line === 10 ? 16.8 : 17.3}" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="${line === 10 ? 13 : 15}"${line === 10 ? ' letter-spacing="-0.6"' : ''} fill="#fff">${line}</text>` +
     train(bg) + `</svg>`;
 }

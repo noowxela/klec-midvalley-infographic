@@ -26,6 +26,7 @@ Deep links: `?chapter=0` … `?chapter=8` or `#00` … `#08`; also `?lang=en|zh|
 - **00 orbit:** the camera turns 360° every 75 s on 00. It pauses on drag or zoom and while the tab is hidden, resumes 3 s after you stop, and ends when you leave 00.
 - **Collapsible panels:** chevron tabs on the text and side panels; **M** or the top-bar button hides both (map only).
 - **Animated trains:** LRT on both Kelana Jaya Line tracks (stopping at Abdullah Hukum, KJ17), and KTM Komuter 5- and 6-car sets on both tracks of both KTM lines, sized after the KTM Class 92 (cars ≈23 m × 2.75 m; Wikipedia), with the line colour as the livery stripe: Line 1 stops at Mid Valley (KTM · 10), Line 2 at Abdullah Hukum (KTM · 16). One on/off toggle in the top bar (overflow menu on mobile).
+- **Airport lines (02 Transit hub):** the ERL tracks in the KLIA Transit colour (Line 7; it passes through without stopping, no ERL station in the study area per OSM; KLIA Ekspres shares the tracks but is not drawn separately) and the KL Sentral–Terminal Skypark Line (Line 10) as a thin dashed line beside the Line 2 track it uses, with no trains, because the service is suspended (since 15 February 2023).
 - **Line pills and public stop numbers:** pills for KTM Line 1 (blue), KTM Line 2 (red) and LRT Line 5. Stations are shown as KTM · 10 (Mid Valley) and KTM · 16 (Abdullah Hukum); the official codes (KB01, KD01) appear only in source notes. KJ17 is shown as is.
 - **Bottom bar** in the style of the Banqiao rail: equal segments, 3 px current bar that fills during autoplay, ← / → buttons.
 - **Compass + Reset view:** the compass turns with the camera; Reset view appears only after you move the camera off the chapter preset.
@@ -41,7 +42,7 @@ Deep links: `?chapter=0` … `?chapter=8` or `#00` … `#08`; also `?lang=en|zh|
 - **OpenStreetMap** via the Overpass API, pulled 2026-10-10 (`src/data/meta.json`, `fetchedAt`). © OpenStreetMap contributors, ODbL.
 - **Attribution rules:** the full line ("Map data © OpenStreetMap contributors (ODbL), Overpass API pull …") appears on 00 only. The corner credit linking to openstreetmap.org/copyright is on every chapter. Other chapters' source lines list only their own methods and non-OSM sources.
 - **Heights:** cited values from `scripts/height-sources.json` (table and limitations in [`docs/height-sources.md`](docs/height-sources.md)). Otherwise the OSM `height` tag, or `building:levels` × 3.5 m. Anything else is a placeholder flagged as an estimate (≈ in the UI).
-- **Rail:** line colours and station codes from Wikipedia ("Klang Valley Integrated Transit System" and the station and line articles, fetched 2026-10-10). KTM line per track comes from OSM route relations (`raw/ktm-routes.json`).
+- **Rail:** line colours and station codes from Wikipedia ("Klang Valley Integrated Transit System" and the station and line articles, fetched 2026-10-10; KLIA Transit #33A8B5 and Skypark #8B4513 from Module:Adjacent stations/KLRT, fetched 2026-10-12). Skypark route from OSM relations 9985660 / 8391024. KTM line per track comes from OSM route relations (`raw/ktm-routes.json`).
 - **Climate:** the cited WMO 1991–2020 normals in `src/data/climate.json`. Sun position uses the NOAA formulas.
 - **Estimates are flagged.** No figure is typed in by hand: every number comes from data or a cited source.
 

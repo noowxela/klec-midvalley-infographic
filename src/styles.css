@@ -27,6 +27,8 @@
   --c-ktm1: #3c5a9f; /* 1 Batu Caves–Pulau Sebang Line (KB codes) */
   --c-ktm2: #dc2420; /* 2 Tanjung Malim–Port Klang Line (KD codes) */
   --c-erl: #8d8d8a;
+  --c-klia-transit: #33a8b5; /* 7 KLIA Transit (Wikipedia, Module:Adjacent stations/KLRT) */
+  --c-skypark: #8b4513; /* 10 KL Sentral–Terminal Skypark Line (suspended) */
   --c-route: #e2552f;
   --c-amber: #e0a020;
   --src-osm: #3a3a38;
@@ -79,6 +81,8 @@
   --c-ktm1: #3c5a9f;
   --c-ktm2: #dc2420;
   --c-erl: #77776f;
+  --c-klia-transit: #33a8b5;
+  --c-skypark: #8b4513;
   --c-route: #ff7a4d;
   --src-osm: #f0f0ec;
   --src-levels: #8a8a85;
@@ -392,6 +396,8 @@ a { color: inherit; }
 .toggle .pills { display: inline-flex; gap: 4px; margin-left: -4px; }
 .pin .tag .v .line-pill { height: 15px; width: 28.75px; margin-right: 6px; vertical-align: -3px; }
 .pin .tag .v .line-pill .lp-bg { stroke: #fff; stroke-width: 1.4; } /* white ring: the pill sits on a tag of its own colour */
+.line-pill.suspended { opacity: 0.6; } /* service suspended (Line 10 Skypark) */
+.tag-suspended { display: inline-block; white-space: nowrap; flex: none; margin: 0 6px 0 -2px; padding: 0 4px; border: 1px dashed currentColor; border-radius: 3px; font-size: 0.82em; line-height: 1.35; opacity: 0.8; text-transform: lowercase; }
 
 /* ======================================================================================================
    Mobile layout (html.mobile, set by main.ts for max-width 768 px, or max-height 500 px up to 1024 px wide).

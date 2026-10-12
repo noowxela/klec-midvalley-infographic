@@ -27,7 +27,7 @@ const D = (n: XY, y = 0): [number, number, number] => [n[0], y, -n[1]];
 // excluding the 2026 Segambut Utara infill (KA05A); owner's choice. KD01 appears only in the 03 Location source note and the README.
 const PUBLIC_CODE: Record<string, string> = { KB01: '10', KD01: '16' };
 const showCode = (ref: string | null) => (ref ? PUBLIC_CODE[ref] ?? ref : '—');
-const lineColor = { lrt: 'var(--c-lrt)', ktm1: 'var(--c-ktm1)', ktm2: 'var(--c-ktm2)', erl: 'var(--c-erl)' } as const;
+const lineColor = { lrt: 'var(--c-lrt)', ktm1: 'var(--c-ktm1)', ktm2: 'var(--c-ktm2)', erl: 'var(--c-erl)', klia: 'var(--c-klia-transit)', skypark: 'var(--c-skypark)' } as const;
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ---------- static derived figures (language independent) ----------
@@ -116,6 +116,13 @@ export function buildChapters(): Chapter[] {
     return { id: `pl-${name}`, title, value, at: D(p.c, p.height + 3), kind };
   };
   const textPin = (id: string, title: string, at: XY | null, y = 2, value?: string): PinDef | null => (at ? { id, title, value, at: D(at, y), kind: 'minor' } : null);
+  // 02: line labels for KLIA Transit (ERL tracks) and the suspended Skypark Line (Line 2 tracks), placed on the OSM track
+  const wayPt = (id: number, f: number): XY | null => { const w = lines.rails.find((r) => r.id === id); return w ? w.pts[Math.min(w.pts.length - 1, Math.floor(w.pts.length * f))] : null; };
+  const linePin = (id: string, title: string, value: string, at: XY | null, y: number, color: string, icon: string): PinDef | null => (at ? { id, title, value, at: D(at, y), kind: 'minor', accent: color, icon } : null);
+  const airPins = () => nn([
+    linePin('ln-klia', T.ch1.pinKlia, T.ch1.pinKliaV, wayPt(52347242, 0.2), 7, lineColor.klia, linePill(7, N.kliaTransit7)),
+    linePin('ln-skypark', T.ch1.pinSky, T.ch1.pinSkyV, wayPt(180560345, 0.62), 2, lineColor.skypark, linePill(10, N.skypark10, 'suspended')),
+  ]);
   const corePins = () => nn([
     stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
     stationPin('KD01', 'ktm2', N.kj17, `KTM · ${showCode('KD01')}`),
@@ -176,17 +183,17 @@ export function buildChapters(): Chapter[] {
         ...(tallestH ? [{ fig: fmt(tallestH), unit: U.m, cap: T.ch1.statTallest(tallestNames) }] : []),
         { fig: fmt(stats.routeTotalM), unit: U.m, cap: T.ch1.statWalk(fmt(stats.routeMinutes)) },
       ],
-      source: T.ch1.source(stats.heightCited),
+      source: `${T.ch1.source(stats.heightCited)} ${T.ch1.airSource}`,
       view: { target: [0, 0, -40], azimuth: -0.72, polar: 0.95, distance: 1950 },
-      mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: false },
-      pins: corePins(),
+      mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'highlight' }, airport: true, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: false },
+      pins: [...corePins(), ...airPins()],
       panel: (el) => {
         const s1 = h('section'); s1.append(h('h3', {}, T.ch1.studyArea));
         s1.append(h('div', { class: 'small' }, T.ch1.studyText(meta.center.lat.toFixed(4), meta.center.lon.toFixed(4), fmt(meta.halfSizeM * 2), `S ${meta.bbox.south} · W ${meta.bbox.west} · N ${meta.bbox.north} · E ${meta.bbox.east}`)));
         const s2 = h('section'); s2.append(h('h3', {}, T.ch1.onModel));
         const L = T.ch1.legend;
         const box = (sw: string) => `<span class="swatch box" style="background:${sw}"></span>`;
-        for (const [ic, txt] of [[box('var(--scene-building)'), L.building], [box('var(--c-water)'), L.water], [box('var(--c-green)'), L.green], [linePill(5, N.lrtLine5), L.lrt], [linePill(2, N.ktmLine2), L.ktm2(`KD · ${showCode('KD01')}`)], [linePill(1, N.ktmLine1), L.ktm1(`KB · ${showCode('KB01')}`)]] as const)
+        for (const [ic, txt] of [[box('var(--scene-building)'), L.building], [box('var(--c-water)'), L.water], [box('var(--c-green)'), L.green], [linePill(5, N.lrtLine5), L.lrt], [linePill(2, N.ktmLine2), L.ktm2(`KD · ${showCode('KD01')}`)], [linePill(1, N.ktmLine1), L.ktm1(`KB · ${showCode('KB01')}`)], [linePill(7, N.kliaTransit7), L.klia], [`${linePill(10, N.skypark10, 'suspended')}<span class="tag-suspended">${T.ch1.suspended}</span>`, L.skypark]] as const)
           s2.append(h('div', { class: 'legend-row' }, `${ic}${txt}`));
         const s3 = h('section'); s3.append(h('h3', {}, T.ch1.quality));
         s3.append(h('div', { class: 'small' }, T.ch1.qualityText(stats.heightCited, stats.heightOsm, stats.heightLevels, stats.heightEstimate)));
