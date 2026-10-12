@@ -105,7 +105,7 @@ Footprint per precinct = union of block footprints on a 1 m grid.
 ### v4: trains and landmark mosques
 
 **Trains (`src/trains.ts`)**
-- What runs: LRT Kelana Jaya trains only, on the two OSM track ways through the study area. The ways are chained into one continuous track per direction, resampled every metre and smoothed (plan ±4 m, deck height ramped over about 30 m, so there is no step where the deck goes from 9 m to 10.5 m).
+- What runs (v4): LRT Kelana Jaya trains, on the two OSM track ways through the study area. The ways are chained into one continuous track per direction, resampled every metre and smoothed (plan ±4 m, deck height ramped over about 30 m, so there is no step where the deck goes from 9 m to 10.5 m).
 - Map edges: each track is extended 160 m in a straight line past the map edge. Trains enter and leave there and are clipped at the study frame.
 - Trainsets: repeating per track, 4-2-4 cars on track 1 and 2-4-4 cars on track 2. Cars are separate instances placed by their two bogie points on the track, so a train bends through curves.
 - Car proportions (illustrative): 17 m car, 0.8 m gap, 2.65 m wide, 3.3 m tall, floor 0.45 m above the deck.
@@ -117,8 +117,17 @@ Footprint per precinct = union of block footprints on a 1 m grid.
 - Clock: advances only while the page is visible, clamped to 0.1 s per frame.
 - prefers-reduced-motion: trains are shown static, with one 4-car train standing at KJ17.
 - Toggle: the top-bar trains button (aria-pressed), persisted in localStorage `mv-trains`. Trains are on by default and are hidden in chapters that hide the LRT line.
-- Other lines: `chainWays` / `buildTrack` are generic and could take KTM/ERL chains. That is not enabled.
 - Checks: `scripts/trains-check.mjs`.
+
+**KTM Komuter trains (v14, `src/trains.ts` `KTM_TRAIN`)**
+- What runs: KTM Komuter sets on both tracks of both KTM lines: Line 1 Batu Caves–Pulau Sebang (east tracks, stripe `--c-ktm1` #3C5A9F) and Line 2 Tanjung Malim–Port Klang (west tracks, stripe `--c-ktm2` #DC2420). Per line, the OSM main-track ways (route from the OSM route relations; crossovers and the two ways with an inferred route left out) are chained regardless of their drawn direction (`chainWaysAnyDir`) into one track per direction, oriented for left-hand running (`orientLeftHand`).
+- Height: at grade (0.35 m, the drawn KTM track height). The drawn 6 m bridge decks keep their height and are approached on 4 % ramps (schematic, like the viaduct heights); the KTM track ribbons and piers are now drawn from these same tracks, so trains and track agree. Line 1 passes through two OSM tunnel ways (≈115 m) south-east of Mid Valley: trains run through them but are not drawn there, and neither is the track.
+- Stops: Line 1 at Mid Valley (KB01, shown as KTM · 10), Line 2 at Abdullah Hukum (KD01, KTM · 16), train centred on the station (track point 2–7 m from the OSM station position).
+- Station roofs: OSM `building=roof` canopies over the KTM tracks (KB01, KD01 and one more at KD01) are drawn as a 0.6 m roof slab, and the KD01 `train_station` block over the tracks from a 5 m clearance up, so trains at the platforms stay visible. The blocks' heights in the data and the UI are unchanged.
+- Cars: sized after the KTM Class 92 (Wikipedia "KTM Class 92", fetched 2026-10-12: 6-car set 138.6 m, cars 22.8–23.7 m, width 2.75 m, height 3.905 m, floor 1.1 m): 23.1 m cars, 0.9 m gap, 2.75 m wide, body 0.9–3.9 m above the rail, sloped cab nose. Class 92 sets are 6 cars; the 5-car sets are illustrative. Sets repeat 6-5 / 5-6 per track.
+- Motion (illustrative, no timetable source): cruise 20 m/s (72 km/h; Class 92 service maximum is 120–125 km/h), brake and accelerate at 0.8 m/s², dwell 30 s. Headway 180 s per track (compressed: real Komuter headways are tens of minutes), opposite tracks half a headway apart; at most 4 KTM trains are on the map at once, and never two on one track.
+- Rendering: one more `Trains` instance (4 instanced meshes + 1 LineSegments) for all four KTM tracks; the stripe takes the line colour as an instance colour. An update takes about 0.02 ms.
+- Same integration as the LRT: trains toggle (`#btn-trains`, overflow menu on mobile), hidden where a chapter hides the KTM layer, clock paused while the tab is hidden, keeps running during the 00 orbit, and under reduced motion one KTM train stands at each KTM station. The page loads 20 s into the KTM cycle so trains are already moving.
 
 **Landmark mosques (Overview)**
 - Selection: OSM buildings named "Masjid Jamek Abdullah Hukum" (way/659511483) and "Masjid An Nur" (relation/12622827, alt_name "Balai Islam An-Nur TNB Bangsar"). Both are religion=muslim.

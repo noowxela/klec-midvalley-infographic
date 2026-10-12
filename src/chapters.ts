@@ -138,19 +138,15 @@ export function buildChapters(): Chapter[] {
   const Z = T.ch0; const zs = meta.zones as unknown as Record<string, { blocks: number; footprintM2: number; centroid: XY; tallest: { height: number } | null }>;
   const zoneTop = (z: string) => Math.max(40, ...buildings.filter((b) => b.zone === z).map((b) => b.height)) * 0.55;
   return [
-    // ---------------- 00 overview: text panel only (no side panel); the model fills the area right of the text ----------------
+    // ---------------- 00 overview: text panel only (no side panel, no station pins); the model fills the area right of the text ----------------
     {
       id: 0, label: Z.label, tab: Z.tab, title: Z.title, lead: Z.lead, hint: Z.hint,
       stats: [],
       source: T.common.osmSrc(stats.fetchedDate),
-      view: { target: [-10, 0, -30], azimuth: 0.2, polar: 0.7, distance: 2200 },
+      view: { target: [-111, 0, -30], azimuth: -1.65, polar: 1.1, distance: 1363 },
       turntable: true, // slow 360° showcase orbit from this preset (World.setTurntable)
       mode: { rails: { lrt: 'highlight', ktm: 'highlight', erl: 'context' }, footways: 'hidden', routeSet: 'none', xray: false, buildingStyle: 'default', precincts: false },
-      pins: nn([
-        stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
-        stationPin('KD01', 'ktm2', N.kj17, `KTM · ${showCode('KD01')}`),
-        stationPin('KB01', 'ktm1', N.kb01, `KTM · ${showCode('KB01')}`),
-      ]),
+      pins: [],
     },
     // ---------------- 01 landmarks: precinct colours, landmark mosques, car park (the former 00 side panel) ----------------
     {
@@ -162,9 +158,6 @@ export function buildChapters(): Chapter[] {
       pins: nn([
         ...landmarks.map((l) => { const jamek = l.name === 'Masjid Jamek Abdullah Hukum'; return { id: `mosque-${l.id}`, title: jamek ? Z.mosqueJamek : Z.mosqueAnNur, value: jamek ? (l.podium?.levels ? Z.mosqueOnPodium(l.podium.levels) : Z.mosqueJamekSub) : Z.mosqueAnNurSub, at: D(l.c, l.height + 1), kind: 'minor' as const, accent: 'var(--landmark)' }; }),
         ...ZONES.filter((z) => zs[z]?.blocks).map((z) => ({ id: `zone-${z}`, title: Z.zones[z], value: Z.pinBlocks(zs[z].blocks), at: D(zs[z].centroid, zoneTop(z)), kind: 'major' as const, accent: `var(--z-${z})` })),
-        stationPin('KJ17', 'lrt', N.kj17, 'LRT · KJ17'),
-        stationPin('KD01', 'ktm2', N.kj17, `KTM · ${showCode('KD01')}`),
-        stationPin('KB01', 'ktm1', N.kb01, `KTM · ${showCode('KB01')}`),
       ]),
       // legend lives in the side panel (precinct colours + landmark mosques)
       panel: (el) => {

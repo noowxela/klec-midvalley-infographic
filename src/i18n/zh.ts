@@ -35,7 +35,7 @@ export const zh: Dict = {
     prevChapter: '上一章',
     nextChapter: '下一章',
     chaptersNav: '章节',
-    trains: '轻轨高架上的列车（示意）',
+    trains: '轻快铁与 KTM 列车（示意）',
     hideText: '隐藏文字面板',
     showText: '显示文字面板',
     hideSide: '隐藏侧面板',

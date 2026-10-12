@@ -25,7 +25,7 @@ Deep links: `?chapter=0` … `?chapter=8` or `#00` … `#08`; also `?lang=en|zh|
 - **Languages:** EN / zh / ms switcher in the top bar (or `?lang=`), remembered in localStorage.
 - **00 orbit:** the camera turns 360° every 75 s on 00. It pauses on drag or zoom and while the tab is hidden, resumes 3 s after you stop, and ends when you leave 00.
 - **Collapsible panels:** chevron tabs on the text and side panels; **M** or the top-bar button hides both (map only).
-- **Animated LRT trains** on both Kelana Jaya Line tracks, stopping at Abdullah Hukum; on/off toggle in the top bar.
+- **Animated trains:** LRT on both Kelana Jaya Line tracks (stopping at Abdullah Hukum, KJ17), and KTM Komuter 5- and 6-car sets on both tracks of both KTM lines, sized after the KTM Class 92 (cars ≈23 m × 2.75 m; Wikipedia), with the line colour as the livery stripe: Line 1 stops at Mid Valley (KTM · 10), Line 2 at Abdullah Hukum (KTM · 16). One on/off toggle in the top bar (overflow menu on mobile).
 - **Line pills and public stop numbers:** pills for KTM Line 1 (blue), KTM Line 2 (red) and LRT Line 5. Stations are shown as KTM · 10 (Mid Valley) and KTM · 16 (Abdullah Hukum); the official codes (KB01, KD01) appear only in source notes. KJ17 is shown as is.
 - **Bottom bar** in the style of the Banqiao rail: equal segments, 3 px current bar that fills during autoplay, ← / → buttons.
 - **Compass + Reset view:** the compass turns with the camera; Reset view appears only after you move the camera off the chapter preset.
@@ -34,7 +34,7 @@ Deep links: `?chapter=0` … `?chapter=8` or `#00` … `#08`; also `?lang=en|zh|
 - **Also:** light/dark theme, autoplay (10 s per chapter), optional chime, fullscreen.
 - **Keyboard:** → / ↓ / PgDn / Space next · ← / ↑ / PgUp previous · Home overview · F fullscreen · M map only. Mouse: drag to rotate, scroll to zoom, right-drag to pan.
 - **Mobile layout** (≤ 768 px wide, or short landscape phones up to 1024 × 500): the map fills the screen at native size with portrait-aware camera framing. The chapter rail stays at the bottom as a scrollable row of 48 px tabs with ← / →, and the current tab is kept in view. Text and side-panel content share one bottom sheet that collapses to a peek (number + headline); tap or swipe up to expand it to ~60 % and scroll inside, and swipe left / right on the peek to change chapter. On landscape phones the sheet is a card at the bottom left. Less-used tools sit in a ⋯ menu. Safe-area insets and `dvh` units keep the browser bars off the rail.
-- **Reduced motion:** no orbit, trains stand still (one train at KJ17), and fades and flights are instant.
+- **Reduced motion:** no orbit, trains stand still (one LRT train at KJ17, one KTM train at each KTM station), and fades and flights are instant.
 
 ## Data and sources
 
@@ -81,7 +81,7 @@ node scripts/compass-check.mjs      # compass + Reset view visibility and overla
 node scripts/credit-check.mjs       # OSM credit placement; OSM line on 00 only
 node scripts/orbit-check.mjs        # 00 turntable
 node scripts/mobile-check.mjs       # mobile layout at 360×640, 390×844, 430×932, 844×390, 768×1024 (+ 667×375)
-node scripts/trains-check.mjs       # LRT trains: track, stop, spacing, toggle, reduced motion
+node scripts/trains-check.mjs       # LRT + KTM trains: track, stops, 5/6 cars, spacing, toggle, reduced motion
 node scripts/v7-check.mjs           # loader minimum + mosque/car-park shots
 node scripts/firstload.mjs <outDir> [query] [rm|nowebgl]   # cold throttled first-load frames
 ```
@@ -115,7 +115,6 @@ Since v16 the chapters are numbered 00–08 in a row. Links made earlier open th
 - **Mall heights** (5 × 5 m) are applied uniformly to untagged mall parts; named parts stay estimates.
 - **Not built yet:**
   - KL Eco City underground roads (in the data, not drawn) need a cutaway;
-  - KTM trains are not animated;
   - KJ17 has no public stop number.
 
 More detail (per-version design notes, precinct rule, trains, loader, rail codes, bottom bar, compass) is in [`docs/design-notes.md`](docs/design-notes.md).

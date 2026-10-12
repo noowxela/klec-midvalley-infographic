@@ -34,7 +34,7 @@ export const en = {
     prevChapter: 'Previous chapter',
     nextChapter: 'Next chapter',
     chaptersNav: 'Chapters',
-    trains: 'Trains on the LRT viaduct (illustrative)',
+    trains: 'LRT and KTM trains (illustrative)',
     hideText: 'Hide text panel',
     showText: 'Show text panel',
     hideSide: 'Hide side panel',

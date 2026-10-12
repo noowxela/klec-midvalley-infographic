@@ -34,7 +34,7 @@ export const ms: Dict = {
     prevChapter: 'Bab sebelumnya',
     nextChapter: 'Bab seterusnya',
     chaptersNav: 'Bab',
-    trains: 'Tren di atas jejambat LRT (ilustrasi)',
+    trains: 'Tren LRT dan KTM (ilustrasi)',
     hideText: 'Sembunyi panel teks',
     showText: 'Tunjuk panel teks',
     hideSide: 'Sembunyi panel sisi',

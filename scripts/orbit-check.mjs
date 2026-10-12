@@ -26,7 +26,7 @@ async function open(name, q, { rm = false } = {}) {
 const st = (p) => p.evaluate(() => {
   const w = window.__mv.world; const v = w.currentView(); const b = document.getElementById('btn-reset');
   const n = document.getElementById('north-needle'); const tr = w.trains?.debugState?.() ?? null;
-  return { az: v.azimuth, polar: v.polar, dist: v.distance, reset: !b.classList.contains('is-hidden'), needle: n.getAttribute('transform') || getComputedStyle(n).transform, north: w.northAngle(), active: w.turntableActive(), trainClock: w.trains?.clock ?? null, tr };
+  return { az: v.azimuth, polar: v.polar, dist: v.distance, reset: !b.classList.contains('is-hidden'), needle: n.getAttribute('transform') || getComputedStyle(n).transform, north: w.northAngle(), active: w.turntableActive(), trainClock: w.trains?.clock ?? null, ktmClock: w.ktmTrains?.clock ?? null, ktmVisible: w.ktmTrains?.group.visible ?? null, tr };
 });
 const dAz = (a, b) => Math.atan2(Math.sin(b - a), Math.cos(b - a));
 const RATE = (2 * Math.PI) / 75;
@@ -37,12 +37,13 @@ const RATE = (2 * Math.PI) / 75;
   const t0 = Date.now(); await sleep(4000);
   const b = await st(p); const dt = (Date.now() - t0) / 1000; await p.screenshot({ path: 'shots-orbit/v15-00-orbit-b.png' });
   const rate = dAz(a.az, b.az) / Math.max(dt, b.trainClock - a.trainClock); // train clock = real frame time between the two reads
-  console.log('00 advance', JSON.stringify({ dAzDeg: +(dAz(a.az, b.az) * 180 / Math.PI).toFixed(1), secs: +dt.toFixed(1), periodS: +(2 * Math.PI / rate).toFixed(1), dPolar: +(b.polar - a.polar).toFixed(4), dDist: +(b.dist - a.dist).toFixed(1), reset: [a.reset, b.reset], north: [+a.north.toFixed(3), +b.north.toFixed(3)], active: b.active, trainsAdvancedS: +(b.trainClock - a.trainClock).toFixed(1) }));
+  console.log('00 advance', JSON.stringify({ dAzDeg: +(dAz(a.az, b.az) * 180 / Math.PI).toFixed(1), secs: +dt.toFixed(1), periodS: +(2 * Math.PI / rate).toFixed(1), dPolar: +(b.polar - a.polar).toFixed(4), dDist: +(b.dist - a.dist).toFixed(1), reset: [a.reset, b.reset], north: [+a.north.toFixed(3), +b.north.toFixed(3)], active: b.active, trainsAdvancedS: +(b.trainClock - a.trainClock).toFixed(1), ktmAdvancedS: +(b.ktmClock - a.ktmClock).toFixed(1), ktmVisible: b.ktmVisible }));
   if (!(rate > RATE * 0.6 && rate < RATE * 1.6)) bad.push(`00 rate ${rate}`);
   if (Math.abs(b.polar - a.polar) > 0.002 || Math.abs(b.dist - a.dist) > 2) bad.push('00 pitch/distance drift');
   if (a.reset || b.reset) bad.push('00 reset shown by the orbit');
   if (Math.abs(dAz(a.north, b.north)) < 0.1) bad.push('compass did not rotate with the orbit');
   if (!(b.trainClock - a.trainClock > dt * 0.7)) bad.push(`trains not running during the orbit (${a.trainClock} -> ${b.trainClock})`);
+  if (!(b.ktmClock - a.ktmClock > dt * 0.7) || !b.ktmVisible) bad.push(`KTM trains not running / shown during the orbit (${a.ktmClock} -> ${b.ktmClock})`);
   // pause while the mouse is held down (no movement), resume ~3 s after release
   const x = 1300, y = 540; await p.mouse.move(x, y); await p.mouse.down(); await sleep(300);
   const h1 = await st(p); await sleep(1200); const h2 = await st(p); await p.mouse.up();

@@ -27,6 +27,7 @@ let chapters: Chapter[] = buildChapters();
 
 // ---------- fit the 1920x1080 stage to the window ----------
 const world = new World($('#gl'));
+if (import.meta.env.DEV) void import('./dev/cameraGui').then(({ attachCameraGui }) => attachCameraGui(world));
 let stageScale = 1; // current stage scale (the bottom-right strip is unscaled, so the scale bar is sized in screen px)
 function fit() {
   const m = mqMobile.matches; if (m !== mobile) setMobile(m);
@@ -377,7 +378,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ---------- top buttons ----------
-// trains on the LRT viaduct: on by default, user choice persisted
+// LRT and KTM trains: on by default, user choice persisted
 const btnTrains = $('#btn-trains');
 const applyTrains = (on: boolean) => { world.setTrains(on); btnTrains.setAttribute('aria-pressed', String(on)); };
 applyTrains(localStorage.getItem('mv-trains') !== 'off');
