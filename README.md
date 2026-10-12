@@ -13,7 +13,7 @@ A 3D scrollytelling infographic of the rail-and-mall cluster on both banks of th
 | 02 | Transit hub | The 1 km × 1 km study area and its three stations (cover) |
 | 03 | Location | River, roads, LRT viaduct and both KTM lines around the cluster |
 | 04 | Massing | Heights by source (cited, OSM, flagged estimate) and the tallest named towers |
-| 05 | Connections | Shortest OSM pedestrian path from Abdullah Hukum LRT to Mid Valley KTM |
+| 05 | Connections | Shortest OSM pedestrian path from Abdullah Hukum LRT to Mid Valley KTM, plus an underground road cutaway |
 | 06 | Walking routes | Route set between stations, malls and towers, with bridge, indoor, covered and open-air shares |
 | 07 | Sun & shade | Sun position by date and time, shadows cast from the model, sidewalk shade |
 | 08 | Rain & monsoon | Monthly rainfall normals and covered vs open-air pedestrian ways |
@@ -26,6 +26,7 @@ Deep links: `?chapter=0` … `?chapter=8` or `#00` … `#08`; also `?lang=en|zh|
 - **00 orbit:** the camera turns 360° every 75 s on 00. It pauses on drag or zoom and while the tab is hidden, resumes 3 s after you stop, and ends when you leave 00.
 - **Collapsible panels:** chevron tabs on the text and side panels; **M** or the top-bar button hides both (map only).
 - **Animated trains:** LRT on both Kelana Jaya Line tracks (stopping at Abdullah Hukum, KJ17), and KTM Komuter 5- and 6-car sets on both tracks of both KTM lines, sized after the KTM Class 92 (cars ≈23 m × 2.75 m; Wikipedia), with the line colour as the livery stripe: Line 1 stops at Mid Valley (KTM · 10), Line 2 at Abdullah Hukum (KTM · 16). One on/off toggle in the top bar (overflow menu on mobile).
+- **Underground road cutaway (05 Connections):** the OSM below-ground roads (`tunnel=yes` or `layer<0`) drawn beneath a translucent ground with a cut-section box at the study-area edge, grouped as KL Eco City lower tier, Mid Valley City basement access (by OSM landuse precinct), Federal Highway motorcycle-lane underpasses (OSM name) and other. Depths are estimates (4.5 m per OSM layer step; no public depth figures found). Illustrative car flow, static under reduced motion. Toggles for the cutaway and the cars. Sources: OSM; S P Setia "KL Eco City" project page (two-tier internal road system, ramps to Federal Highway, NPE, Jalan Maarof and Jalan Bangsar; fetched 2026-10-12); Malaysia Property News, Apr 2012 (two dedicated Federal Highway ramps).
 - **Airport lines (02 Transit hub):** the ERL tracks in the KLIA Transit colour (Line 7; it passes through without stopping, no ERL station in the study area per OSM; KLIA Ekspres shares the tracks but is not drawn separately) and the KL Sentral–Terminal Skypark Line (Line 10) as a thin dashed line beside the Line 2 track it uses, with no trains, because the service is suspended (since 15 February 2023).
 - **Line pills and public stop numbers:** pills for KTM Line 1 (blue), KTM Line 2 (red) and LRT Line 5. Stations are shown as KTM · 10 (Mid Valley) and KTM · 16 (Abdullah Hukum); the official codes (KB01, KD01) appear only in source notes. KJ17 is shown as is.
 - **Bottom bar** in the style of the Banqiao rail: equal segments, 3 px current bar that fills during autoplay, ← / → buttons.
@@ -77,6 +78,7 @@ Start a production preview first, then run any check. Screenshots go to git-igno
 npm run build && npx vite preview --port 4173 --strictPort &
 npm run shots                       # screenshots.mjs: every chapter × language, console errors, text fit, keyboard
 node scripts/rail-check.mjs         # line colours, pills, public stop numbers, label overlap
+node scripts/cutaway-check.mjs      # 05 cutaway: toggles, legend, labels, translucent ground, reduced motion, other chapters unchanged
 node scripts/bar-check.mjs          # bottom bar: labels, current bar, arrows, autoplay, mobile
 node scripts/compass-check.mjs      # compass + Reset view visibility and overlap
 node scripts/credit-check.mjs       # OSM credit placement; OSM line on 00 only
@@ -115,7 +117,6 @@ Since v16 the chapters are numbered 00–08 in a row. Links made earlier open th
 - **Masjid Jamek car park:** modelled as 5 levels (OSM). 2016 press reports (FMT, Bernama) say a seven-level podium.
 - **Mall heights** (5 × 5 m) are applied uniformly to untagged mall parts; named parts stay estimates.
 - **Not built yet:**
-  - KL Eco City underground roads (in the data, not drawn) need a cutaway;
   - KJ17 has no public stop number.
 
 More detail (per-version design notes, precinct rule, trains, loader, rail codes, bottom bar, compass) is in [`docs/design-notes.md`](docs/design-notes.md).

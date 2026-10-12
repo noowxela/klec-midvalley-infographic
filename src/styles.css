@@ -29,6 +29,8 @@
   --c-erl: #8d8d8a;
   --c-klia-transit: #33a8b5; /* 7 KLIA Transit (Wikipedia, Module:Adjacent stations/KLRT) */
   --c-skypark: #8b4513; /* 10 KL Sentral–Terminal Skypark Line (suspended) */
+  /* 05 cutaway (below-ground roads) */
+  --c-cut-road: #c99a1a; --c-cut-midvalley: #6f63b5; --c-cut-other: #8f8a80; --c-cut-moto: #2f8f6a; --c-cut-earth: #b39b78; --c-cut-edge: #6b5a42; --c-cut-car: #2b2b29;
   --c-route: #e2552f;
   --c-amber: #e0a020;
   --src-osm: #3a3a38;
@@ -83,6 +85,7 @@
   --c-erl: #77776f;
   --c-klia-transit: #33a8b5;
   --c-skypark: #8b4513;
+  --c-cut-road: #e8c04a; --c-cut-midvalley: #9d92e0; --c-cut-other: #a8a398; --c-cut-moto: #4fc496; --c-cut-earth: #6b5a44; --c-cut-edge: #c4ae8a; --c-cut-car: #f0f0ec;
   --c-route: #ff7a4d;
   --src-osm: #f0f0ec;
   --src-levels: #8a8a85;
