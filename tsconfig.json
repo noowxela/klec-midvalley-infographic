@@ -12,7 +12,13 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "paths": {
+      "@map-assets": ["./map-assets/src/index.ts"],
+      "@map-assets/*": ["./map-assets/src/*"],
+      "three": ["./node_modules/@types/three"],
+      "three/*": ["./node_modules/@types/three/*"]
+    }
   },
   "include": ["src"]
 }

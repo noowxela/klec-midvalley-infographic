@@ -1,6 +1,6 @@
 // 简体中文（马来西亚用法）。结构与 en.ts 相同；数字一律由数据计算后传入。
 // Place names: Chinese forms only where commonly used in Malaysia (谷中城, 吉隆坡生态城, 巴生河, 联邦大道); otherwise the official name is kept.
-import { fmt } from '../data';
+import { fmt } from '../format';
 import type { Dict } from './en';
 
 const n = fmt;

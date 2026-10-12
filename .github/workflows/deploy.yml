@@ -1,8 +1,8 @@
 name: Deploy to GitHub Pages
 
+# Started by hand (Actions tab -> Deploy to GitHub Pages -> Run workflow). Pages for a private repo needs a paid
+# GitHub plan; add `push: branches: [main]` back once Pages is available.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -18,8 +18,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout (with the private map-assets submodule)
         uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.MAP_REPO_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

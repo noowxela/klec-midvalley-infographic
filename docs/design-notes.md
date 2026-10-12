@@ -2,6 +2,8 @@
 
 Detailed implementation notes moved here from the README (version by version). Chapter numbers in older sections are the ones current when they were written; see the mapping table in the README.
 
+These notes predate the 2026-10-12 split into this repo and [map-assets](https://github.com/spacingouty09/map-assets). Paths below are the old ones: `src/data/` is now `map-assets/data/`, `scripts/process-osm.mjs`, `fetch-osm.mjs` and `config.mjs` are now under `map-assets/pipeline/`, `scripts/height-sources.json` and `src/data/climate.json` are now under `map-assets/sources/`, and the model half of `src/scene.ts` (plus `trains.ts`, `shade.ts` and `sun.ts`) is now in `map-assets/src/`.
+
 An interactive, chaptered 3D infographic of the rail-and-mall cluster around
 Abdullah Hukum LRT, KL Eco City, The Gardens Mall, Mid Valley Megamall and
 Mid Valley KTM in Kuala Lumpur. All geometry comes from OpenStreetMap; the
